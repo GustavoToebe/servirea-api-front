@@ -9,12 +9,15 @@ import { AuthService } from '../../../../core/auth/auth.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   template: `
-    <div class="grid min-h-screen place-items-center bg-slate-950 p-4">
-      <div class="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl">
+    <div class="relative grid min-h-screen place-items-center overflow-hidden bg-[#F4F5FF] p-4">
+      <div class="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-[#673DE6]/20 blur-3xl"></div>
+      <div class="pointer-events-none absolute -bottom-28 -right-16 h-80 w-80 rounded-full bg-[#2F1C6A]/15 blur-3xl"></div>
+
+      <div class="relative w-full max-w-md rounded-3xl border border-white/70 bg-white p-8 shadow-[0_24px_60px_rgba(47,28,106,0.12)]">
         <div class="mb-8 text-center">
           <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-blue text-xl font-black text-white">SJ</div>
-          <h1 class="text-2xl font-black text-slate-900">Escalas da Paróquia</h1>
-          <p class="mt-2 text-sm text-slate-500">São José Operário • Coroinhas e Acólitos</p>
+          <h1 class="text-2xl font-extrabold tracking-tight text-brand-ink">Escalas da Paróquia</h1>
+          <p class="mt-2 text-sm text-slate-500">São José Operário • Coroinhas e acólitos</p>
         </div>
 
         <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
@@ -36,6 +39,9 @@ import { AuthService } from '../../../../core/auth/auth.service';
           <a routerLink="/inscricao" class="font-semibold text-brand-blue">Inscrever coroinha ou acólito</a>
         </p>
         <p class="mt-3 text-center text-xs text-slate-400">Acesso restrito aos responsáveis pela organização das escalas.</p>
+        <p class="mt-6 text-center text-xs">
+          <a routerLink="/admin/login" class="font-semibold text-slate-400 hover:text-brand-navy">Painel da plataforma</a>
+        </p>
       </div>
     </div>
   `

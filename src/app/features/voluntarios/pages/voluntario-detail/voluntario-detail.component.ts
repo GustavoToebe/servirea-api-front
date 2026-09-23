@@ -21,7 +21,7 @@ import { VoluntariosService } from '../../services/voluntarios.service';
         <section class="card p-6">
           <div class="flex flex-col gap-6 md:flex-row md:items-start">
             <img *ngIf="v.foto_url" [src]="v.foto_url" class="h-40 w-40 rounded-3xl object-cover" alt="Foto">
-            <div *ngIf="!v.foto_url" class="flex h-40 w-40 shrink-0 items-center justify-center rounded-3xl bg-sky-100 text-4xl font-black text-brand-blue">{{ initials(v.nome_completo) }}</div>
+            <div *ngIf="!v.foto_url" class="flex h-40 w-40 shrink-0 items-center justify-center rounded-3xl bg-violet-100 text-4xl font-black text-brand-blue">{{ initials(v.nome_completo) }}</div>
             <div class="flex-1">
               <div class="flex flex-wrap items-center gap-2"><h2 class="text-3xl font-black text-slate-900">{{ v.nome_completo }}</h2><span class="badge" [ngClass]="v.ativo ? 'bg-emerald-50 text-emerald-700':'bg-slate-100 text-slate-500'">{{ v.ativo ? 'Ativo':'Inativo' }}</span></div>
               <p class="mt-2 text-slate-500">{{ tipoLabel(v.tipo) }} • {{ age(v.data_nascimento) ?? 'idade não informada' }}{{ age(v.data_nascimento) != null ? ' anos' : '' }}</p>
@@ -37,7 +37,7 @@ import { VoluntariosService } from '../../services/voluntarios.service';
 
         <div class="grid gap-6 lg:grid-cols-2">
           <section class="card p-6"><h3 class="mb-4 text-lg font-black">Contato e endereço</h3><div class="space-y-3 text-sm"><p><span class="text-slate-400">Endereço:</span> {{ address() }}</p><p><span class="text-slate-400">Celular:</span> {{ v.celular || '—' }}</p><p><span class="text-slate-400">Telefone:</span> {{ v.telefone || '—' }}</p><p><span class="text-slate-400">E-mail:</span> {{ v.email || '—' }}</p></div></section>
-          <section class="card p-6"><h3 class="mb-4 text-lg font-black">Funções habilitadas</h3><div class="flex flex-wrap gap-2"><span *ngFor="let f of v.funcoes_habilitadas" class="badge bg-sky-50 text-brand-blue">{{ funcao(f) }}</span><span *ngIf="!v.funcoes_habilitadas.length" class="text-sm text-slate-400">Nenhuma função configurada.</span></div></section>
+          <section class="card p-6"><h3 class="mb-4 text-lg font-black">Funções habilitadas</h3><div class="flex flex-wrap gap-2"><span *ngFor="let f of v.funcoes_habilitadas" class="badge bg-violet-50 text-brand-blue">{{ funcao(f) }}</span><span *ngIf="!v.funcoes_habilitadas.length" class="text-sm text-slate-400">Nenhuma função configurada.</span></div></section>
         </div>
 
         <section class="card p-6">

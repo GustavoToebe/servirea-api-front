@@ -34,7 +34,7 @@ import { ExportService } from '../../services/export.service';
           </form>
         </section>
 
-        <div class="rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-slate-700">
+        <div class="rounded-2xl border border-violet-100 bg-violet-50 p-4 text-sm text-slate-700">
           <strong>Como funciona:</strong> a escala mensal fica só com sábados e domingos; a semanal, com os dias úteis. Se a festa da Igreja cair no fim de semana, o nome aparece na mensal; se cair em dia de semana, aparece na semanal. Você ainda pode adicionar ou excluir um dia na mão.
         </div>
 

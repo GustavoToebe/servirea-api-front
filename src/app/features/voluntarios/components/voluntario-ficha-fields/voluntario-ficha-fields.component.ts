@@ -123,7 +123,7 @@ import { createResponsavelGroup } from '../../forms/voluntario-ficha.factory';
 
       <section class="card p-6">
         <div class="grid gap-4 md:grid-cols-2">
-          <label class="flex items-start gap-3 rounded-xl bg-sky-50 p-4">
+          <label class="flex items-start gap-3 rounded-xl bg-violet-50 p-4">
             <input type="checkbox" formControlName="autoriza_whatsapp" class="mt-1 h-4 w-4">
             <span><strong>Autorização para grupo de WhatsApp</strong><br><span class="text-sm text-slate-600">Registro da autorização indicada na ficha física.</span></span>
           </label>

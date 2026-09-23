@@ -64,12 +64,12 @@ type AbaVoluntarios = 'ativos' | 'aguardando' | 'inativos' | 'historico';
                 <td class="px-5 py-4">
                   <div class="flex items-center gap-3">
                     <img *ngIf="v.foto_url" [src]="v.foto_url" class="h-11 w-11 rounded-full object-cover" alt="Foto">
-                    <div *ngIf="!v.foto_url" class="flex h-11 w-11 items-center justify-center rounded-full bg-sky-100 font-bold text-brand-blue">{{ initials(v.nome_completo) }}</div>
+                    <div *ngIf="!v.foto_url" class="flex h-11 w-11 items-center justify-center rounded-full bg-violet-100 font-bold text-brand-blue">{{ initials(v.nome_completo) }}</div>
                     <div><div class="font-bold text-slate-900">{{ v.nome_completo }}</div><div class="text-xs text-slate-500">{{ v.celular || v.telefone || v.email || 'Sem contato direto' }}</div></div>
                   </div>
                 </td>
                 <td class="px-5 py-4">{{ ageFromDate(v.data_nascimento) ?? '—' }}</td>
-                <td class="px-5 py-4"><span class="badge bg-sky-50 text-brand-blue">{{ tipoLabel(v.tipo) }}</span></td>
+                <td class="px-5 py-4"><span class="badge bg-violet-50 text-brand-blue">{{ tipoLabel(v.tipo) }}</span></td>
                 <td class="px-5 py-4"><div class="flex max-w-sm flex-wrap gap-1"><span *ngFor="let f of v.funcoes_habilitadas" class="rounded-md bg-slate-100 px-2 py-1 text-xs">{{ funcaoLabel(f) }}</span><span *ngIf="!v.funcoes_habilitadas?.length" class="text-slate-400">—</span></div></td>
                 <td class="px-5 py-4"><span class="badge" [ngClass]="v.ativo ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'">{{ v.ativo ? 'Ativo' : 'Inativo' }}</span></td>
                 <td class="px-5 py-4"><div class="flex justify-end gap-2"><a [routerLink]="['/voluntarios', v.id]" class="btn-secondary !px-3 !py-2">Ver</a><a [routerLink]="['/voluntarios', v.id, 'editar']" class="btn-secondary !px-3 !py-2">Editar</a></div></td>
@@ -87,7 +87,7 @@ type AbaVoluntarios = 'ativos' | 'aguardando' | 'inativos' | 'historico';
             <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div class="flex gap-4">
                 <img *ngIf="inscricao.foto_url" [src]="inscricao.foto_url" class="h-16 w-16 rounded-2xl object-cover" alt="Foto">
-                <div *ngIf="!inscricao.foto_url" class="flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-100 font-black text-brand-blue">{{ initials(inscricao.nome_completo) }}</div>
+                <div *ngIf="!inscricao.foto_url" class="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-100 font-black text-brand-blue">{{ initials(inscricao.nome_completo) }}</div>
                 <div>
                   <h2 class="text-lg font-black text-slate-900">{{ inscricao.nome_completo }}</h2>
                   <p class="text-sm text-slate-600">{{ tipoLabel(inscricao.tipo) }}</p>

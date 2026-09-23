@@ -11,9 +11,9 @@ import { TipoVoluntario, Voluntario } from '../../../features/voluntarios/models
     <div class="relative">
       <button type="button"
               class="flex w-full items-center gap-2 rounded-lg border bg-white px-3 py-2 text-left text-sm transition"
-              [class.border-sky-400]="open"
+              [class.border-violet-400]="open"
               [class.ring-2]="open"
-              [class.ring-sky-100]="open"
+              [class.ring-violet-100]="open"
               [class.border-slate-300]="!open"
               [class.bg-slate-100]="disabled"
               [disabled]="disabled"
@@ -35,19 +35,19 @@ import { TipoVoluntario, Voluntario } from '../../../features/voluntarios/models
                     (mousedown)="$event.preventDefault()"
                     (click)="setTipo(t.value)">{{ t.label }}</button>
           </div>
-          <input class="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-sky-400"
+          <input class="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-violet-500"
                  [(ngModel)]="search" placeholder="Filtrar" autofocus>
         </div>
         <div class="max-h-56 overflow-auto py-1">
           <button *ngFor="let v of filtered()" type="button"
-                  class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  [class.bg-sky-50]="v.id === selectedId"
+                  class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  [class.bg-violet-50]="v.id === selectedId"
                   [disabled]="excludeIds.includes(v.id) && v.id !== selectedId"
                   (mousedown)="$event.preventDefault()"
                   (click)="choose(v)">
             <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded border"
-                  [class.border-sky-500]="v.id === selectedId"
-                  [class.bg-sky-500]="v.id === selectedId"
+                  [class.border-violet-600]="v.id === selectedId"
+                  [class.bg-violet-600]="v.id === selectedId"
                   [class.border-slate-300]="v.id !== selectedId">
               <span *ngIf="v.id === selectedId" class="text-[10px] font-black text-white">✓</span>
             </span>

@@ -5,14 +5,18 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          blue: '#006599',
-          navy: '#10344a',
-          gray: '#9ca3af'
+          blue: '#673DE6',
+          navy: '#2F1C6A',
+          ink: '#1D1E20',
+          gray: '#727586'
         },
-        app: '#f5f7f9'
+        app: '#F4F5FF'
       },
       boxShadow: {
-        card: '0 8px 24px rgba(15, 23, 42, 0.06)'
+        card: '0 10px 30px rgba(47, 28, 106, 0.06)'
+      },
+      fontFamily: {
+        sans: ['"Plus Jakarta Sans"', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif']
       }
     }
   },

@@ -1,8 +1,29 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
 import { pendingChangesGuard } from './core/guards/pending-changes.guard';
+import { backofficeGuard } from './features/backoffice/backoffice.guard';
 
 export const routes: Routes = [
+  {
+    path: 'admin/login',
+    loadComponent: () => import('./features/backoffice/pages/backoffice-login.component').then(m => m.BackofficeLoginComponent)
+  },
+  {
+    path: 'admin',
+    canActivate: [backofficeGuard],
+    loadComponent: () => import('./features/backoffice/layout/backoffice-layout.component').then(m => m.BackofficeLayoutComponent),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+      { path: 'dashboard', loadComponent: () => import('./features/backoffice/pages/backoffice-dashboard.component').then(m => m.BackofficeDashboardComponent) },
+      { path: 'paroquias', loadComponent: () => import('./features/backoffice/pages/paroquias-list.component').then(m => m.ParoquiasListComponent) },
+      { path: 'paroquias/nova', loadComponent: () => import('./features/backoffice/pages/paroquia-form.component').then(m => m.ParoquiaFormComponent) },
+      { path: 'paroquias/:id', loadComponent: () => import('./features/backoffice/pages/paroquia-form.component').then(m => m.ParoquiaFormComponent) },
+      { path: 'usuarios', loadComponent: () => import('./features/backoffice/pages/usuarios-list.component').then(m => m.UsuariosListComponent) },
+      { path: 'usuarios/novo', loadComponent: () => import('./features/backoffice/pages/usuario-form.component').then(m => m.UsuarioFormComponent) },
+      { path: 'usuarios/:id', loadComponent: () => import('./features/backoffice/pages/usuario-form.component').then(m => m.UsuarioFormComponent) },
+      { path: 'logs', loadComponent: () => import('./features/backoffice/pages/logs-list.component').then(m => m.LogsListComponent) }
+    ]
+  },
   {
     path: 'login',
     loadComponent: () => import('./features/auth/pages/login/login.component').then(m => m.LoginComponent)

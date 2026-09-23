@@ -4,4 +4,5 @@ export const environment = {
   supabaseUrl: 'https://qcybebkhwhrudbwoweip.supabase.co',
   supabaseAnonKey: 'sb_publishable_AHHQ4S_VM0hDJ5lFJgcrgQ_q-dwLgW0',
   turnstileSiteKey: '0x4AAAAAAE5LAuNTiGgIUjVG',
+  apiUrl: 'http://localhost:8080',
 };

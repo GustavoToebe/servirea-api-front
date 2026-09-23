@@ -32,7 +32,7 @@ import { ageFromDate, formatDateBr, formatDateTimeBr, initials, studyLabel, tipo
           <h2 class="mb-5 text-lg font-black">Dados do voluntário</h2>
           <div class="flex flex-col gap-6 md:flex-row md:items-start">
             <img *ngIf="inscricao.foto_url" [src]="inscricao.foto_url" class="h-40 w-40 rounded-3xl object-cover" alt="Foto">
-            <div *ngIf="!inscricao.foto_url" class="flex h-40 w-40 shrink-0 items-center justify-center rounded-3xl bg-sky-100 text-4xl font-black text-brand-blue">{{ initials(inscricao.nome_completo) }}</div>
+            <div *ngIf="!inscricao.foto_url" class="flex h-40 w-40 shrink-0 items-center justify-center rounded-3xl bg-violet-100 text-4xl font-black text-brand-blue">{{ initials(inscricao.nome_completo) }}</div>
             <div class="flex-1">
               <h3 class="text-3xl font-black text-slate-900">{{ inscricao.nome_completo }}</h3>
               <p class="mt-2 text-slate-500">{{ tipoLabel(inscricao.tipo) }} • {{ ageLabel(inscricao.data_nascimento) }}</p>
@@ -62,7 +62,7 @@ import { ageFromDate, formatDateBr, formatDateTimeBr, initials, studyLabel, tipo
           <section class="card p-6">
             <h3 class="mb-4 text-lg font-black">Funções</h3>
             <div class="flex flex-wrap gap-2">
-              <span *ngFor="let funcao of inscricao.funcoes_habilitadas" class="badge bg-sky-50 text-brand-blue">{{ funcaoLabel(funcao) }}</span>
+              <span *ngFor="let funcao of inscricao.funcoes_habilitadas" class="badge bg-violet-50 text-brand-blue">{{ funcaoLabel(funcao) }}</span>
               <span *ngIf="!inscricao.funcoes_habilitadas?.length" class="text-sm text-slate-400">Nenhuma função configurada.</span>
             </div>
             <p class="mt-4 text-sm"><span class="text-slate-400">Observações:</span> {{ inscricao.observacoes || '—' }}</p>

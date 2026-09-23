@@ -30,7 +30,7 @@ import { Escala, MESES, STATUS_LABEL, StatusEscala } from '../../../escalas/mode
         </section>
         <section class="card p-6">
           <h2 class="text-lg font-black">Ações rápidas</h2><div class="mt-4 grid gap-3"><a routerLink="/escalas/nova" class="btn-primary">＋ Criar nova escala</a><a routerLink="/voluntarios/novo" class="btn-secondary">＋ Cadastrar coroinha/acólito</a><a routerLink="/relatorios" class="btn-secondary">Exportar PDF / PNG</a></div>
-          <div class="mt-6 rounded-2xl bg-sky-50 p-4 text-sm text-slate-600"><strong class="text-brand-blue">Dica</strong><br>Você pode salvar a escala como “Não finalizada” e continuar em outro dia sem perder o trabalho.</div>
+          <div class="mt-6 rounded-2xl bg-violet-50 p-4 text-sm text-slate-600"><strong class="text-brand-blue">Dica</strong><br>Você pode salvar a escala como “Não finalizada” e continuar em outro dia sem perder o trabalho.</div>
         </section>
       </div>
     </div>
