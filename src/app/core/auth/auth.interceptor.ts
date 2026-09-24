@@ -86,3 +86,8 @@ function encerrarSessao(router: Router): void {
   sessionStorage.removeItem(EMAIL_KEY);
   void router.navigate(['/login']);
 }
+
+/** Zera o refresh compartilhado entre os testes do interceptor. */
+export function resetParishAuthRefresh(): void {
+  refreshEmAndamento = null;
+}

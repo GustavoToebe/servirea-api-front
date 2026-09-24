@@ -61,3 +61,8 @@ function renovar(backend: HttpBackend, api: string): Observable<string> {
   }
   return refreshEmAndamento;
 }
+
+/** Zera o refresh compartilhado entre os testes do interceptor. */
+export function resetBackofficeAuthRefresh(): void {
+  refreshEmAndamento = null;
+}
