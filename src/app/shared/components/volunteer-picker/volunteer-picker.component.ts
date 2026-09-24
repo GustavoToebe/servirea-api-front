@@ -51,7 +51,7 @@ import { TipoVoluntario, Voluntario } from '../../../features/voluntarios/models
                   [class.border-slate-300]="v.id !== selectedId">
               <span *ngIf="v.id === selectedId" class="text-[10px] font-black text-white">✓</span>
             </span>
-            <span class="min-w-0 truncate">{{ v.nome_completo }}</span>
+            <span class="min-w-0 truncate">{{ nomeDe(v) }}</span>
             <span *ngIf="excludeIds.includes(v.id) && v.id !== selectedId" class="ml-auto text-[10px] font-semibold text-amber-600">já usado</span>
           </button>
           <div *ngIf="!filtered().length" class="px-3 py-4 text-center text-xs text-slate-400">Nenhum irmão encontrado.</div>
@@ -115,7 +115,7 @@ export class VolunteerPickerComponent implements OnChanges {
       this.selectedName = '';
     } else {
       this.selectedIdChange.emit(v.id);
-      this.selectedName = v.nome_completo;
+      this.selectedName = this.nomeDe(v);
     }
     this.search = '';
     this.open = false;
@@ -126,9 +126,16 @@ export class VolunteerPickerComponent implements OnChanges {
     return this.volunteers
       .filter(v => v.ativo)
       .filter(v => !this.tipoFiltro || v.tipo === this.tipoFiltro)
-      .filter(v => !q || this.normalize(v.nome_completo).includes(q));
+      .filter(v => !q || this.normalize(this.nomeDe(v)).includes(q));
   }
 
-  private syncName() { this.selectedName = this.volunteers.find(v => v.id === this.selectedId)?.nome_completo || ''; }
+  nomeDe(v: Voluntario): string {
+    return v.nome_completo || (v as Voluntario & { nomeCompleto?: string }).nomeCompleto || '';
+  }
+
+  private syncName() {
+    const encontrado = this.volunteers.find(v => v.id === this.selectedId);
+    this.selectedName = encontrado ? this.nomeDe(encontrado) : '';
+  }
   private normalize(v: string) { return (v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
 }

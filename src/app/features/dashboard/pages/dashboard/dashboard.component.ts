@@ -14,7 +14,7 @@ import { Escala, MESES, STATUS_LABEL, StatusEscala } from '../../../escalas/mode
       <div><h1 class="text-2xl font-black text-slate-900">Início</h1><p class="text-sm text-slate-500">Visão rápida da organização dos coroinhas, acólitos e escalas.</p></div>
       <div *ngIf="error" class="rounded-xl bg-red-50 p-4 text-red-700">{{ error }}</div>
       <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div class="card p-5"><div class="text-sm font-semibold text-slate-500">Cadastros ativos</div><div class="mt-2 text-3xl font-black text-slate-900">{{ activeCount }}</div><a routerLink="/voluntarios" class="mt-3 inline-block text-sm font-bold text-brand-blue">Ver pessoas →</a></div>
+        <div class="card p-5"><div class="text-sm font-semibold text-slate-500">Cadastros ativos</div><div class="mt-2 text-3xl font-black text-slate-900">{{ activeCount }}</div><a routerLink="/pessoas" class="mt-3 inline-block text-sm font-bold text-brand-blue">Ver pessoas →</a></div>
         <div class="card p-5"><div class="text-sm font-semibold text-slate-500">Coroinhas</div><div class="mt-2 text-3xl font-black text-slate-900">{{ coroinhas }}</div><div class="mt-3 text-xs text-slate-400">ativos e “ambos”</div></div>
         <div class="card p-5"><div class="text-sm font-semibold text-slate-500">Acólitos</div><div class="mt-2 text-3xl font-black text-slate-900">{{ acolitos }}</div><div class="mt-3 text-xs text-slate-400">ativos e “ambos”</div></div>
         <div class="card p-5"><div class="text-sm font-semibold text-slate-500">Rascunhos de escala</div><div class="mt-2 text-3xl font-black text-amber-600">{{ drafts }}</div><a routerLink="/escalas" class="mt-3 inline-block text-sm font-bold text-brand-blue">Continuar escalas →</a></div>
@@ -29,7 +29,7 @@ import { Escala, MESES, STATUS_LABEL, StatusEscala } from '../../../escalas/mode
           </div>
         </section>
         <section class="card p-6">
-          <h2 class="text-lg font-black">Ações rápidas</h2><div class="mt-4 grid gap-3"><a routerLink="/escalas/nova" class="btn-primary">＋ Criar nova escala</a><a routerLink="/voluntarios/novo" class="btn-secondary">＋ Cadastrar coroinha/acólito</a><a routerLink="/relatorios" class="btn-secondary">Exportar PDF / PNG</a></div>
+          <h2 class="text-lg font-black">Ações rápidas</h2><div class="mt-4 grid gap-3"><a routerLink="/escalas/nova" class="btn-primary">＋ Criar nova escala</a><a routerLink="/pessoas/nova" class="btn-secondary">＋ Cadastrar pessoa</a><a routerLink="/relatorios" class="btn-secondary">Exportar PDF / PNG</a></div>
           <div class="mt-6 rounded-2xl bg-violet-50 p-4 text-sm text-slate-600"><strong class="text-brand-blue">Dica</strong><br>Você pode salvar a escala como “Não finalizada” e continuar em outro dia sem perder o trabalho.</div>
         </section>
       </div>
