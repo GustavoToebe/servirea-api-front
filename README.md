@@ -2,6 +2,21 @@
 
 Projeto Angular + Tailwind + Supabase para substituir as planilhas usadas no cadastro e na criação das escalas da paróquia.
 
+> **Estado atual (24/09/2026):** o front fala só com a **API Java**
+> (`servire-api-back`, `environment.apiUrl`). Login é JWT da API (não mais
+> Supabase Auth); pessoas, inscrições e escalas usam `/pessoas`, `/inscricoes`
+> e `/escalas`. As seções abaixo sobre `supabase/schema.sql` e Supabase Auth são
+> históricas. Para rodar: API em `http://localhost:8080` (ver README do back) e
+> `npm start`.
+>
+> - `core/auth/auth.interceptor.ts` põe o `Bearer`, renova o token uma vez só
+>   para vários 401 simultâneos e manda `X-XSRF-TOKEN` (`core/auth/xsrf.ts`) nas
+>   rotas do cookie de refresh. O XSRF nativo do Angular fica desligado porque
+>   ignora URL absoluta.
+> - Ficha de pessoa: `responsaveis` e `dependentes` em listas separadas; em cada
+>   item, `parentesco` é o que a **outra** pessoa é. Responsável novo vai como
+>   `novaPessoa` e a API cria na mesma transação.
+
 ## O que já está implementado
 
 - Login com Supabase Auth.

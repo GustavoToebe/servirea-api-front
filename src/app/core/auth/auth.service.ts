@@ -59,20 +59,6 @@ export class AuthService {
     }
   }
 
-  async refresh(): Promise<string> {
-    const tenantId = this.tenantId();
-    if (!tenantId) {
-      throw new Error('Sessão sem paróquia.');
-    }
-    const resposta = await firstValueFrom(this.http.post<AccessTokenResponse>(
-      `${environment.apiUrl}/auth/refresh`,
-      { tenantId },
-      { withCredentials: true }
-    ));
-    this.guardarSessao(resposta.accessToken, resposta.tenantAtual);
-    return resposta.accessToken;
-  }
-
   signOut(): Promise<void> {
     return this.logout();
   }

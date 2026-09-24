@@ -17,6 +17,12 @@ export interface ContatoTelefone {
   principal: boolean;
 }
 
+/**
+ * Relação vista da pessoa exibida/salva: `parentesco` é o que a OUTRA pessoa
+ * é (Mãe, na lista de responsáveis; Filho, na de dependentes) e
+ * `parentescoInverso` é o que ESTA pessoa é para ela. Mesmo sentido na
+ * resposta e no request — dá para reenviar o que veio sem inverter nada.
+ */
 export interface Relacao {
   id?: string;
   pessoaId: string;
@@ -49,7 +55,10 @@ export interface Pessoa {
   rg: string | null;
   emails: ContatoEmail[];
   telefones: ContatoTelefone[];
-  relacoes: Relacao[];
+  /** Quem responde por esta pessoa (só quando ela é VOLUNTARIO). */
+  responsaveis: Relacao[];
+  /** Por quem esta pessoa responde (só quando ela é RESPONSAVEL). */
+  dependentes: Relacao[];
   cep: string | null;
   cidade: string | null;
   uf: string | null;
@@ -70,7 +79,8 @@ export interface PessoaRequest {
   rg: string | null;
   emails: ContatoEmail[];
   telefones: ContatoTelefone[];
-  relacoes: RelacaoRequest[];
+  responsaveis: RelacaoRequest[];
+  dependentes: RelacaoRequest[];
   cep: string | null;
   cidade: string | null;
   uf: string | null;
@@ -82,11 +92,19 @@ export interface PessoaRequest {
   voluntario: VoluntarioPerfil | null;
 }
 
+/** Informe `pessoaId` OU `novaPessoa` (esta só em `responsaveis`; criada na mesma transação). */
 export interface RelacaoRequest {
-  pessoaId: string;
+  pessoaId?: string | null;
+  novaPessoa?: NovaPessoaRequest | null;
   parentesco: string;
   parentescoInverso?: string | null;
   principal: boolean;
+}
+
+export interface NovaPessoaRequest {
+  nomeCompleto: string;
+  email?: string | null;
+  telefone?: string | null;
 }
 
 export interface VoluntarioLista {
@@ -125,6 +143,11 @@ export const TIPO_LABEL: Record<TipoVoluntario, string> = {
 export const PARENTESCOS = [
   'Pai', 'Mãe', 'Avô', 'Avó', 'Tio', 'Tia', 'Irmão', 'Irmã',
   'Padrinho', 'Madrinha', 'Responsável', 'Outro'
+];
+
+export const PARENTESCOS_DEPENDENTE = [
+  'Filho', 'Filha', 'Neto', 'Neta', 'Sobrinho', 'Sobrinha', 'Irmão', 'Irmã',
+  'Afilhado', 'Afilhada', 'Outro'
 ];
 
 export const FUNCOES_FORM: FuncaoEscala[] = ['MISSAL', 'CRUZ', 'CREDENCIA', 'VELA', 'COLETA', 'SINO'];

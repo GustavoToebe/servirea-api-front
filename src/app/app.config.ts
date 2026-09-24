@@ -1,6 +1,6 @@
 import { ApplicationConfig } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
-import { provideHttpClient, withInterceptors, withXsrfConfiguration } from '@angular/common/http';
+import { provideHttpClient, withInterceptors, withNoXsrfProtection } from '@angular/common/http';
 import { routes } from './app.routes';
 import { parishAuthInterceptor } from './core/auth/auth.interceptor';
 import { backofficeAuthInterceptor } from './features/backoffice/backoffice-auth.interceptor';
@@ -10,10 +10,9 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(
       withInterceptors([parishAuthInterceptor, backofficeAuthInterceptor]),
-      withXsrfConfiguration({
-        cookieName: 'XSRF-TOKEN',
-        headerName: 'X-XSRF-TOKEN'
-      })
+      // O XSRF nativo do Angular ignora URL absoluta (a API é outra origem);
+      // quem manda X-XSRF-TOKEN são os interceptors acima (core/auth/xsrf.ts).
+      withNoXsrfProtection()
     )
   ]
 };

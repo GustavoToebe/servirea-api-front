@@ -1,94 +1,142 @@
 import { Injectable } from '@angular/core';
-import { SupabaseService } from '../../../core/supabase/supabase.service';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { environment } from '../../../../environments/environment';
+import { mensagemApi } from '../../../core/api/api-error';
 import { celebracoesDoMes } from '../data/calendario-liturgico';
-import { Escala, EscalaDetalhe, EscalaEvento, EscalaFilters, EscalaVaga, TipoEscala } from '../models/escala.model';
+import { Escala, EscalaDetalhe, EscalaEvento, EscalaFilters, EscalaVaga, Presenca, StatusEscala, TipoEscala } from '../models/escala.model';
 import { FuncaoEscala } from '../../voluntarios/models/voluntario.model';
 
+/** Contrato de `/escalas` na API Java (`EscalaResponse` e filhos). */
+interface EscalaApi {
+  id: string;
+  titulo: string;
+  tipo: TipoEscala;
+  ano: number;
+  mes: number;
+  status: StatusEscala;
+  observacao: string | null;
+  version: number | null;
+  eventos: {
+    id: string;
+    data: string;
+    horario: string;
+    celebracao: string;
+    vagas: { id: string; funcao: FuncaoEscala; posicao: number; voluntarioId: string | null; voluntarioNome: string | null; presenca: Presenca }[];
+  }[];
+}
+
+/**
+ * Escalas pela API Java. Antes falava direto com o Supabase, o que parou de
+ * funcionar quando o login passou a ser o JWT da API (sem sessão do Supabase,
+ * a RLS barra tudo). As telas continuam com o modelo antigo (snake_case) —
+ * a tradução fica toda aqui.
+ */
 @Injectable({ providedIn: 'root' })
 export class EscalasService {
-  constructor(private supabase: SupabaseService) {}
+  private readonly base = `${environment.apiUrl}/escalas`;
 
-  async list(filters: EscalaFilters = {}): Promise<Escala[]> {
-    let query = this.supabase.client.from('escalas').select('*').order('ano', { ascending: false }).order('mes', { ascending: false }).order('created_at', { ascending: false });
-    if (filters.ano) query = query.eq('ano', filters.ano);
-    if (filters.mes) query = query.eq('mes', filters.mes);
-    if (filters.tipo) query = query.eq('tipo', filters.tipo);
-    if (filters.status) query = query.eq('status', filters.status);
-    const { data, error } = await query;
-    if (error) throw error;
-    return (data || []) as Escala[];
+  constructor(private http: HttpClient) {}
+
+  async list(filters: EscalaFilters = {}): Promise<EscalaDetalhe[]> {
+    let params = new HttpParams();
+    if (filters.ano) params = params.set('ano', filters.ano);
+    if (filters.mes) params = params.set('mes', filters.mes);
+    if (filters.tipo) params = params.set('tipo', filters.tipo);
+    if (filters.status) params = params.set('status', filters.status);
+    try {
+      const rows = await firstValueFrom(this.http.get<EscalaApi[]>(this.base, { params }));
+      return rows.map(r => this.paraDetalhe(r));
+    } catch (erro) {
+      throw new Error(mensagemApi(erro, 'Não foi possível listar as escalas.'));
+    }
   }
 
   async getById(id: string): Promise<EscalaDetalhe> {
-    const { data, error } = await this.supabase.client
-      .from('escalas')
-      .select('*, eventos:escala_eventos(*, vagas:escala_vagas(*, voluntario:voluntarios(id,nome_completo,tipo,ativo)))')
-      .eq('id', id)
-      .single();
-    if (error) throw error;
-    const result = data as unknown as EscalaDetalhe;
-    result.eventos = (result.eventos || []).sort((a,b) => `${a.data} ${a.horario}`.localeCompare(`${b.data} ${b.horario}`));
-    result.eventos.forEach(e => e.vagas = (e.vagas || []).sort((a,b) => this.slotOrder(a)-this.slotOrder(b)));
-    return result;
+    try {
+      return this.paraDetalhe(await firstValueFrom(this.http.get<EscalaApi>(`${this.base}/${id}`)));
+    } catch (erro) {
+      throw new Error(mensagemApi(erro, 'Escala não encontrada.'));
+    }
   }
 
+  /**
+   * Cria (POST) ou atualiza (PUT, com `version`) a escala inteira numa
+   * transação só na API. Pedir `FINALIZADA` salva e depois finaliza.
+   */
   async save(payload: Omit<EscalaDetalhe, 'id'> & { id?: string }): Promise<EscalaDetalhe> {
-    const meta = {
+    const corpo = {
       titulo: payload.titulo,
       tipo: payload.tipo,
       ano: payload.ano,
       mes: payload.mes,
-      status: payload.status,
-      observacao: payload.observacao || null
+      observacao: payload.observacao || null,
+      version: payload.version ?? null,
+      eventos: payload.eventos.map(e => ({
+        data: e.data,
+        horario: this.horario(e.horario),
+        celebracao: e.celebracao || 'Missa',
+        vagas: e.vagas.map(v => ({ funcao: v.funcao, posicao: v.posicao, voluntarioId: v.voluntario_id || null }))
+      }))
     };
-    let id = payload.id;
-    if (id) {
-      const { error } = await this.supabase.client.from('escalas').update(meta).eq('id', id);
-      if (error) throw error;
-      const { error: delError } = await this.supabase.client.from('escala_eventos').delete().eq('escala_id', id);
-      if (delError) throw delError;
-    } else {
-      const { data, error } = await this.supabase.client.from('escalas').insert(meta).select().single();
-      if (error) throw error;
-      id = data.id;
-    }
-
     try {
-      for (const event of payload.eventos) {
-        const { data: inserted, error } = await this.supabase.client.from('escala_eventos').insert({
-          escala_id: id,
-          data: event.data,
-          horario: event.horario,
-          celebracao: event.celebracao || 'Missa'
-        }).select().single();
-        if (error) throw error;
-        if (event.vagas.length) {
-          const rows = event.vagas.map(v => ({ evento_id: inserted.id, funcao: v.funcao, posicao: v.posicao, voluntario_id: v.voluntario_id || null }));
-          const { error: slotsError } = await this.supabase.client.from('escala_vagas').insert(rows);
-          if (slotsError) throw slotsError;
-        }
+      let salva = await firstValueFrom(payload.id
+        ? this.http.put<EscalaApi>(`${this.base}/${payload.id}`, corpo)
+        : this.http.post<EscalaApi>(this.base, corpo));
+      if (payload.status === 'FINALIZADA' && salva.status !== 'FINALIZADA') {
+        salva = await firstValueFrom(this.http.post<EscalaApi>(`${this.base}/${salva.id}/finalizar`, {}));
       }
-      return await this.getById(id!);
-    } catch (e) {
-      if (!payload.id && id) {
-        await this.supabase.client.from('escalas').update({ status: 'CANCELADA' }).eq('id', id);
-        await this.supabase.client.from('escalas').delete().eq('id', id);
-      }
-      throw e;
+      return this.paraDetalhe(salva);
+    } catch (erro) {
+      throw new Error(mensagemApi(erro, 'Não foi possível salvar a escala.'));
     }
   }
 
-  async setStatus(id: string, status: 'RASCUNHO' | 'FINALIZADA' | 'CANCELADA'): Promise<void> {
-    const { error } = await this.supabase.client.from('escalas').update({ status }).eq('id', id);
-    if (error) throw error;
+  async setStatus(id: string, status: StatusEscala): Promise<EscalaDetalhe> {
+    const acao = status === 'CANCELADA' ? 'cancelar' : status === 'FINALIZADA' ? 'finalizar' : 'reabrir';
+    try {
+      return this.paraDetalhe(await firstValueFrom(this.http.post<EscalaApi>(`${this.base}/${id}/${acao}`, {})));
+    } catch (erro) {
+      throw new Error(mensagemApi(erro, 'Não foi possível mudar o status da escala.'));
+    }
   }
 
+  /** A API só exclui escala CANCELADA (409 caso contrário). */
   async deleteCancelled(id: string): Promise<void> {
-    const { data, error: findError } = await this.supabase.client.from('escalas').select('status,titulo').eq('id', id).single();
-    if (findError) throw findError;
-    if (data.status !== 'CANCELADA') throw new Error('A escala precisa estar Cancelada antes de ser excluída.');
-    const { error } = await this.supabase.client.from('escalas').delete().eq('id', id).eq('status', 'CANCELADA');
-    if (error) throw error;
+    try {
+      await firstValueFrom(this.http.delete<void>(`${this.base}/${id}`));
+    } catch (erro) {
+      throw new Error(mensagemApi(erro, 'A escala precisa estar Cancelada antes de ser excluída.'));
+    }
+  }
+
+  private paraDetalhe(r: EscalaApi): EscalaDetalhe {
+    const eventos: EscalaEvento[] = (r.eventos || []).map(e => ({
+      id: e.id,
+      escala_id: r.id,
+      data: e.data,
+      horario: this.horario(e.horario),
+      celebracao: e.celebracao || 'Missa',
+      vagas: (e.vagas || []).map(v => ({
+        id: v.id,
+        evento_id: e.id,
+        funcao: v.funcao,
+        posicao: v.posicao,
+        voluntario_id: v.voluntarioId,
+        voluntario: v.voluntarioId ? { id: v.voluntarioId, nome_completo: v.voluntarioNome || '' } : null,
+        presenca: v.presenca
+      })).sort((a, b) => this.slotOrder(a) - this.slotOrder(b))
+    })).sort((a, b) => `${a.data} ${a.horario}`.localeCompare(`${b.data} ${b.horario}`));
+    const escala: Escala = {
+      id: r.id, titulo: r.titulo, tipo: r.tipo, ano: r.ano, mes: r.mes,
+      status: r.status, observacao: r.observacao, version: r.version
+    };
+    return { ...escala, eventos };
+  }
+
+  /** A API devolve "19:00" quando os segundos são zero; as telas usam "19:00:00". */
+  private horario(h: string): string {
+    return h && h.length === 5 ? `${h}:00` : h;
   }
 
   buildDefaultEvents(tipo: TipoEscala, ano: number, mes: number): EscalaEvento[] {

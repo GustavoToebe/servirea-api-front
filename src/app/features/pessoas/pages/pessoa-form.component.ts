@@ -3,7 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HasPendingChanges } from '../../../core/guards/pending-changes.guard';
-import { FUNCOES_FORM, FUNCOES_LABEL, FuncaoEscala, PARENTESCOS, Pessoa, PessoaPapel, PessoaRequest, RelacaoRequest, TIPO_LABEL } from '../models/pessoa.model';
+import { FUNCOES_FORM, FUNCOES_LABEL, FuncaoEscala, PARENTESCOS, PARENTESCOS_DEPENDENTE, Pessoa, PessoaPapel, PessoaRequest, Relacao, RelacaoRequest, TIPO_LABEL } from '../models/pessoa.model';
 import { PessoasService } from '../services/pessoas.service';
 import { VoluntariosApiService } from '../services/voluntarios-api.service';
 import { readPhotoPreview, validatePhotoFile } from '../../../shared/utils/photo.utils';
@@ -27,9 +27,10 @@ import { readPhotoPreview, validatePhotoFile } from '../../../shared/utils/photo
         <section class="card p-6">
           <h2 class="mb-4 text-lg font-black">Papéis</h2>
           <div class="flex flex-wrap gap-4">
-            <label class="flex items-center gap-2"><input type="checkbox" (change)="togglePapel('VOLUNTARIO', $event)" [checked]="temPapel('VOLUNTARIO')"> Voluntário (escala)</label>
-            <label class="flex items-center gap-2"><input type="checkbox" (change)="togglePapel('RESPONSAVEL', $event)" [checked]="temPapel('RESPONSAVEL')"> Responsável</label>
+            <label class="flex items-center gap-2"><input type="checkbox" (change)="togglePapel('VOLUNTARIO', $event)" [checked]="temPapel('VOLUNTARIO')" [disabled]="papeisOriginais.has('VOLUNTARIO')"> Voluntário (escala)</label>
+            <label class="flex items-center gap-2"><input type="checkbox" (change)="togglePapel('RESPONSAVEL', $event)" [checked]="temPapel('RESPONSAVEL')" [disabled]="papeisOriginais.has('RESPONSAVEL')"> Responsável</label>
           </div>
+          <p *ngIf="papeisOriginais.size" class="mt-2 text-xs text-slate-500">Dá para acrescentar papel; os que a pessoa já tem não podem ser removidos.</p>
         </section>
 
         <section class="card p-6">
@@ -67,47 +68,77 @@ import { readPhotoPreview, validatePhotoFile } from '../../../shared/utils/photo
           </div>
         </section>
 
-        <section class="card p-6">
+        <section *ngIf="temPapel('VOLUNTARIO')" class="card p-6">
           <div class="mb-2 flex items-center justify-between">
             <div>
-              <h2 class="text-lg font-black">Relações (é / de)</h2>
-              <p class="text-sm text-slate-500">Opcional. Adulto/ministro pode ficar sem responsável. Escolha uma pessoa já cadastrada ou crie uma nova.</p>
+              <h2 class="text-lg font-black">Responsáveis</h2>
+              <p class="text-sm text-slate-500">Quem responde por esta pessoa. Opcional — adulto/ministro pode ficar sem. Escolha alguém já cadastrado como responsável ou cadastre um novo aqui.</p>
             </div>
-            <button type="button" class="btn-secondary" (click)="addRelacao()">＋ Relação</button>
+            <button type="button" class="btn-secondary" (click)="addRelacao('responsaveis')">＋ Responsável</button>
           </div>
-          <div formArrayName="relacoes" class="space-y-4">
-            <div *ngFor="let g of relacoes.controls; let i=index" [formGroupName]="i" class="rounded-2xl border border-slate-200 p-4">
+          <ng-container *ngTemplateOutlet="relacoesTpl; context: { $implicit: responsaveis, lado: 'responsaveis' }"></ng-container>
+        </section>
+
+        <section *ngIf="temPapel('RESPONSAVEL')" class="card p-6">
+          <div class="mb-2 flex items-center justify-between">
+            <div>
+              <h2 class="text-lg font-black">Dependentes</h2>
+              <p class="text-sm text-slate-500">Voluntários por quem esta pessoa responde. O voluntário precisa estar cadastrado.</p>
+            </div>
+            <button type="button" class="btn-secondary" (click)="addRelacao('dependentes')">＋ Dependente</button>
+          </div>
+          <ng-container *ngTemplateOutlet="relacoesTpl; context: { $implicit: dependentes, lado: 'dependentes' }"></ng-container>
+        </section>
+
+        <ng-template #relacoesTpl let-lista let-lado="lado">
+          <div class="space-y-4">
+            <div *ngFor="let g of $any(lista).controls; let i=index" [formGroup]="$any(g)" class="rounded-2xl border border-slate-200 p-4">
               <div class="grid gap-3 md:grid-cols-2">
                 <div class="md:col-span-2">
-                  <label class="label">Pessoa já cadastrada</label>
+                  <label class="label">{{ lado === 'responsaveis' ? 'Responsável' : 'Dependente' }}</label>
                   <select class="field" formControlName="pessoaId">
-                    <option value="">Cadastrar nova nesta ficha</option>
-                    <option *ngFor="let p of candidatosRelacao" [value]="p.id">{{ p.nomeCompleto }}</option>
+                    <option *ngIf="lado === 'responsaveis'" value="">Cadastrar novo responsável nesta ficha</option>
+                    <option *ngIf="lado === 'dependentes'" value="" disabled>Escolha um voluntário</option>
+                    <option *ngFor="let p of candidatos(lado)" [value]="p.id">{{ p.nomeCompleto }}</option>
                   </select>
                 </div>
-                <div *ngIf="!g.get('pessoaId')?.value">
-                  <label class="label">Nome da nova pessoa *</label>
-                  <input class="field" formControlName="nomeNovo">
-                </div>
-                <div *ngIf="!g.get('pessoaId')?.value">
-                  <label class="label">E-mail da nova pessoa</label>
-                  <input class="field" type="email" formControlName="emailNovo">
+                <ng-container *ngIf="lado === 'responsaveis' && !g.get('pessoaId')?.value">
+                  <div class="md:col-span-2">
+                    <label class="label">Nome do novo responsável *</label>
+                    <input class="field" formControlName="nomeNovo">
+                  </div>
+                  <div>
+                    <label class="label">E-mail</label>
+                    <input class="field" type="email" formControlName="emailNovo">
+                  </div>
+                  <div>
+                    <label class="label">Telefone</label>
+                    <input class="field" formControlName="telefoneNovo">
+                  </div>
+                </ng-container>
+                <div>
+                  <label class="label">{{ lado === 'responsaveis' ? 'O responsável é *' : 'O dependente é *' }}</label>
+                  <input class="field" formControlName="parentesco" [attr.list]="lado + '-par-' + i"
+                         [placeholder]="lado === 'responsaveis' ? 'Mãe, Pai…' : 'Filho, Neta…'">
+                  <datalist [id]="lado + '-par-' + i">
+                    <option *ngFor="let p of (lado === 'responsaveis' ? parentescos : parentescosDependente)" [value]="p"></option>
+                  </datalist>
                 </div>
                 <div>
-                  <label class="label">É (parentesco) *</label>
-                  <input class="field" formControlName="parentesco" [attr.list]="'par-'+i" placeholder="Mãe, Pai…">
-                  <datalist [id]="'par-'+i"><option *ngFor="let p of parentescos" [value]="p"></option></datalist>
+                  <label class="label">Esta pessoa é</label>
+                  <input class="field" formControlName="parentescoInverso"
+                         [placeholder]="lado === 'responsaveis' ? 'Filho, Filha…' : 'Mãe, Pai…'">
                 </div>
-                <div>
-                  <label class="label">De (inverso)</label>
-                  <input class="field" formControlName="parentescoInverso" placeholder="Filho, Filha…">
-                </div>
-                <label class="flex items-center gap-2"><input type="checkbox" formControlName="principal"> Principal</label>
+                <label class="flex items-center gap-2">
+                  <input type="checkbox" formControlName="principal">
+                  {{ lado === 'responsaveis' ? 'Responsável principal' : 'Sou o responsável principal' }}
+                </label>
               </div>
-              <button type="button" class="mt-3 text-sm text-red-600" (click)="relacoes.removeAt(i)">Remover</button>
+              <button type="button" class="mt-3 text-sm text-red-600" (click)="removerRelacao($any(lista), i)">Remover</button>
             </div>
+            <p *ngIf="!$any(lista).length" class="text-sm text-slate-400">Nenhum.</p>
           </div>
-        </section>
+        </ng-template>
 
         <section class="card p-6">
           <h2 class="mb-4 text-lg font-black">Endereço</h2>
@@ -181,8 +212,11 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
   photoFile: File | null = null;
   photoPreview: string | null = null;
   papeis = new Set<PessoaPapel>(['VOLUNTARIO']);
-  candidatosRelacao: Pessoa[] = [];
+  /** Papéis que a pessoa já tinha — a API não deixa remover. */
+  papeisOriginais = new Set<PessoaPapel>();
+  pessoasCadastradas: Pessoa[] = [];
   parentescos = PARENTESCOS;
+  parentescosDependente = PARENTESCOS_DEPENDENTE;
   funcoes = FUNCOES_FORM;
   funcaoLabel = FUNCOES_LABEL;
   tipos: Array<'COROINHA' | 'ACOLITO' | 'AMBOS'> = ['COROINHA', 'ACOLITO', 'AMBOS'];
@@ -195,7 +229,8 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
     rg: [''],
     emails: this.fb.array([this.emailGroup(true)]),
     telefones: this.fb.array([this.telefoneGroup(true)]),
-    relacoes: this.fb.array([]),
+    responsaveis: this.fb.array([]),
+    dependentes: this.fb.array([]),
     cep: [''],
     cidade: [''],
     uf: [''],
@@ -226,12 +261,13 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
 
   get emails(): FormArray { return this.form.get('emails') as FormArray; }
   get telefones(): FormArray { return this.form.get('telefones') as FormArray; }
-  get relacoes(): FormArray { return this.form.get('relacoes') as FormArray; }
+  get responsaveis(): FormArray { return this.form.get('responsaveis') as FormArray; }
+  get dependentes(): FormArray { return this.form.get('dependentes') as FormArray; }
 
   async ngOnInit() {
     this.id = this.route.snapshot.paramMap.get('id');
     try {
-      this.candidatosRelacao = (await this.pessoas.listar()).filter(p => p.id !== this.id);
+      this.pessoasCadastradas = (await this.pessoas.listar()).filter(p => p.id !== this.id);
       if (this.id) {
         const p = await this.pessoas.buscar(this.id);
         this.patch(p);
@@ -251,23 +287,35 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
   }
 
   togglePapel(papel: PessoaPapel, event: Event) {
-    const on = (event.target as HTMLInputElement).checked;
-    if (on) this.papeis.add(papel);
-    else if (this.papeis.size > 1) this.papeis.delete(papel);
+    const input = event.target as HTMLInputElement;
+    if (input.checked) {
+      this.papeis.add(papel);
+    } else if (this.papeisOriginais.has(papel) || this.papeis.size === 1) {
+      // Papel existente não pode ser removido (a API recusa) e sempre fica ao menos um.
+      input.checked = true;
+      return;
+    } else {
+      this.papeis.delete(papel);
+    }
     this.form.markAsDirty();
+  }
+
+  /** Responsáveis só entre quem já tem o papel; dependentes só entre voluntários. */
+  candidatos(lado: 'responsaveis' | 'dependentes'): Pessoa[] {
+    const papel: PessoaPapel = lado === 'responsaveis' ? 'RESPONSAVEL' : 'VOLUNTARIO';
+    return this.pessoasCadastradas.filter(p => p.papeis.includes(papel));
   }
 
   addEmail() { this.emails.push(this.emailGroup(false)); this.form.markAsDirty(); }
   addTelefone() { this.telefones.push(this.telefoneGroup(false)); this.form.markAsDirty(); }
-  addRelacao() {
-    this.relacoes.push(this.fb.group({
-      pessoaId: [''],
-      nomeNovo: [''],
-      emailNovo: [''],
-      parentesco: ['', Validators.required],
-      parentescoInverso: [''],
-      principal: [this.relacoes.length === 0]
-    }));
+  addRelacao(lado: 'responsaveis' | 'dependentes') {
+    const lista = lado === 'responsaveis' ? this.responsaveis : this.dependentes;
+    lista.push(this.relacaoGroup({ principal: lado === 'responsaveis' && lista.length === 0 }));
+    this.form.markAsDirty();
+  }
+
+  removerRelacao(lista: FormArray, i: number) {
+    lista.removeAt(i);
     this.form.markAsDirty();
   }
 
@@ -299,11 +347,23 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
       this.error = 'Informe o nome e pelo menos um papel.';
       return;
     }
+    const listasVisiveis = [
+      ...(this.papeis.has('VOLUNTARIO') ? [this.responsaveis] : []),
+      ...(this.papeis.has('RESPONSAVEL') ? [this.dependentes] : [])
+    ];
+    if (listasVisiveis.some(lista => lista.invalid)) {
+      listasVisiveis.forEach(lista => lista.markAllAsTouched());
+      this.error = 'Preencha o parentesco (e um e-mail válido, se informado) em cada relação.';
+      return;
+    }
+    if (this.dependentes.controls.some(g => !g.get('pessoaId')?.value) && this.papeis.has('RESPONSAVEL')) {
+      this.error = 'Escolha o voluntário de cada dependente (ou remova a linha).';
+      return;
+    }
     this.saving = true;
     this.error = '';
     try {
-      const relacoes = await this.montarRelacoes();
-      const request = this.montarRequest(relacoes);
+      const request = this.montarRequest();
       const salvo = this.id
         ? await this.pessoas.atualizar(this.id, request)
         : await this.pessoas.criar(request);
@@ -331,8 +391,21 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
     return this.fb.group({ tipo: ['celular'], numero: [''], principal: [principal] });
   }
 
+  private relacaoGroup(r: Partial<Relacao> = {}) {
+    return this.fb.group({
+      pessoaId: [r.pessoaId || ''],
+      nomeNovo: [''],
+      emailNovo: ['', Validators.email],
+      telefoneNovo: [''],
+      parentesco: [r.parentesco || '', Validators.required],
+      parentescoInverso: [r.parentescoInverso || ''],
+      principal: [!!r.principal]
+    });
+  }
+
   private patch(p: Pessoa) {
     this.papeis = new Set(p.papeis);
+    this.papeisOriginais = new Set(p.papeis);
     this.form.patchValue({
       nomeCompleto: p.nomeCompleto,
       dataNascimento: p.dataNascimento || '',
@@ -368,55 +441,46 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
       this.telefones.push(this.fb.group({ tipo: [t.tipo], numero: [t.numero], principal: [t.principal] }));
     }
     if (!this.telefones.length) this.addTelefone();
-    this.relacoes.clear();
-    for (const r of p.relacoes || []) {
-      this.relacoes.push(this.fb.group({
-        pessoaId: [r.pessoaId],
-        nomeNovo: [''],
-        emailNovo: [''],
-        parentesco: [r.parentesco],
-        parentescoInverso: [r.parentescoInverso || ''],
-        principal: [r.principal]
-      }));
-    }
+    this.responsaveis.clear();
+    for (const r of p.responsaveis || []) this.responsaveis.push(this.relacaoGroup(r));
+    this.dependentes.clear();
+    for (const r of p.dependentes || []) this.dependentes.push(this.relacaoGroup(r));
     this.form.markAsPristine();
   }
 
-  private async montarRelacoes(): Promise<RelacaoRequest[]> {
+  /**
+   * Responsável novo vai como `novaPessoa` e é criado pela API na mesma
+   * transação do cadastro — se o salvar falhar, não sobra pessoa órfã.
+   */
+  private montarRelacoes(lista: FormArray): RelacaoRequest[] {
     const out: RelacaoRequest[] = [];
-    for (const g of this.relacoes.controls) {
-      const v = g.getRawValue() as { pessoaId: string; nomeNovo: string; emailNovo: string; parentesco: string; parentescoInverso: string; principal: boolean };
-      let pessoaId = v.pessoaId;
-      if (!pessoaId) {
-        if (!v.nomeNovo.trim()) continue;
-        const emails = v.emailNovo.trim()
-          ? [{ tipo: 'E-mail pessoal', email: v.emailNovo.trim(), principal: true }]
-          : [];
-        const criada = await this.pessoas.criar({
-          papeis: ['RESPONSAVEL'],
-          nomeCompleto: v.nomeNovo.trim(),
-          dataNascimento: null,
-          sexo: null, cpf: null, rg: null,
-          emails,
-          telefones: [],
-          relacoes: [],
-          cep: null, cidade: null, uf: null, logradouro: null, numero: null, complemento: null, bairro: null,
-          observacoes: null,
-          voluntario: null
-        });
-        pessoaId = criada.id;
-      }
-      out.push({
-        pessoaId,
+    for (const g of lista.controls) {
+      const v = g.getRawValue() as {
+        pessoaId: string; nomeNovo: string; emailNovo: string; telefoneNovo: string;
+        parentesco: string; parentescoInverso: string; principal: boolean;
+      };
+      const base = {
         parentesco: v.parentesco.trim(),
         parentescoInverso: v.parentescoInverso.trim() || null,
         principal: v.principal
-      });
+      };
+      if (v.pessoaId) {
+        out.push({ ...base, pessoaId: v.pessoaId });
+      } else if (v.nomeNovo.trim()) {
+        out.push({
+          ...base,
+          novaPessoa: {
+            nomeCompleto: v.nomeNovo.trim(),
+            email: v.emailNovo.trim() || null,
+            telefone: v.telefoneNovo.trim() || null
+          }
+        });
+      }
     }
     return out;
   }
 
-  private montarRequest(relacoes: RelacaoRequest[]): PessoaRequest {
+  private montarRequest(): PessoaRequest {
     const v = this.form.getRawValue();
     const emails = (v.emails as { tipo: string; email: string; principal: boolean }[])
       .filter(e => e.email?.trim())
@@ -444,7 +508,8 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
       rg: blank(v.rg),
       emails,
       telefones,
-      relacoes,
+      responsaveis: this.papeis.has('VOLUNTARIO') ? this.montarRelacoes(this.responsaveis) : [],
+      dependentes: this.papeis.has('RESPONSAVEL') ? this.montarRelacoes(this.dependentes) : [],
       cep: blank(v.cep),
       cidade: blank(v.cidade),
       uf: blank(v.uf),

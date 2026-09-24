@@ -1,4 +1,4 @@
-import { FuncaoEscala, Voluntario } from '../../voluntarios/models/voluntario.model';
+import { FuncaoEscala } from '../../voluntarios/models/voluntario.model';
 
 export type TipoEscala = 'SEMANAL' | 'MENSAL';
 export type StatusEscala = 'RASCUNHO' | 'FINALIZADA' | 'CANCELADA';
@@ -11,9 +11,11 @@ export interface Escala {
   mes: number;
   status: StatusEscala;
   observacao: string | null;
-  created_at?: string;
-  updated_at?: string;
+  /** Controle otimista da API (seção 47): o PUT precisa mandar a versão que leu. */
+  version?: number | null;
 }
+
+export type Presenca = 'PENDENTE' | 'PRESENTE' | 'FALTOU';
 
 export interface EscalaVaga {
   id?: string;
@@ -21,7 +23,8 @@ export interface EscalaVaga {
   funcao: FuncaoEscala;
   posicao: number;
   voluntario_id: string | null;
-  voluntario?: Pick<Voluntario, 'id' | 'nome_completo' | 'tipo' | 'ativo'> | null;
+  voluntario?: { id: string; nome_completo: string } | null;
+  presenca?: Presenca;
 }
 
 export interface EscalaEvento {

@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Pessoa, TIPO_LABEL, ageFromDate, contatoPrincipalEmail, contatoPrincipalTelefone, initials } from '../models/pessoa.model';
 import { PessoasService } from '../services/pessoas.service';
@@ -30,12 +31,24 @@ import { VoluntariosApiService } from '../services/voluntarios-api.service';
           </div>
         </div>
       </section>
-      <section class="card p-6" *ngIf="pessoa.relacoes?.length">
-        <h2 class="mb-4 text-lg font-black">Relações</h2>
-        <div *ngFor="let r of pessoa.relacoes" class="rounded-2xl border p-4">
-          <strong>{{ r.nomeCompleto }}</strong>
-          <span class="text-sm text-slate-500"> · é {{ r.parentesco }}{{ r.parentescoInverso ? ' / de ' + r.parentescoInverso : '' }}</span>
-          <span *ngIf="r.principal" class="ml-2 text-amber-500">★ principal</span>
+      <section class="card p-6" *ngIf="pessoa.responsaveis?.length">
+        <h2 class="mb-4 text-lg font-black">Responsáveis</h2>
+        <div class="space-y-2">
+          <a *ngFor="let r of pessoa.responsaveis" [routerLink]="['/pessoas', r.pessoaId]" class="block rounded-2xl border p-4 hover:bg-slate-50">
+            <strong>{{ r.nomeCompleto }}</strong>
+            <span class="text-sm text-slate-500"> · {{ r.parentesco }}</span>
+            <span *ngIf="r.principal" class="ml-2 text-amber-500">★ principal</span>
+          </a>
+        </div>
+      </section>
+      <section class="card p-6" *ngIf="pessoa.dependentes?.length">
+        <h2 class="mb-4 text-lg font-black">Dependentes</h2>
+        <div class="space-y-2">
+          <a *ngFor="let r of pessoa.dependentes" [routerLink]="['/pessoas', r.pessoaId]" class="block rounded-2xl border p-4 hover:bg-slate-50">
+            <strong>{{ r.nomeCompleto }}</strong>
+            <span class="text-sm text-slate-500"> · {{ r.parentesco }}</span>
+            <span *ngIf="r.principal" class="ml-2 text-amber-500">★ responsável principal</span>
+          </a>
         </div>
       </section>
       <section class="card p-6">
@@ -56,6 +69,7 @@ export class PessoaDetailComponent implements OnInit {
   contatoPrincipalEmail = contatoPrincipalEmail;
   contatoPrincipalTelefone = contatoPrincipalTelefone;
   tipoLabel = TIPO_LABEL;
+  private readonly destroyRef = inject(DestroyRef);
 
   endereco(p: Pessoa): string {
     return [p.logradouro, p.numero, p.bairro, p.cidade, p.uf].filter(parte => !!parte).join(', ') || '—';
@@ -67,9 +81,20 @@ export class PessoaDetailComponent implements OnInit {
     private voluntarios: VoluntariosApiService
   ) {}
 
-  async ngOnInit() {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (!id) return;
+  /**
+   * `paramMap` e não `snapshot`: os links de responsável/dependente levam de
+   * `/pessoas/A` para `/pessoas/B` e o Angular reaproveita o componente.
+   */
+  ngOnInit() {
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      const id = params.get('id');
+      if (id) void this.carregar(id);
+    });
+  }
+
+  private async carregar(id: string) {
+    this.error = '';
+    this.fotoUrl = null;
     try {
       this.pessoa = await this.pessoas.buscar(id);
       if (this.pessoa.voluntario?.fotoPath) {
