@@ -5,7 +5,9 @@ import { RouterLink } from '@angular/router';
 import { BackofficeApiService } from '../backoffice-api.service';
 import {
   FiltroParoquia,
+  PERIODICIDADE,
   ParoquiaAdmin,
+  Periodicidade,
   STATUS_PAROQUIA,
   apiMessage,
   formatWhen,
@@ -49,8 +51,12 @@ import {
           <option value="ADMINISTRATIVO">Administrativo</option>
         </select>
       </div>
-      <div class="flex items-end">
-        <button class="bo-link" type="button" (click)="clear()">Remover filtros</button>
+      <div class="flex items-end justify-between gap-3">
+        <label class="flex cursor-pointer items-center gap-2 pb-2 text-sm font-semibold text-neutral-300">
+          <input type="checkbox" class="h-4 w-4 accent-[#e10600]" [(ngModel)]="filtro.emAtraso" (ngModelChange)="load()">
+          Só em atraso
+        </label>
+        <button class="bo-link pb-2" type="button" (click)="clear()">Remover filtros</button>
       </div>
       <div><label class="bo-label">Contratou de</label><input class="bo-field" type="date" [(ngModel)]="filtro.contratadoDe"></div>
       <div><label class="bo-label">Contratou até</label><input class="bo-field" type="date" [(ngModel)]="filtro.contratadoAte"></div>
@@ -67,6 +73,7 @@ import {
             <th>Paróquia</th>
             <th>CNPJ</th>
             <th>E-mail</th>
+            <th>Plano</th>
             <th>Vigência</th>
             <th>Status</th>
           </tr>
@@ -84,8 +91,15 @@ import {
             </td>
             <td>{{ row.cnpj || '—' }}</td>
             <td>{{ row.email || '—' }}</td>
+            <td>
+              <span *ngIf="row.planoNome; else semPlano">{{ row.planoNome }} · {{ periodicidade(row.periodicidade) }}</span>
+              <ng-template #semPlano><span class="text-neutral-500">—</span></ng-template>
+            </td>
             <td>{{ when(row.vigenciaAte) }}</td>
-            <td [class]="statusClass(row.status)">{{ statusLabel(row.status) }}</td>
+            <td>
+              <div [class]="statusClass(row.status)">{{ statusLabel(row.status) }}</div>
+              <div *ngIf="row.cobrancasVencidas" class="bo-bad text-xs">Em atraso {{ row.diasAtraso }}d · {{ row.cobrancasVencidas }} venc.</div>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -103,6 +117,7 @@ export class ParoquiasListComponent implements OnInit {
   statusClass = statusClass;
   when = formatWhen;
   statusLabel = (status: ParoquiaAdmin['status']) => STATUS_PAROQUIA[status];
+  periodicidade = (p: Periodicidade | null) => (p ? PERIODICIDADE[p] : '');
 
   constructor(private api: BackofficeApiService) {}
 
@@ -132,7 +147,8 @@ export class ParoquiasListComponent implements OnInit {
       contratadoDe: '',
       contratadoAte: '',
       vigenciaDe: '',
-      vigenciaAte: ''
+      vigenciaAte: '',
+      emAtraso: false
     };
   }
 }

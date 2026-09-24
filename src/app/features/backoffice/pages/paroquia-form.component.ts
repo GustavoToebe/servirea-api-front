@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { BackofficeApiService } from '../backoffice-api.service';
+import { ParoquiaFinanceiroComponent } from './paroquia-financeiro.component';
 import {
   ParoquiaAdmin,
   STATUS_PAROQUIA,
@@ -18,7 +19,7 @@ import {
 @Component({
   selector: 'app-paroquia-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, ParoquiaFinanceiroComponent],
   template: `
     <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div>
@@ -76,7 +77,6 @@ import {
       <section>
         <label class="bo-label">Observações</label>
         <textarea class="bo-field min-h-28" [(ngModel)]="form.observacoes" name="observacoes"></textarea>
-        <p *ngIf="pagamento" class="mt-2 text-xs text-neutral-500">Último pagamento: {{ when(pagamento) }}</p>
       </section>
 
       <section *ngIf="!id" class="bo-card p-5">
@@ -92,7 +92,6 @@ import {
       <div *ngIf="id" class="flex flex-wrap gap-2">
         <button *ngIf="status !== 'BLOQUEADO' && status !== 'CANCELADO'" type="button" class="bo-btn-line" (click)="ask('bloquear')">Bloquear</button>
         <button *ngIf="status === 'BLOQUEADO'" type="button" class="bo-btn-line" (click)="ask('desbloquear')">Desbloquear</button>
-        <button *ngIf="status !== 'CANCELADO'" type="button" class="bo-btn-line" (click)="ask('pago')">Marcar como pago</button>
         <button *ngIf="status === 'ATIVO' || status === 'TRIAL'" type="button" class="bo-btn-ghost" (click)="ask('suporte')">Entrar em suporte</button>
       </div>
 
@@ -101,6 +100,9 @@ import {
         <button class="bo-btn" type="submit" [disabled]="saving">{{ saving ? 'Salvando...' : (id ? 'Salvar paróquia' : 'Criar paróquia') }}</button>
       </div>
     </form>
+
+    <!-- Fora do <form>: o financeiro tem formulários próprios nos modais. -->
+    <app-paroquia-financeiro *ngIf="id && !loading" class="mt-8 block" [paroquiaId]="id" (alterou)="atualizarSituacao()" />
 
     <div *ngIf="confirm" class="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">
       <div class="bo-card w-full max-w-md p-6">
@@ -123,12 +125,11 @@ export class ParoquiaFormComponent implements OnInit {
   status: StatusParoquia | null = null;
   codigo = '';
   slug = '';
-  pagamento: string | null = null;
   initials = initials;
   statusClass = statusClass;
   when = formatWhen;
   statusLabel = (status: StatusParoquia) => STATUS_PAROQUIA[status];
-  confirm: { title: string; message: string; action: 'bloquear' | 'desbloquear' | 'pago' | 'suporte' } | null = null;
+  confirm: { title: string; message: string; action: 'bloquear' | 'desbloquear' | 'suporte' } | null = null;
   form = this.empty();
 
   constructor(private api: BackofficeApiService, private route: ActivatedRoute, private router: Router) {}
@@ -192,11 +193,10 @@ export class ParoquiaFormComponent implements OnInit {
     });
   }
 
-  ask(action: 'bloquear' | 'desbloquear' | 'pago' | 'suporte') {
+  ask(action: 'bloquear' | 'desbloquear' | 'suporte') {
     const copy = {
       bloquear: ['Bloquear paróquia', 'A paróquia fica inadimplente e perde o acesso até ser desbloqueada.'],
       desbloquear: ['Desbloquear paróquia', 'A paróquia volta ao status ativa.'],
-      pago: ['Marcar como pago', 'Registra o PIX manual e deixa a paróquia ativa.'],
       suporte: ['Entrar em suporte', 'Emite um acesso de suporte nesta paróquia. O app da paróquia ainda entra pelo login da coordenação.']
     } as const;
     this.confirm = { action, title: copy[action][0], message: copy[action][1] };
@@ -218,10 +218,24 @@ export class ParoquiaFormComponent implements OnInit {
     };
     if (action === 'bloquear') this.api.bloquear(id).subscribe(done);
     else if (action === 'desbloquear') this.api.desbloquear(id).subscribe(done);
-    else if (action === 'pago') this.api.marcarPago(id).subscribe(done);
     else this.api.entrarEmSuporte(id).subscribe({
       next: result => this.notice = `Acesso de suporte emitido para ${result.tenantAtual.nome}.`,
       error: (err: unknown) => this.error = apiMessage(err)
+    });
+  }
+
+  /**
+   * Pagamento no financeiro pode tirar a paróquia de TRIAL/BLOQUEADO e
+   * estender a vigência. Atualiza só isso, sem sobrescrever edições não
+   * salvas do formulário.
+   */
+  atualizarSituacao() {
+    if (!this.id) return;
+    this.api.buscarParoquia(this.id).subscribe({
+      next: paroquia => {
+        this.status = paroquia.status;
+        this.form.vigenciaAte = paroquia.vigenciaAte || '';
+      }
     });
   }
 
@@ -237,7 +251,6 @@ export class ParoquiaFormComponent implements OnInit {
     this.status = paroquia.status;
     this.codigo = paroquia.codigo;
     this.slug = paroquia.slug;
-    this.pagamento = paroquia.ultimoPagamentoEm;
     this.form = {
       ...this.empty(),
       codigo: paroquia.codigo,

@@ -5,8 +5,10 @@ import { environment } from '../../../environments/environment';
 import {
   BackofficeLog,
   DashboardResponse,
+  Financeiro,
   FiltroParoquia,
   ParoquiaAdmin,
+  Plano,
   SuporteToken,
   UsuarioAdmin,
   VinculoForm,
@@ -39,6 +41,7 @@ export class BackofficeApiService {
     for (const [key, value] of entries) {
       if (value) params = params.set(key, value);
     }
+    if (filtro.emAtraso) params = params.set('emAtraso', 'true');
     return this.http.get<ParoquiaAdmin[]>(`${this.base}/paroquias`, { params });
   }
 
@@ -62,8 +65,48 @@ export class BackofficeApiService {
     return this.http.post<ParoquiaAdmin>(`${this.base}/paroquias/${id}/desbloquear`, {});
   }
 
-  marcarPago(id: string): Observable<ParoquiaAdmin> {
-    return this.http.post<ParoquiaAdmin>(`${this.base}/paroquias/${id}/marcar-pago`, {});
+  financeiro(id: string): Observable<Financeiro> {
+    return this.http.get<Financeiro>(`${this.base}/paroquias/${id}/financeiro`);
+  }
+
+  criarAssinatura(id: string, body: unknown): Observable<Financeiro> {
+    return this.http.post<Financeiro>(`${this.base}/paroquias/${id}/assinatura`, body);
+  }
+
+  cancelarAssinatura(id: string): Observable<Financeiro> {
+    return this.http.post<Financeiro>(`${this.base}/paroquias/${id}/assinatura/cancelar`, {});
+  }
+
+  gerarCobrancas(id: string, ate: string): Observable<Financeiro> {
+    return this.http.post<Financeiro>(`${this.base}/paroquias/${id}/cobrancas/gerar`, { ate });
+  }
+
+  registrarPagamento(id: string, body: unknown): Observable<Financeiro> {
+    return this.http.post<Financeiro>(`${this.base}/paroquias/${id}/pagamentos`, body);
+  }
+
+  estornarCobranca(id: string, cobrancaId: string): Observable<Financeiro> {
+    return this.http.post<Financeiro>(`${this.base}/paroquias/${id}/cobrancas/${cobrancaId}/estornar`, {});
+  }
+
+  isentarCobranca(id: string, cobrancaId: string, motivo: string | null): Observable<Financeiro> {
+    return this.http.post<Financeiro>(`${this.base}/paroquias/${id}/cobrancas/${cobrancaId}/isentar`, { motivo });
+  }
+
+  listarPlanos(): Observable<Plano[]> {
+    return this.http.get<Plano[]>(`${this.base}/planos`);
+  }
+
+  criarPlano(body: unknown): Observable<Plano> {
+    return this.http.post<Plano>(`${this.base}/planos`, body);
+  }
+
+  atualizarPlano(id: string, body: unknown): Observable<Plano> {
+    return this.http.put<Plano>(`${this.base}/planos/${id}`, body);
+  }
+
+  adicionarPreco(id: string, body: unknown): Observable<Plano> {
+    return this.http.post<Plano>(`${this.base}/planos/${id}/precos`, body);
   }
 
   entrarEmSuporte(id: string): Observable<SuporteToken> {

@@ -4,12 +4,19 @@ export type TipoEmail = '' | 'CONTATO' | 'FINANCEIRO' | 'ADMINISTRATIVO';
 export type RoleUsuario = 'ADMIN' | 'COORDENADOR' | 'VISUALIZADOR';
 export type StatusVinculo = 'ATIVO' | 'INATIVO';
 
+export type Periodicidade = 'MENSAL' | 'ANUAL';
+export type FormaPagamento = 'PIX' | 'CARTAO_CREDITO' | 'CARTAO_DEBITO' | 'DINHEIRO' | 'TRANSFERENCIA' | 'BOLETO' | 'OUTRO';
+export type StatusCobranca = 'ABERTA' | 'PAGA' | 'CANCELADA';
+export type StatusAssinatura = 'ATIVA' | 'CANCELADA';
+
 export interface DashboardResponse {
   total: number;
   ativas: number;
   trial: number;
   bloqueadas: number;
   canceladas: number;
+  emAtraso: number;
+  recebidoNoMes: number;
 }
 
 export interface ParoquiaAdmin {
@@ -34,6 +41,10 @@ export interface ParoquiaAdmin {
   vigenciaAte: string | null;
   tipoEmail: string | null;
   createdAt: string;
+  planoNome: string | null;
+  periodicidade: Periodicidade | null;
+  cobrancasVencidas: number;
+  diasAtraso: number;
 }
 
 export interface FiltroParoquia {
@@ -46,6 +57,67 @@ export interface FiltroParoquia {
   contratadoAte: string;
   vigenciaDe: string;
   vigenciaAte: string;
+  /** Só paróquias com cobrança vencida em aberto. Opcional: outras telas listam paróquias sem filtro. */
+  emAtraso?: boolean;
+}
+
+export interface PrecoPlano {
+  id: string;
+  periodicidade: Periodicidade;
+  valor: number;
+  vigenteDesde: string;
+}
+
+export interface Plano {
+  id: string;
+  codigo: string;
+  nome: string;
+  limiteVoluntarios: number | null;
+  ativo: boolean;
+  precoMensal: number | null;
+  precoAnual: number | null;
+  precos: PrecoPlano[];
+}
+
+export interface Assinatura {
+  id: string;
+  planoId: string;
+  planoNome: string;
+  periodicidade: Periodicidade;
+  valor: number;
+  diaVencimento: number;
+  inicio: string;
+  fim: string | null;
+  status: StatusAssinatura;
+  observacoes: string | null;
+}
+
+export interface Cobranca {
+  id: string;
+  assinaturaId: string;
+  competenciaInicio: string;
+  competenciaFim: string;
+  vencimento: string;
+  valor: number;
+  status: StatusCobranca;
+  vencida: boolean;
+  pagoEm: string | null;
+  valorPago: number | null;
+  formaPagamento: FormaPagamento | null;
+  observacao: string | null;
+}
+
+export interface Financeiro {
+  assinaturaAtual: Assinatura | null;
+  assinaturas: Assinatura[];
+  cobrancas: Cobranca[];
+  resumo: {
+    vencidas: number;
+    diasAtraso: number;
+    valorEmAtraso: number;
+    proximoVencimento: string | null;
+    totalPagoNoAno: number;
+  };
 }
 
 export interface VinculoParoquia {
@@ -102,6 +174,40 @@ export const ROLE_LABEL: Record<RoleUsuario, string> = {
   COORDENADOR: 'Coordenador',
   VISUALIZADOR: 'Visualizador'
 };
+
+export const PERIODICIDADE: Record<Periodicidade, string> = {
+  MENSAL: 'Mensal',
+  ANUAL: 'Anual'
+};
+
+export const FORMA_PAGAMENTO: Record<FormaPagamento, string> = {
+  PIX: 'PIX',
+  CARTAO_CREDITO: 'Cartão de crédito',
+  CARTAO_DEBITO: 'Cartão de débito',
+  DINHEIRO: 'Dinheiro',
+  TRANSFERENCIA: 'Transferência',
+  BOLETO: 'Boleto',
+  OUTRO: 'Outro'
+};
+
+const MOEDA = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+export function formatMoney(value?: number | null): string {
+  return value === null || value === undefined ? '—' : MOEDA.format(value);
+}
+
+/** "2026-09-01" → "09/2026" (competência). */
+export function formatCompetencia(value: string): string {
+  const [y, m] = value.split('-');
+  return `${m}/${y}`;
+}
+
+/** Hoje no fuso do navegador, em ISO (yyyy-mm-dd), para inputs type=date. */
+export function todayIso(): string {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
 
 export function statusClass(status: StatusParoquia): string {
   if (status === 'ATIVO') return 'bo-ok';

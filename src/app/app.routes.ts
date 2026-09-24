@@ -18,6 +18,7 @@ export const routes: Routes = [
       { path: 'paroquias', loadComponent: () => import('./features/backoffice/pages/paroquias-list.component').then(m => m.ParoquiasListComponent) },
       { path: 'paroquias/nova', loadComponent: () => import('./features/backoffice/pages/paroquia-form.component').then(m => m.ParoquiaFormComponent) },
       { path: 'paroquias/:id', loadComponent: () => import('./features/backoffice/pages/paroquia-form.component').then(m => m.ParoquiaFormComponent) },
+      { path: 'planos', loadComponent: () => import('./features/backoffice/pages/planos.component').then(m => m.PlanosComponent) },
       { path: 'usuarios', loadComponent: () => import('./features/backoffice/pages/usuarios-list.component').then(m => m.UsuariosListComponent) },
       { path: 'usuarios/novo', loadComponent: () => import('./features/backoffice/pages/usuario-form.component').then(m => m.UsuarioFormComponent) },
       { path: 'usuarios/:id', loadComponent: () => import('./features/backoffice/pages/usuario-form.component').then(m => m.UsuarioFormComponent) },
