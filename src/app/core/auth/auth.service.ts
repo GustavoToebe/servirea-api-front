@@ -26,6 +26,11 @@ export class AuthService {
     return sessionStorage.getItem(TENANT_NOME_KEY) || '';
   }
 
+  /** Depois de renomear a paróquia, o menu lateral mostra o nome novo. */
+  atualizarTenantNome(nome: string): void {
+    sessionStorage.setItem(TENANT_NOME_KEY, nome);
+  }
+
   email(): string {
     return sessionStorage.getItem(EMAIL_KEY) || '';
   }

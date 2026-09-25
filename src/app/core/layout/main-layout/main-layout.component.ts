@@ -109,6 +109,7 @@ export class MainLayoutComponent implements OnInit {
   ];
 
   conta = [
+    { label: 'Paróquia', url: '/paroquia' },
     { label: 'Perfis', url: '/perfis' },
     { label: 'Usuários', url: '/usuarios' },
     { label: 'Meu perfil', url: '/meu-perfil' }

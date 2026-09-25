@@ -40,6 +40,7 @@ export const routes: Routes = [
       { path: 'escalas/:id', canDeactivate: [pendingChangesGuard], loadComponent: () => import('./features/escalas/pages/escala-builder/escala-builder.component').then(m => m.EscalaBuilderComponent) },
       { path: 'relatorios', loadComponent: () => import('./features/relatorios/pages/relatorios-home/relatorios-home.component').then(m => m.RelatoriosHomeComponent) },
       { path: 'ajustes', loadComponent: () => import('./features/ajustes/ajustes.component').then(m => m.AjustesComponent) },
+      { path: 'paroquia', loadComponent: () => import('./features/acesso/pages/paroquia.component').then(m => m.ParoquiaComponent) },
       { path: 'perfis', loadComponent: () => import('./features/acesso/pages/perfis.component').then(m => m.PerfisComponent) },
       { path: 'usuarios', loadComponent: () => import('./features/acesso/pages/usuarios.component').then(m => m.UsuariosComponent) },
       { path: 'meu-perfil', loadComponent: () => import('./features/acesso/pages/meu-perfil.component').then(m => m.MeuPerfilComponent) }
