@@ -61,6 +61,78 @@ export function celebracoesDoMes(ano: number, mes: number): CelebracaoLiturgica[
   return celebracoesDoAno(ano).filter(c => Number(c.data.slice(5, 7)) === mes);
 }
 
+export type CicloLiturgico = 'A' | 'B' | 'C';
+export type NomeTempo = 'Advento' | 'Natal' | 'Quaresma' | 'Páscoa' | 'Tempo Comum';
+
+export interface TempoLiturgico {
+  tempo: NomeTempo;
+  ciclo: CicloLiturgico;
+  rotulo: string;
+}
+
+/** Domingo entre 27 de novembro e 3 de dezembro, início do Advento daquele ano civil. */
+export function domingoAdvento(ano: number): Date {
+  const nov27 = new Date(ano, 10, 27, 12, 0, 0);
+  const desloca = nov27.getDay() === 0 ? 0 : 7 - nov27.getDay();
+  return addDays(nov27, desloca);
+}
+
+/** O ano litúrgico recebe o número do ano civil em que termina, e o ciclo segue esse número. */
+export function tempoLiturgico(data: Date): TempoLiturgico {
+  const dia = new Date(data.getFullYear(), data.getMonth(), data.getDate(), 12, 0, 0);
+  const advento = domingoAdvento(dia.getFullYear());
+  const anoLiturgico = dia >= advento ? dia.getFullYear() + 1 : dia.getFullYear();
+  const ciclo = cicloLiturgico(anoLiturgico);
+  const tempo = nomeTempo(dia);
+  const titulo = dia.getDay() === 0 ? tituloDomingo(tempo) : tempo;
+  return { tempo, ciclo, rotulo: `${titulo} • Ano ${ciclo}` };
+}
+
+export function rotuloDia(iso: string): string {
+  const [ano, mes, dia] = iso.slice(0, 10).split('-').map(Number);
+  return new Date(ano, mes - 1, dia, 12).toLocaleDateString('pt-BR', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short'
+  });
+}
+
+function cicloLiturgico(anoLiturgico: number): CicloLiturgico {
+  const resto = anoLiturgico % 3;
+  if (resto === 1) return 'A';
+  if (resto === 2) return 'B';
+  return 'C';
+}
+
+function tituloDomingo(tempo: NomeTempo): string {
+  if (tempo === 'Quaresma') return 'Domingo da Quaresma';
+  if (tempo === 'Páscoa') return 'Domingo de Páscoa';
+  return `Domingo do ${tempo}`;
+}
+
+function nomeTempo(dia: Date): NomeTempo {
+  const ano = dia.getFullYear();
+  const pascoa = dataPascoa(ano);
+  const cinzas = addDays(pascoa, -46);
+  const pentecostes = addDays(pascoa, 49);
+  const natal = new Date(ano, 11, 25, 12, 0, 0);
+  const advento = domingoAdvento(ano);
+  const batismo = domingoBatismo(ano);
+
+  if (dia >= advento && dia < natal) return 'Advento';
+  if (dia >= natal || (dia.getMonth() === 0 && dia <= batismo)) return 'Natal';
+  if (dia >= cinzas && dia < pascoa) return 'Quaresma';
+  if (dia >= pascoa && dia <= pentecostes) return 'Páscoa';
+  return 'Tempo Comum';
+}
+
+/** Domingo depois de 6 de janeiro: encerra o Tempo do Natal. */
+function domingoBatismo(ano: number): Date {
+  const epifania = new Date(ano, 0, 6, 12, 0, 0);
+  const desloca = epifania.getDay() === 0 ? 7 : 7 - epifania.getDay();
+  return addDays(epifania, desloca);
+}
+
 function addDays(date: Date, days: number): Date {
   const next = new Date(date.getTime());
   next.setDate(next.getDate() + days);

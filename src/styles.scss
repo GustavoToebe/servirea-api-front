@@ -3,25 +3,91 @@
 @tailwind utilities;
 
 :root {
+  --brand: #673de6;
+  --brand-hover: #5025d1;
+  --brand-navy: #2f1c6a;
+  --app-bg: #f4f5ff;
+  --ink: #131b2e;
+  --muted: #64748b;
+  --card: rgba(255, 255, 255, 0.86);
+  --line: #e7e4f5;
+  --field-line: #ddd8f0;
   font-family: "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #1d1e20;
-  background: #f4f5ff;
+  color: var(--ink);
+  background: var(--app-bg);
 }
 
 html, body { min-height: 100%; }
-body { margin: 0; background: #f4f5ff; }
+body { margin: 0; background: var(--app-bg); color: var(--ink); }
 * { box-sizing: border-box; }
 button, input, select, textarea { font: inherit; }
 
 @layer components {
-  .card { @apply rounded-2xl border border-[#E7E4F5] bg-white shadow-card; }
-  .btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-full bg-brand-blue px-5 py-2.5 font-semibold text-white transition hover:bg-[#5025D1] disabled:cursor-not-allowed disabled:opacity-50; }
-  .btn-secondary { @apply inline-flex items-center justify-center gap-2 rounded-full border border-[#DDD8F0] bg-white px-5 py-2.5 font-semibold text-slate-700 transition hover:bg-[#F4F5FF] disabled:cursor-not-allowed disabled:opacity-50; }
-  .btn-danger { @apply inline-flex items-center justify-center gap-2 rounded-full bg-red-600 px-5 py-2.5 font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50; }
-  .field { @apply w-full rounded-xl border border-[#DDD8F0] bg-white px-3 py-2.5 outline-none transition focus:border-brand-blue focus:ring-4 focus:ring-[#673DE6]/15 disabled:bg-slate-100; }
+  .card {
+    @apply rounded-2xl border shadow-card;
+    background: var(--card);
+    border-color: var(--line);
+    backdrop-filter: blur(12px);
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 font-semibold text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+    background: var(--brand);
+  }
+  .btn-primary:hover { background: var(--brand-hover); }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border bg-white px-5 py-2.5 font-semibold text-slate-700 transition hover:bg-app disabled:cursor-not-allowed disabled:opacity-50;
+    border-color: var(--field-line);
+  }
+  .btn-danger { @apply inline-flex items-center justify-center gap-2 rounded-full bg-red-600 px-5 py-2.5 font-semibold text-white transition hover:bg-red-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50; }
+  .field {
+    @apply w-full rounded-xl border bg-white px-3 py-2.5 outline-none transition disabled:bg-slate-100;
+    border-color: var(--field-line);
+  }
+  .field:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 15%, transparent);
+  }
   .label { @apply mb-1.5 block text-sm font-semibold text-slate-700; }
   .badge { @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold; }
+  .chip {
+    @apply rounded-full border px-3 py-1.5 text-sm font-bold transition;
+    border-color: var(--field-line);
+    background: var(--card);
+    color: var(--ink);
+  }
+  .chip-on { background: var(--brand); border-color: var(--brand); color: #fff; }
 }
+
+html.dark .parish .text-slate-900,
+html.dark .parish .text-slate-800,
+html.dark .parish .text-brand-ink { color: var(--ink); }
+html.dark .parish .text-slate-700,
+html.dark .parish .text-slate-600,
+html.dark .parish .text-slate-500,
+html.dark .parish .text-slate-400 { color: var(--muted); }
+html.dark .parish .bg-white,
+html.dark .parish .bg-white\/95,
+html.dark .parish .bg-white\/90,
+html.dark .parish .bg-white\/85,
+html.dark .parish .bg-white\/80 { background-color: rgba(15, 15, 20, 0.88); }
+html.dark .parish .bg-slate-50,
+html.dark .parish .bg-slate-100,
+html.dark .parish .bg-\[\#F4F5FF\] { background-color: rgba(255, 255, 255, 0.06); }
+html.dark .parish .border-slate-100,
+html.dark .parish .border-slate-200,
+html.dark .parish .divide-slate-100 > * { border-color: rgba(255, 255, 255, 0.08); }
+html.dark .parish .hover\:bg-slate-50:hover { background-color: rgba(255, 255, 255, 0.05); }
+html.dark .parish .btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink);
+  border-color: var(--field-line);
+}
+html.dark .parish .field {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
+}
+html.dark .parish .label { color: var(--muted); }
+html.dark .bo { color: #f5f5f5; background: #101010; }
 
 /* Backoffice do operador: preto com detalhes em vermelho. */
 .bo { color-scheme: dark; color: #f5f5f5; background: #101010; }

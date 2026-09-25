@@ -1,4 +1,4 @@
-import { celebracoesDoAno, celebracoesDoMes, dataPascoa } from './calendario-liturgico';
+import { celebracoesDoAno, celebracoesDoMes, dataPascoa, tempoLiturgico } from './calendario-liturgico';
 
 function iso(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -21,6 +21,18 @@ describe('calendario litúrgico', () => {
     expect(titulos['Corpus Christi']).toBe('2026-06-04');
     expect(titulos['Natal do Senhor']).toBe('2026-12-25');
     expect(titulos['Nossa Senhora Aparecida']).toBe('2026-10-12');
+  });
+
+  it('nomeia o tempo e o ciclo a partir da data civil', () => {
+    const comum = tempoLiturgico(new Date(2026, 8, 25, 12));
+    expect(comum.tempo).toBe('Tempo Comum');
+    expect(comum.ciclo).toBe('A');
+    expect(comum.rotulo).toContain('Ano A');
+
+    expect(tempoLiturgico(new Date(2026, 2, 1, 12)).tempo).toBe('Quaresma');
+    expect(tempoLiturgico(new Date(2026, 3, 5, 12)).tempo).toBe('Páscoa');
+    expect(tempoLiturgico(new Date(2026, 11, 25, 12)).tempo).toBe('Natal');
+    expect(tempoLiturgico(new Date(2027, 1, 1, 12)).ciclo).toBe('B');
   });
 
   it('filtra as celebrações do mês', () => {

@@ -9,7 +9,7 @@ import { TenantResumo } from '../../../../core/auth/auth.models';
     selector: 'app-login',
     imports: [ReactiveFormsModule, RouterLink],
     template: `
-    <div class="relative grid min-h-screen place-items-center overflow-hidden bg-[#F4F5FF] p-4">
+    <div class="parish relative grid min-h-screen place-items-center overflow-hidden bg-app p-4">
       <div class="relative w-full max-w-md rounded-3xl border border-white/70 bg-white p-8 shadow-[0_24px_60px_rgba(47,28,106,0.12)]">
         <div class="mb-8 text-center">
           <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-blue text-xl font-black text-white">SJ</div>

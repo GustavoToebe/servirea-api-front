@@ -7,6 +7,7 @@ import { AccessTokenResponse, LoginResponse, TenantResumo } from './auth.models'
 
 const TOKEN_KEY = 'sv_access';
 const TENANT_KEY = 'sv_tenant';
+const TENANT_NOME_KEY = 'sv_tenant_nome';
 const EMAIL_KEY = 'sv_email';
 
 @Injectable({ providedIn: 'root' })
@@ -19,6 +20,10 @@ export class AuthService {
 
   tenantId(): string | null {
     return sessionStorage.getItem(TENANT_KEY);
+  }
+
+  tenantNome(): string {
+    return sessionStorage.getItem(TENANT_NOME_KEY) || '';
   }
 
   email(): string {
@@ -71,6 +76,7 @@ export class AuthService {
     } finally {
       sessionStorage.removeItem(TOKEN_KEY);
       sessionStorage.removeItem(TENANT_KEY);
+      sessionStorage.removeItem(TENANT_NOME_KEY);
       sessionStorage.removeItem(EMAIL_KEY);
     }
   }
@@ -78,5 +84,6 @@ export class AuthService {
   private guardarSessao(accessToken: string, tenant: TenantResumo): void {
     sessionStorage.setItem(TOKEN_KEY, accessToken);
     sessionStorage.setItem(TENANT_KEY, tenant.id);
+    if (tenant.nome) sessionStorage.setItem(TENANT_NOME_KEY, tenant.nome);
   }
 }

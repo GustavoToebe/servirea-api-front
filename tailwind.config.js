@@ -1,16 +1,17 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./src/**/*.{html,ts}"],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
         brand: {
-          blue: '#673DE6',
-          navy: '#2F1C6A',
-          ink: '#1D1E20',
+          blue: 'var(--brand)',
+          navy: 'var(--brand-navy)',
+          ink: 'var(--ink)',
           gray: '#727586'
         },
-        app: '#F4F5FF'
+        app: 'var(--app-bg)'
       },
       boxShadow: {
         card: '0 10px 30px rgba(47, 28, 106, 0.06)'

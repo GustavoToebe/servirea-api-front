@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { Inscricao, StatusInscricao } from '../models/inscricao.model';
-import { Pessoa, TIPO_LABEL, VoluntarioLista, ageFromDate, initials } from '../models/pessoa.model';
+import { Pessoa, TIPO_LABEL, TipoVoluntario, FUNCOES_LABEL, VoluntarioLista, ageFromDate, initials } from '../models/pessoa.model';
 import { InscricoesApiService } from '../services/inscricoes-api.service';
 import { PessoasService } from '../services/pessoas.service';
 import { VoluntariosApiService } from '../services/voluntarios-api.service';
@@ -18,8 +18,8 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
     <div class="space-y-6">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 class="text-2xl font-black text-slate-900">Pessoas</h1>
-          <p class="text-sm text-slate-500">Cadastro pessoa-primeiro. Voluntário e responsável podem ser a mesma pessoa.</p>
+        <h1 class="text-2xl font-black text-slate-900">Pessoas e ministérios</h1>
+        <p class="text-sm text-slate-500">Coroinhas, acólitos e responsáveis. A ficha guarda função, idade e contato.</p>
         </div>
         <a routerLink="/pessoas/nova" class="btn-primary">＋ Novo cadastro</a>
       </div>
@@ -40,6 +40,15 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
       }
     
       @if (aba==='todas' || aba==='ativos' || aba==='inativos') {
+        <div class="flex flex-wrap gap-2">
+          <button type="button" class="chip" [class.chip-on]="tipo===''" (click)="tipo=''">Todos</button>
+          <button type="button" class="chip" [class.chip-on]="tipo==='COROINHA'" (click)="tipo='COROINHA'">Coroinhas</button>
+          <button type="button" class="chip" [class.chip-on]="tipo==='ACOLITO'" (click)="tipo='ACOLITO'">Acólitos</button>
+          <button type="button" class="chip" [class.chip-on]="tipo==='AMBOS'" (click)="tipo='AMBOS'">Coroinha / acólito</button>
+        </div>
+      }
+
+      @if (aba==='todas' || aba==='ativos' || aba==='inativos') {
         <div class="card p-5">
           <div class="grid gap-4 md:grid-cols-3">
             <div class="md:col-span-2"><label class="label">Nome</label><input class="field" [(ngModel)]="nome" (keyup.enter)="load()" placeholder="Buscar por nome"></div>
@@ -56,72 +65,82 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
       }
     
       @if (aba==='todas') {
-        <div class="card overflow-hidden">
+        <div class="grid gap-3">
           @if (loading) {
-            <div class="p-10 text-center text-slate-500">Carregando...</div>
+            <div class="card p-10 text-center text-slate-500">Carregando...</div>
           }
-          @if (!loading && !pessoas.length) {
-            <div class="p-10 text-center text-slate-500">Nenhum cadastro.</div>
+          @if (!loading && !pessoasVisiveis.length) {
+            <div class="card p-10 text-center text-slate-500">Nenhum cadastro.</div>
           }
-          @if (!loading && pessoas.length) {
-            <table class="w-full min-w-[700px] text-left text-sm">
-              <thead class="bg-slate-100 text-xs uppercase text-slate-500"><tr><th class="px-5 py-4">Pessoa</th><th class="px-5 py-4">Papéis</th><th class="px-5 py-4 text-right">Ações</th></tr></thead>
-              <tbody class="divide-y divide-slate-100">
-                @for (p of pessoas; track p) {
-                  <tr class="hover:bg-slate-50">
-                    <td class="px-5 py-4">
-                      <div class="flex items-center gap-3">
-                        <div class="flex h-11 w-11 items-center justify-center rounded-full bg-violet-100 font-bold text-brand-blue">{{ initials(p.nomeCompleto) }}</div>
-                        <div class="font-bold">{{ p.nomeCompleto }}</div>
-                      </div>
-                    </td>
-                    <td class="px-5 py-4">
-                      @for (papel of p.papeis; track papel) {
-                        <span class="badge mr-1 bg-violet-50 text-brand-blue">{{ papel === 'VOLUNTARIO' ? 'Voluntário' : 'Responsável' }}</span>
-                      }
-                    </td>
-                    <td class="px-5 py-4 text-right">
-                      <a [routerLink]="['/pessoas', p.id]" class="btn-secondary !px-3 !py-2">Ver</a>
-                      <a [routerLink]="['/pessoas', p.id, 'editar']" class="btn-secondary ml-2 !px-3 !py-2">Editar</a>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+          @for (p of pessoasVisiveis; track p.id) {
+            <article class="card p-5">
+              <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-violet-100 font-bold text-brand-blue">{{ initials(p.nomeCompleto) }}</div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h2 class="text-lg font-black">{{ p.nomeCompleto }}</h2>
+                    @if (p.voluntario) {
+                      <span class="badge bg-violet-50 text-brand-blue">{{ tipoLabel[p.voluntario.tipo] }}</span>
+                    }
+                    @if (ageFromDate(p.dataNascimento) !== null) {
+                      <span class="text-sm text-slate-500">{{ ageFromDate(p.dataNascimento) }} anos</span>
+                    }
+                  </div>
+                  <div class="mt-2 flex flex-wrap gap-2">
+                    @for (papel of p.papeis; track papel) {
+                      <span class="badge bg-slate-100 text-slate-600">{{ papel === 'VOLUNTARIO' ? 'Voluntário' : 'Responsável' }}</span>
+                    }
+                    @for (funcao of p.voluntario?.funcoesHabilitadas || []; track funcao) {
+                      <span class="badge bg-violet-50 text-violet-800">{{ funcoesLabel[funcao] }}</span>
+                    }
+                  </div>
+                  @if (responsavelDe(p)) {
+                    <p class="mt-2 text-sm text-slate-500">Responsável: {{ responsavelDe(p) }}</p>
+                  }
+                </div>
+                <div class="flex gap-2">
+                  <a [routerLink]="['/pessoas', p.id]" class="btn-secondary !px-3 !py-2">Ver</a>
+                  <a [routerLink]="['/pessoas', p.id, 'editar']" class="btn-secondary !px-3 !py-2">Editar</a>
+                </div>
+              </div>
+            </article>
           }
         </div>
       }
     
       @if (aba==='ativos' || aba==='inativos') {
-        <div class="card overflow-hidden">
+        <div class="grid gap-3">
           @if (loading) {
-            <div class="p-10 text-center text-slate-500">Carregando...</div>
+            <div class="card p-10 text-center text-slate-500">Carregando...</div>
           }
-          @if (!loading && !rows.length) {
-            <div class="p-10 text-center text-slate-500">Nenhum cadastro.</div>
+          @if (!loading && !rowsVisiveis.length) {
+            <div class="card p-10 text-center text-slate-500">Nenhum cadastro.</div>
           }
-          @if (!loading && rows.length) {
-            <table class="w-full min-w-[700px] text-left text-sm">
-              <thead class="bg-slate-100 text-xs uppercase text-slate-500"><tr><th class="px-5 py-4">Pessoa</th><th class="px-5 py-4">Tipo</th><th class="px-5 py-4">Status</th><th class="px-5 py-4 text-right">Ações</th></tr></thead>
-              <tbody class="divide-y divide-slate-100">
-                @for (v of rows; track v) {
-                  <tr class="hover:bg-slate-50">
-                    <td class="px-5 py-4">
-                      <div class="flex items-center gap-3">
-                        <div class="flex h-11 w-11 items-center justify-center rounded-full bg-violet-100 font-bold text-brand-blue">{{ initials(v.nomeCompleto) }}</div>
-                        <div class="font-bold">{{ v.nomeCompleto }}</div>
-                      </div>
-                    </td>
-                    <td class="px-5 py-4"><span class="badge bg-violet-50 text-brand-blue">{{ tipoLabel[v.tipo] }}</span></td>
-                    <td class="px-5 py-4"><span class="badge" [ngClass]="v.ativo ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'">{{ v.ativo ? 'Ativo' : 'Inativo' }}</span></td>
-                    <td class="px-5 py-4 text-right">
-                      <a [routerLink]="['/pessoas', v.id]" class="btn-secondary !px-3 !py-2">Ver</a>
-                      <a [routerLink]="['/pessoas', v.id, 'editar']" class="btn-secondary ml-2 !px-3 !py-2">Editar</a>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+          @for (v of rowsVisiveis; track v.id) {
+            <article class="card p-5">
+              <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-violet-100 font-bold text-brand-blue">{{ initials(v.nomeCompleto) }}</div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h2 class="text-lg font-black">{{ v.nomeCompleto }}</h2>
+                    <span class="badge bg-violet-50 text-brand-blue">{{ tipoLabel[v.tipo] }}</span>
+                    @if (ageFromDate(v.dataNascimento) !== null) {
+                      <span class="text-sm text-slate-500">{{ ageFromDate(v.dataNascimento) }} anos</span>
+                    }
+                    <span class="badge" [ngClass]="v.ativo ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'">{{ v.ativo ? 'Ativo' : 'Inativo' }}</span>
+                  </div>
+                  <div class="mt-2 flex flex-wrap gap-2">
+                    @for (funcao of v.funcoesHabilitadas; track funcao) {
+                      <span class="badge bg-violet-50 text-violet-800">{{ funcoesLabel[funcao] }}</span>
+                    }
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <a [routerLink]="['/pessoas', v.id]" class="btn-secondary !px-3 !py-2">Ver</a>
+                  <a [routerLink]="['/pessoas', v.id, 'editar']" class="btn-secondary !px-3 !py-2">Editar</a>
+                </div>
+              </div>
+            </article>
           }
         </div>
       }
@@ -184,6 +203,8 @@ export class PessoasListComponent implements OnInit {
   error = '';
   message = '';
   counts = { pessoas: 0, ativos: 0, inativos: 0, pendentes: 0 };
+  tipo: '' | TipoVoluntario = '';
+  funcoesLabel = FUNCOES_LABEL;
   approveTarget: Inscricao | null = null;
   rejectTarget: Inscricao | null = null;
   tipoLabel = TIPO_LABEL;
@@ -246,6 +267,21 @@ export class PessoasListComponent implements OnInit {
   principalNome(i: Inscricao): string {
     const p = i.responsaveis.find(r => r.principal) || i.responsaveis[0];
     return p?.nome || '—';
+  }
+
+  get pessoasVisiveis(): Pessoa[] {
+    if (!this.tipo) return this.pessoas;
+    return this.pessoas.filter(p => p.voluntario?.tipo === this.tipo);
+  }
+
+  get rowsVisiveis(): VoluntarioLista[] {
+    if (!this.tipo) return this.rows;
+    return this.rows.filter(v => v.tipo === this.tipo);
+  }
+
+  responsavelDe(pessoa: Pessoa): string {
+    const relacao = pessoa.responsaveis.find(r => r.principal) || pessoa.responsaveis[0];
+    return relacao?.nomeCompleto || '';
   }
 
   openReject(i: Inscricao) {

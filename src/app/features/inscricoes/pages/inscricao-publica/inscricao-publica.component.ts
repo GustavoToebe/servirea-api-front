@@ -15,7 +15,7 @@ type InscricaoView = 'form' | 'enviando' | 'sucesso' | 'erro';
     selector: 'app-inscricao-publica',
     imports: [ReactiveFormsModule, RouterLink, TurnstileComponent],
     template: `
-    <div class="min-h-screen bg-app">
+    <div class="parish min-h-screen bg-app">
       <header class="border-b border-slate-200 bg-white">
         <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 md:px-8">
           <div class="flex items-center gap-3">

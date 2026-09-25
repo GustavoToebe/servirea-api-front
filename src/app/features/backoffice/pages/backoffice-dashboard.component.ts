@@ -10,7 +10,8 @@ import { BackofficeApiService } from '../backoffice-api.service';
     template: `
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 class="bo-title">Início</h1>
+        <div class="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#e10600]">Operação</div>
+        <h1 class="bo-title">Paróquias na plataforma</h1>
         <p class="mt-1 text-sm text-neutral-400">Situação das paróquias na plataforma.</p>
       </div>
       <a routerLink="/admin/paroquias/nova" class="bo-btn">Nova paróquia</a>
@@ -28,7 +29,10 @@ import { BackofficeApiService } from '../backoffice-api.service';
         @for (card of cards; track card) {
           <a [routerLink]="card.url" class="bo-card block p-5 transition hover:border-[#e10600]/60">
             <div class="text-xs font-bold uppercase tracking-wider text-neutral-500">{{ card.label }}</div>
-            <div class="mt-3 text-3xl font-black" [class.text-[#ff5a54]]="card.warn">{{ card.value }}</div>
+            <div class="mt-3 text-3xl font-black tabular-nums" [class.text-[#ff5a54]]="card.warn">{{ card.value }}</div>
+            @if (card.hint) {
+              <div class="mt-2 text-xs text-neutral-500">{{ card.hint }}</div>
+            }
           </a>
         }
       </div>
@@ -64,13 +68,13 @@ export class BackofficeDashboardComponent implements OnInit {
     const data = this.data;
     if (!data) return [];
     return [
-      { label: 'Total', value: data.total, url: '/admin/paroquias', warn: false },
-      { label: 'Ativas', value: data.ativas, url: '/admin/paroquias', warn: false },
-      { label: 'Trial', value: data.trial, url: '/admin/paroquias', warn: false },
-      { label: 'Inadimplentes', value: data.bloqueadas, url: '/admin/paroquias', warn: true },
-      { label: 'Inativas', value: data.canceladas, url: '/admin/paroquias', warn: false },
-      { label: 'Em atraso', value: data.emAtraso, url: '/admin/paroquias', warn: data.emAtraso > 0 },
-      { label: 'Recebido no mês', value: formatMoney(data.recebidoNoMes), url: '/admin/paroquias', warn: false }
+      { label: 'Total', value: data.total, hint: 'Paróquias cadastradas', url: '/admin/paroquias', warn: false },
+      { label: 'Ativas', value: data.ativas, hint: 'Em uso', url: '/admin/paroquias', warn: false },
+      { label: 'Trial', value: data.trial, hint: 'Ainda em experiência', url: '/admin/paroquias', warn: false },
+      { label: 'Inadimplentes', value: data.bloqueadas, hint: 'Bloqueio manual', url: '/admin/paroquias', warn: true },
+      { label: 'Inativas', value: data.canceladas, hint: 'Contrato encerrado', url: '/admin/paroquias', warn: false },
+      { label: 'Em atraso', value: data.emAtraso, hint: 'Cobrança vencida', url: '/admin/paroquias', warn: data.emAtraso > 0 },
+      { label: 'Recebido no mês', value: formatMoney(data.recebidoNoMes), hint: 'Pagamentos lançados', url: '/admin/paroquias', warn: false }
     ];
   }
 }
