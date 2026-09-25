@@ -17,11 +17,11 @@ const EMAIL_KEY = 'sv_email';
  */
 let refreshEmAndamento: Observable<string> | null = null;
 
-const ROTAS_PUBLICAS = ['/auth/login', '/auth/select-tenant', '/auth/forgot-password', '/auth/reset-password', '/public/'];
+const ROTAS_PUBLICAS = ['/auth/login', '/auth/select-tenant', '/auth/forgot-password', '/auth/reset-password', '/auth/suporte/trocar', '/public/'];
 
 export const parishAuthInterceptor: HttpInterceptorFn = (req, next) => {
   const api = environment.apiUrl;
-  if (!req.url.startsWith(api) || req.url.startsWith(`${api}/admin`)) {
+  if (!req.url.startsWith(api)) {
     return next(req);
   }
 

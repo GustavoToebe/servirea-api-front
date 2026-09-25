@@ -41,11 +41,11 @@ describe('parishAuthInterceptor', () => {
     req.flush({});
   });
 
-  it('não coloca Bearer em rota /admin (fica para o interceptor do backoffice)', () => {
+  it('coloca Bearer também em URL da API que não é da paróquia autenticada', () => {
     sessionStorage.setItem('sv_access', 'parish-jwt');
-    http.get(`${api}/admin/paroquias`).subscribe();
-    const req = httpMock.expectOne(`${api}/admin/paroquias`);
-    expect(req.request.headers.has('Authorization')).toBeFalse();
+    http.get(`${api}/integracao/v1/instancias`).subscribe();
+    const req = httpMock.expectOne(`${api}/integracao/v1/instancias`);
+    expect(req.request.headers.get('Authorization')).toBe('Bearer parish-jwt');
     req.flush([]);
   });
 

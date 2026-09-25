@@ -81,6 +81,11 @@ export class AuthService {
     }
   }
 
+  /** Sessão já emitida pela API, como a troca do código de suporte. */
+  entrar(accessToken: string, tenant: TenantResumo): void {
+    this.guardarSessao(accessToken, tenant);
+  }
+
   private guardarSessao(accessToken: string, tenant: TenantResumo): void {
     sessionStorage.setItem(TOKEN_KEY, accessToken);
     sessionStorage.setItem(TENANT_KEY, tenant.id);

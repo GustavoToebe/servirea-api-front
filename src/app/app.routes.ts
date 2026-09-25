@@ -1,33 +1,15 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
 import { pendingChangesGuard } from './core/guards/pending-changes.guard';
-import { backofficeGuard } from './features/backoffice/backoffice.guard';
 
 export const routes: Routes = [
   {
-    path: 'admin/login',
-    loadComponent: () => import('./features/backoffice/pages/backoffice-login.component').then(m => m.BackofficeLoginComponent)
-  },
-  {
-    path: 'admin',
-    canActivate: [backofficeGuard],
-    loadComponent: () => import('./features/backoffice/layout/backoffice-layout.component').then(m => m.BackofficeLayoutComponent),
-    children: [
-      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-      { path: 'dashboard', loadComponent: () => import('./features/backoffice/pages/backoffice-dashboard.component').then(m => m.BackofficeDashboardComponent) },
-      { path: 'paroquias', loadComponent: () => import('./features/backoffice/pages/paroquias-list.component').then(m => m.ParoquiasListComponent) },
-      { path: 'paroquias/nova', loadComponent: () => import('./features/backoffice/pages/paroquia-form.component').then(m => m.ParoquiaFormComponent) },
-      { path: 'paroquias/:id', loadComponent: () => import('./features/backoffice/pages/paroquia-form.component').then(m => m.ParoquiaFormComponent) },
-      { path: 'planos', loadComponent: () => import('./features/backoffice/pages/planos.component').then(m => m.PlanosComponent) },
-      { path: 'usuarios', loadComponent: () => import('./features/backoffice/pages/usuarios-list.component').then(m => m.UsuariosListComponent) },
-      { path: 'usuarios/novo', loadComponent: () => import('./features/backoffice/pages/usuario-form.component').then(m => m.UsuarioFormComponent) },
-      { path: 'usuarios/:id', loadComponent: () => import('./features/backoffice/pages/usuario-form.component').then(m => m.UsuarioFormComponent) },
-      { path: 'logs', loadComponent: () => import('./features/backoffice/pages/logs-list.component').then(m => m.LogsListComponent) }
-    ]
-  },
-  {
     path: 'login',
     loadComponent: () => import('./features/auth/pages/login/login.component').then(m => m.LoginComponent)
+  },
+  {
+    path: 'suporte',
+    loadComponent: () => import('./features/acesso/pages/suporte.component').then(m => m.SuporteComponent)
   },
   {
     path: 'inscricao',
@@ -53,7 +35,10 @@ export const routes: Routes = [
       { path: 'escalas/nova', canDeactivate: [pendingChangesGuard], loadComponent: () => import('./features/escalas/pages/escala-builder/escala-builder.component').then(m => m.EscalaBuilderComponent) },
       { path: 'escalas/:id', canDeactivate: [pendingChangesGuard], loadComponent: () => import('./features/escalas/pages/escala-builder/escala-builder.component').then(m => m.EscalaBuilderComponent) },
       { path: 'relatorios', loadComponent: () => import('./features/relatorios/pages/relatorios-home/relatorios-home.component').then(m => m.RelatoriosHomeComponent) },
-      { path: 'ajustes', loadComponent: () => import('./features/ajustes/ajustes.component').then(m => m.AjustesComponent) }
+      { path: 'ajustes', loadComponent: () => import('./features/ajustes/ajustes.component').then(m => m.AjustesComponent) },
+      { path: 'perfis', loadComponent: () => import('./features/acesso/pages/perfis.component').then(m => m.PerfisComponent) },
+      { path: 'usuarios', loadComponent: () => import('./features/acesso/pages/usuarios.component').then(m => m.UsuariosComponent) },
+      { path: 'meu-perfil', loadComponent: () => import('./features/acesso/pages/meu-perfil.component').then(m => m.MeuPerfilComponent) }
     ]
   },
   { path: '**', redirectTo: '' }

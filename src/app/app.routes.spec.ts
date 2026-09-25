@@ -1,14 +1,12 @@
 import { authGuard } from './core/auth/auth.guard';
 import { pendingChangesGuard } from './core/guards/pending-changes.guard';
-import { backofficeGuard } from './features/backoffice/backoffice.guard';
 import { routes } from './app.routes';
 
 describe('rotas da aplicação', () => {
-  it('protege o app da paróquia e o backoffice', () => {
+  it('protege o app da paróquia', () => {
     const app = routes.find(r => r.path === '');
-    const admin = routes.find(r => r.path === 'admin');
     expect(app?.canActivate).toEqual([authGuard]);
-    expect(admin?.canActivate).toEqual([backofficeGuard]);
+    expect(routes.some(r => r.path === 'admin')).toBeFalse();
   });
 
   it('pede confirmação ao sair da ficha e do builder com alterações', () => {
@@ -25,7 +23,7 @@ describe('rotas da aplicação', () => {
   it('expõe login, inscrição pública e atalhos antigos de voluntários', () => {
     expect(routes.some(r => r.path === 'login')).toBeTrue();
     expect(routes.some(r => r.path === 'inscricao')).toBeTrue();
-    expect(routes.some(r => r.path === 'admin/login')).toBeTrue();
+    expect(routes.some(r => r.path === 'suporte')).toBeTrue();
     const filhos = routes.find(r => r.path === '')?.children || [];
     expect(filhos.find(r => r.path === 'voluntarios')?.redirectTo).toBe('pessoas');
   });

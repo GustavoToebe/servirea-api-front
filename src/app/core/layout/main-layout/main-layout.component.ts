@@ -1,6 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../auth/auth.service';
+import { AcessoApiService } from '../../../features/acesso/acesso-api.service';
 
 @Component({
     selector: 'app-main-layout',
@@ -33,6 +34,14 @@ import { AuthService } from '../../auth/auth.service';
             </a>
           }
         </nav>
+        <nav class="space-y-1 px-4">
+          @for (item of conta; track item.url) {
+            <a [routerLink]="item.url" routerLinkActive="!bg-brand-blue !text-white"
+              class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-violet-100/80 hover:bg-white/10 hover:text-white">
+              {{ item.label }}
+            </a>
+          }
+        </nav>
 
         <div class="absolute bottom-0 w-full border-t border-white/10 p-4">
           <button class="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold text-violet-100/80 hover:bg-white/10 hover:text-white" (click)="logout()">
@@ -51,7 +60,13 @@ import { AuthService } from '../../auth/auth.service';
               <div class="font-extrabold leading-tight text-brand-ink">{{ titulo() }}</div>
             </div>
           </div>
-          <button class="rounded-full px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-white/60" (click)="logout()">Sair</button>
+          <div class="flex items-center gap-3">
+            <a routerLink="/meu-perfil" class="text-right">
+              <div class="text-sm font-extrabold text-brand-ink">{{ euNome || 'Meu perfil' }}</div>
+              <div class="text-xs text-slate-500">{{ euPerfil }}</div>
+            </a>
+            <button class="rounded-full px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-white/60" (click)="logout()">Sair</button>
+          </div>
         </header>
         <section class="mx-auto max-w-7xl p-4 pb-24 md:p-8 lg:pb-8"><router-outlet /></section>
       </main>
@@ -77,9 +92,13 @@ import { AuthService } from '../../auth/auth.service';
     </div>
     `
 })
-export class MainLayoutComponent {
+export class MainLayoutComponent implements OnInit {
   private auth = inject(AuthService);
   private router = inject(Router);
+  private acesso = inject(AcessoApiService);
+
+  euNome = '';
+  euPerfil = '';
 
   nav = [
     { label: 'Início', url: '/dashboard' },
@@ -88,6 +107,25 @@ export class MainLayoutComponent {
     { label: 'Relatórios', url: '/relatorios' },
     { label: 'Ajustes', url: '/ajustes' }
   ];
+
+  conta = [
+    { label: 'Perfis', url: '/perfis' },
+    { label: 'Usuários', url: '/usuarios' },
+    { label: 'Meu perfil', url: '/meu-perfil' }
+  ];
+
+  ngOnInit(): void {
+    this.acesso.eu().subscribe({
+      next: eu => {
+        this.euNome = eu.nome;
+        this.euPerfil = eu.perfil;
+      },
+      error: () => {
+        this.euNome = '';
+        this.euPerfil = '';
+      }
+    });
+  }
 
   paroquia(): string {
     return this.auth.tenantNome() || 'São José Operário';
@@ -100,7 +138,7 @@ export class MainLayoutComponent {
 
   titulo(): string {
     const url = this.router.url;
-    return this.nav.find(item => url.startsWith(item.url))?.label || 'Escalas';
+    return [...this.nav, ...this.conta].find(item => url.startsWith(item.url))?.label || 'Escalas';
   }
 
   async logout() {

@@ -53,9 +53,6 @@ import { TenantResumo } from '../../../../core/auth/auth.models';
         <p class="mt-6 text-center text-sm">
           <a routerLink="/inscricao" class="font-semibold text-brand-blue">Inscrever coroinha ou acólito</a>
         </p>
-        <p class="mt-6 text-center text-xs">
-          <a routerLink="/admin/login" class="font-semibold text-slate-400 hover:text-brand-navy">Painel da plataforma</a>
-        </p>
       </div>
     </div>
     `

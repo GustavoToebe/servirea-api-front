@@ -1,8 +1,10 @@
 import { Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { FONTES, PALETAS, ThemeService } from '../../core/theme/theme.service';
 
 @Component({
     selector: 'app-ajustes',
+    imports: [RouterLink],
     template: `
     <div class="mx-auto max-w-2xl space-y-6">
       <div>
@@ -64,6 +66,13 @@ import { FONTES, PALETAS, ThemeService } from '../../core/theme/theme.service';
         <button type="button" class="relative h-7 w-12 shrink-0 rounded-full transition" [style.background]="tema.vibrar() ? 'var(--brand)' : '#cbd5e1'" (click)="tema.definirVibrar(!tema.vibrar())" [attr.aria-pressed]="tema.vibrar()" aria-label="Alternar vibração">
           <span class="absolute top-0.5 h-6 w-6 rounded-full bg-white transition" [class.left-0.5]="!tema.vibrar()" [class.left-5]="tema.vibrar()"></span>
         </button>
+      </section>
+
+      <section class="card space-y-2 p-5">
+        <h2 class="text-lg font-black">Acesso da paróquia</h2>
+        <a routerLink="/perfis" class="block font-semibold text-brand-blue">Perfis</a>
+        <a routerLink="/usuarios" class="block font-semibold text-brand-blue">Usuários</a>
+        <a routerLink="/meu-perfil" class="block font-semibold text-brand-blue">Meu perfil</a>
       </section>
 
       <button type="button" class="btn-secondary" (click)="tema.restaurar()">Restaurar padrões</button>

@@ -39,8 +39,8 @@ interface MissaVista {
         <div class="card p-5">
           <div class="text-xs font-extrabold uppercase tracking-wider text-slate-500">Servidores ativos</div>
           <div class="mt-2 text-3xl font-black">{{ activeCount }}</div>
-          <div class="mt-2 text-xs text-slate-500">{{ coroinhas }} coroinhas · {{ acolitos }} acólitos · {{ mesc }} ministros</div>
-          <div class="mt-1 text-xs text-amber-800">{{ mandatosAVencer }} mandatos a vencer em 90 dias</div>
+          <div class="mt-2 text-xs text-slate-500">{{ quantidade(coroinhas, 'coroinha', 'coroinhas') }} · {{ quantidade(acolitos, 'acólito', 'acólitos') }} · {{ quantidade(mesc, 'ministro', 'ministros') }}</div>
+          <div class="mt-1 text-xs text-amber-800">{{ quantidade(mandatosAVencer, 'mandato', 'mandatos') }} a vencer em 90 dias</div>
           <a routerLink="/pessoas" class="mt-3 inline-block text-sm font-bold text-brand-blue">Ver pessoas →</a>
         </div>
         <div class="card p-5">
@@ -167,6 +167,9 @@ export class DashboardComponent implements OnInit {
   }
 
   status(s: StatusEscala) { return STATUS_LABEL[s]; }
+  quantidade(n: number, um: string, varios: string) {
+    return `${n} ${n === 1 ? um : varios}`;
+  }
   statusClass(s: StatusEscala) {
     return s === 'FINALIZADA' ? 'bg-emerald-50 text-emerald-700' : s === 'CANCELADA' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700';
   }

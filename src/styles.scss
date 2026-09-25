@@ -77,6 +77,21 @@ html.dark .parish .border-slate-100,
 html.dark .parish .border-slate-200,
 html.dark .parish .divide-slate-100 > * { border-color: rgba(255, 255, 255, 0.08); }
 html.dark .parish .hover\:bg-slate-50:hover { background-color: rgba(255, 255, 255, 0.05); }
+html.dark .parish .bg-violet-50,
+html.dark .parish .bg-violet-100 { background-color: rgba(167, 139, 250, 0.16); }
+html.dark .parish .hover\:bg-violet-50:hover { background-color: rgba(167, 139, 250, 0.24); }
+html.dark .parish .bg-red-50 { background-color: rgba(248, 113, 113, 0.16); }
+html.dark .parish .bg-emerald-50 { background-color: rgba(52, 211, 153, 0.16); }
+html.dark .parish .bg-amber-50 { background-color: rgba(251, 191, 36, 0.16); }
+html.dark .parish .border-\[\#E7E4F5\] { border-color: var(--line); }
+html.dark .parish .text-red-700 { color: #fca5a5; }
+html.dark .parish .text-emerald-700,
+html.dark .parish .text-emerald-800 { color: #6ee7b7; }
+html.dark .parish .text-amber-600,
+html.dark .parish .text-amber-700,
+html.dark .parish .text-amber-800 { color: #fcd34d; }
+html.dark .parish .text-violet-700,
+html.dark .parish .text-violet-800 { color: #c4b5fd; }
 html.dark .parish .btn-secondary {
   background: rgba(255, 255, 255, 0.06);
   color: var(--ink);
