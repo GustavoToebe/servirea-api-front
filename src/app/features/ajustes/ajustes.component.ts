@@ -1,5 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { podeVer } from '../../core/layout/menu';
+import { SessaoAtual } from '../../core/layout/sessao-atual';
 import { FONTES, PALETAS, ThemeService } from '../../core/theme/theme.service';
 
 @Component({
@@ -70,8 +72,15 @@ import { FONTES, PALETAS, ThemeService } from '../../core/theme/theme.service';
 
       <section class="card space-y-2 p-5">
         <h2 class="text-lg font-black">Acesso da paróquia</h2>
-        <a routerLink="/perfis" class="block font-semibold text-brand-blue">Perfis</a>
-        <a routerLink="/usuarios" class="block font-semibold text-brand-blue">Usuários</a>
+        @if (pode('PAROQUIA')) {
+          <a routerLink="/paroquia" class="block font-semibold text-brand-blue">Paróquia</a>
+        }
+        @if (pode('PERFIL')) {
+          <a routerLink="/perfis" class="block font-semibold text-brand-blue">Perfis</a>
+        }
+        @if (pode('USUARIO')) {
+          <a routerLink="/usuarios" class="block font-semibold text-brand-blue">Usuários</a>
+        }
         <a routerLink="/meu-perfil" class="block font-semibold text-brand-blue">Meu perfil</a>
       </section>
 
@@ -81,6 +90,11 @@ import { FONTES, PALETAS, ThemeService } from '../../core/theme/theme.service';
 })
 export class AjustesComponent {
   tema = inject(ThemeService);
+  private sessao = inject(SessaoAtual);
   paletas = PALETAS;
   fontes = FONTES;
+
+  pode(codigo: string): boolean {
+    return podeVer(this.sessao.permissoes(), codigo);
+  }
 }

@@ -45,4 +45,5 @@ export interface MeuPerfil {
   tipoTelefone: string | null;
   telefone: string | null;
   perfil: string;
+  permissoes: string[];
 }

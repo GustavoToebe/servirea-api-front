@@ -1,7 +1,8 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../auth/auth.service';
-import { AcessoApiService } from '../../../features/acesso/acesso-api.service';
+import { BARRA, CONTA, montarMenu } from '../menu';
+import { SessaoAtual } from '../sessao-atual';
 
 @Component({
     selector: 'app-main-layout',
@@ -17,8 +18,8 @@ import { AcessoApiService } from '../../../features/acesso/acesso-api.service';
           </div>
         </div>
 
-        <nav class="space-y-1 p-4">
-          @for (item of nav; track item.url) {
+        <nav class="space-y-1 p-4" data-menu="lateral">
+          @for (item of menu().barra; track item.url) {
             <a [routerLink]="item.url" routerLinkActive="!bg-brand-blue !text-white"
               class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-violet-100/80 hover:bg-white/10 hover:text-white">
               <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -34,8 +35,8 @@ import { AcessoApiService } from '../../../features/acesso/acesso-api.service';
             </a>
           }
         </nav>
-        <nav class="space-y-1 px-4">
-          @for (item of conta; track item.url) {
+        <nav class="space-y-1 px-4" data-menu="conta">
+          @for (item of menu().conta; track item.url) {
             <a [routerLink]="item.url" routerLinkActive="!bg-brand-blue !text-white"
               class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-violet-100/80 hover:bg-white/10 hover:text-white">
               {{ item.label }}
@@ -62,8 +63,8 @@ import { AcessoApiService } from '../../../features/acesso/acesso-api.service';
           </div>
           <div class="flex items-center gap-3">
             <a routerLink="/meu-perfil" class="text-right">
-              <div class="text-sm font-extrabold text-brand-ink">{{ euNome || 'Meu perfil' }}</div>
-              <div class="text-xs text-slate-500">{{ euPerfil }}</div>
+              <div class="text-sm font-extrabold text-brand-ink">{{ sessao.eu()?.nome || 'Meu perfil' }}</div>
+              <div class="text-xs text-slate-500">{{ sessao.eu()?.perfil }}</div>
             </a>
             <button class="rounded-full px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-white/60" (click)="logout()">Sair</button>
           </div>
@@ -71,9 +72,22 @@ import { AcessoApiService } from '../../../features/acesso/acesso-api.service';
         <section class="mx-auto max-w-7xl p-4 pb-24 md:p-8 lg:pb-8"><router-outlet /></section>
       </main>
 
-      <nav class="fixed inset-x-0 bottom-0 z-30 border-t border-[#E7E4F5] bg-white/95 px-2 py-1 backdrop-blur lg:hidden">
-        <div class="grid grid-cols-5">
-          @for (item of nav; track item.url) {
+      @if (maisAberto) {
+        <button type="button" class="fixed inset-0 z-30 bg-black/40 lg:hidden" aria-label="Fechar menu" (click)="maisAberto = false"></button>
+        <div class="fixed inset-x-0 bottom-16 z-40 rounded-t-3xl bg-white p-3 shadow-xl lg:hidden" data-menu="folha" role="dialog" aria-label="Mais">
+          @for (item of menu().conta; track item.url) {
+            <a [routerLink]="item.url" (click)="maisAberto = false"
+              class="block rounded-2xl px-4 py-3 text-sm font-extrabold text-brand-ink hover:bg-violet-50">
+              {{ item.label }}
+            </a>
+          }
+          <button type="button" class="block w-full rounded-2xl px-4 py-3 text-left text-sm font-extrabold text-slate-500 hover:bg-violet-50" (click)="logout()">Sair</button>
+        </div>
+      }
+
+      <nav class="fixed inset-x-0 bottom-0 z-50 border-t border-[#E7E4F5] bg-white/95 px-2 py-1 backdrop-blur lg:hidden" data-menu="barra">
+        <div class="grid" [style.grid-template-columns]="'repeat(' + (menu().barra.length + 1) + ', minmax(0, 1fr))'">
+          @for (item of menu().barra; track item.url) {
             <a [routerLink]="item.url" routerLinkActive="!text-brand-blue" class="flex flex-col items-center gap-0.5 px-1 py-2 text-[11px] font-bold text-slate-400">
               <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 @switch (item.url) {
@@ -87,6 +101,11 @@ import { AcessoApiService } from '../../../features/acesso/acesso-api.service';
               {{ item.label }}
             </a>
           }
+          <button type="button" data-menu="mais" class="flex flex-col items-center gap-0.5 px-1 py-2 text-[11px] font-bold text-slate-400"
+            [class.!text-brand-blue]="maisAberto" [attr.aria-expanded]="maisAberto" (click)="maisAberto = !maisAberto">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="18" cy="12" r="1.2" fill="currentColor"/></svg>
+            Mais
+          </button>
         </div>
       </nav>
     </div>
@@ -95,37 +114,16 @@ import { AcessoApiService } from '../../../features/acesso/acesso-api.service';
 export class MainLayoutComponent implements OnInit {
   private auth = inject(AuthService);
   private router = inject(Router);
-  private acesso = inject(AcessoApiService);
+  sessao = inject(SessaoAtual);
 
-  euNome = '';
-  euPerfil = '';
-
-  nav = [
-    { label: 'Início', url: '/dashboard' },
-    { label: 'Escalas', url: '/escalas' },
-    { label: 'Pessoas', url: '/pessoas' },
-    { label: 'Relatórios', url: '/relatorios' },
-    { label: 'Ajustes', url: '/ajustes' }
-  ];
-
-  conta = [
-    { label: 'Paróquia', url: '/paroquia' },
-    { label: 'Perfis', url: '/perfis' },
-    { label: 'Usuários', url: '/usuarios' },
-    { label: 'Meu perfil', url: '/meu-perfil' }
-  ];
+  maisAberto = false;
 
   ngOnInit(): void {
-    this.acesso.eu().subscribe({
-      next: eu => {
-        this.euNome = eu.nome;
-        this.euPerfil = eu.perfil;
-      },
-      error: () => {
-        this.euNome = '';
-        this.euPerfil = '';
-      }
-    });
+    this.sessao.carregar();
+  }
+
+  menu() {
+    return montarMenu(this.sessao.permissoes());
   }
 
   paroquia(): string {
@@ -139,10 +137,11 @@ export class MainLayoutComponent implements OnInit {
 
   titulo(): string {
     const url = this.router.url;
-    return [...this.nav, ...this.conta].find(item => url.startsWith(item.url))?.label || 'Escalas';
+    return [...BARRA, ...CONTA].find(item => url.startsWith(item.url))?.label || 'Escalas';
   }
 
   async logout() {
+    this.maisAberto = false;
     await this.auth.signOut();
     await this.router.navigate(['/login']);
   }
