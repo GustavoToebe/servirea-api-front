@@ -43,7 +43,7 @@ Projeto Angular + Tailwind + Supabase para substituir as planilhas usadas no cad
 
 ## 1. Instalação
 
-Requer Node.js 20+.
+Requer Node.js 24.21.0 LTS.
 
 ```bash
 npm install

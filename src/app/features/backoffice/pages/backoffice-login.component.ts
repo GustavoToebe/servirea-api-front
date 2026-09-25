@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -6,10 +6,9 @@ import { apiMessage } from '../backoffice.models';
 import { BackofficeAuthService } from '../backoffice-auth.service';
 
 @Component({
-  selector: 'app-backoffice-login',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
-  template: `
+    selector: 'app-backoffice-login',
+    imports: [ReactiveFormsModule, RouterLink],
+    template: `
     <div class="bo relative grid min-h-screen place-items-center overflow-hidden p-4">
       <div class="pointer-events-none absolute left-1/2 top-0 h-64 w-[36rem] -translate-x-1/2 rounded-full bg-[#e10600]/20 blur-3xl"></div>
       <div class="relative w-full max-w-md rounded-2xl border border-[#2a2a2a] border-t-[3px] border-t-[#e10600] bg-[#111] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
@@ -27,7 +26,9 @@ import { BackofficeAuthService } from '../backoffice-auth.service';
             <label class="bo-label">Senha</label>
             <input class="bo-field" type="password" formControlName="senha" placeholder="••••••••" autocomplete="current-password">
           </div>
-          <div *ngIf="error" class="rounded-lg border border-[#e10600]/40 bg-[#e10600]/10 px-3 py-2 text-sm text-[#ffb4b0]">{{ error }}</div>
+          @if (error) {
+            <div class="rounded-lg border border-[#e10600]/40 bg-[#e10600]/10 px-3 py-2 text-sm text-[#ffb4b0]">{{ error }}</div>
+          }
           <button class="bo-btn w-full" type="submit" [disabled]="loading || form.invalid">{{ loading ? 'Entrando...' : 'Entrar' }}</button>
         </form>
         <p class="mt-6 text-center text-xs text-neutral-500">
@@ -35,7 +36,7 @@ import { BackofficeAuthService } from '../backoffice-auth.service';
         </p>
       </div>
     </div>
-  `
+    `
 })
 export class BackofficeLoginComponent {
   loading = false;

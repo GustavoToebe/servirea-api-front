@@ -1,14 +1,13 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { apiMessage, DashboardResponse, formatMoney } from '../backoffice.models';
 import { BackofficeApiService } from '../backoffice-api.service';
 
 @Component({
-  selector: 'app-backoffice-dashboard',
-  standalone: true,
-  imports: [CommonModule, RouterLink],
-  template: `
+    selector: 'app-backoffice-dashboard',
+    imports: [RouterLink],
+    template: `
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
         <h1 class="bo-title">Início</h1>
@@ -16,17 +15,25 @@ import { BackofficeApiService } from '../backoffice-api.service';
       </div>
       <a routerLink="/admin/paroquias/nova" class="bo-btn">Nova paróquia</a>
     </div>
-
-    <div *ngIf="error" class="mb-4 rounded-lg border border-[#e10600]/40 bg-[#e10600]/10 px-4 py-3 text-sm text-[#ffb4b0]">{{ error }}</div>
-    <div *ngIf="loading" class="text-sm text-neutral-400">Carregando...</div>
-
-    <div *ngIf="!loading && data" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <a *ngFor="let card of cards" [routerLink]="card.url" class="bo-card block p-5 transition hover:border-[#e10600]/60">
-        <div class="text-xs font-bold uppercase tracking-wider text-neutral-500">{{ card.label }}</div>
-        <div class="mt-3 text-3xl font-black" [class.text-[#ff5a54]]="card.warn">{{ card.value }}</div>
-      </a>
-    </div>
-
+    
+    @if (error) {
+      <div class="mb-4 rounded-lg border border-[#e10600]/40 bg-[#e10600]/10 px-4 py-3 text-sm text-[#ffb4b0]">{{ error }}</div>
+    }
+    @if (loading) {
+      <div class="text-sm text-neutral-400">Carregando...</div>
+    }
+    
+    @if (!loading && data) {
+      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        @for (card of cards; track card) {
+          <a [routerLink]="card.url" class="bo-card block p-5 transition hover:border-[#e10600]/60">
+            <div class="text-xs font-bold uppercase tracking-wider text-neutral-500">{{ card.label }}</div>
+            <div class="mt-3 text-3xl font-black" [class.text-[#ff5a54]]="card.warn">{{ card.value }}</div>
+          </a>
+        }
+      </div>
+    }
+    
     <section class="bo-card mt-6 p-6">
       <h2 class="text-lg font-bold">Ações do operador</h2>
       <div class="mt-4 flex flex-wrap gap-3">
@@ -37,7 +44,7 @@ import { BackofficeApiService } from '../backoffice-api.service';
       </div>
       <p class="mt-5 max-w-2xl text-sm leading-6 text-neutral-400">Assinatura, mensalidades e registro de pagamento (PIX, cartão, dinheiro...) ficam no Financeiro de cada paróquia. O pagamento é registrado à mão até existir um gateway. Atraso só é sinalizado: bloquear continua manual.</p>
     </section>
-  `
+    `
 })
 export class BackofficeDashboardComponent implements OnInit {
   loading = true;

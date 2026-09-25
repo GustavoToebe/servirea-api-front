@@ -1,14 +1,13 @@
-import { CommonModule } from '@angular/common';
+
 import { Component } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { initials } from '../backoffice.models';
 import { BackofficeAuthService } from '../backoffice-auth.service';
 
 @Component({
-  selector: 'app-backoffice-layout',
-  standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
-  template: `
+    selector: 'app-backoffice-layout',
+    imports: [RouterOutlet, RouterLink, RouterLinkActive],
+    template: `
     <div class="bo min-h-screen">
       <header class="bo-top fixed inset-x-0 top-0 z-40 flex items-center gap-3 px-4">
         <button class="rounded-lg p-2 text-neutral-300 hover:bg-white/5 lg:hidden" (click)="menuOpen=!menuOpen" aria-label="Abrir menu">
@@ -27,29 +26,43 @@ import { BackofficeAuthService } from '../backoffice-auth.service';
           <div class="bo-avatar h-9 w-9 text-xs ring-2 ring-[#e10600]">{{ mark }}</div>
         </div>
       </header>
-
+    
       <aside class="bo-rail fixed bottom-0 left-0 top-14 z-30 flex flex-col items-center gap-1 py-3 transition-transform lg:translate-x-0"
-             [class.-translate-x-full]="!menuOpen" [class.translate-x-0]="menuOpen">
-        <a *ngFor="let item of nav" [routerLink]="item.url" routerLinkActive="active"
-           class="flex h-11 w-11 items-center justify-center rounded-xl"
-           [attr.title]="item.label" (click)="menuOpen=false">
-          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <ng-container *ngIf="item.id==='home'"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/></ng-container>
-            <ng-container *ngIf="item.id==='church'"><path d="M4 20V10l8-6 8 6v10"/><path d="M9 20v-6h6v6"/><path d="M12 4v3"/></ng-container>
-            <ng-container *ngIf="item.id==='plans'"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/><path d="M7 15h3"/></ng-container>
-            <ng-container *ngIf="item.id==='users'"><path d="M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1"/><circle cx="9.5" cy="8" r="3"/><path d="M20 19v-1a3.5 3.5 0 0 0-2.5-3.35"/><path d="M16.5 5.1a3 3 0 0 1 0 5.8"/></ng-container>
-            <ng-container *ngIf="item.id==='logs'"><path d="M8 6h11M8 12h11M8 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01"/></ng-container>
-          </svg>
-        </a>
+        [class.-translate-x-full]="!menuOpen" [class.translate-x-0]="menuOpen">
+        @for (item of nav; track item) {
+          <a [routerLink]="item.url" routerLinkActive="active"
+            class="flex h-11 w-11 items-center justify-center rounded-xl"
+            [attr.title]="item.label" (click)="menuOpen=false">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              @if (item.id==='home') {
+                <ng-container><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/></ng-container>
+              }
+              @if (item.id==='church') {
+                <ng-container><path d="M4 20V10l8-6 8 6v10"/><path d="M9 20v-6h6v6"/><path d="M12 4v3"/></ng-container>
+              }
+              @if (item.id==='plans') {
+                <ng-container><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/><path d="M7 15h3"/></ng-container>
+              }
+              @if (item.id==='users') {
+                <ng-container><path d="M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1"/><circle cx="9.5" cy="8" r="3"/><path d="M20 19v-1a3.5 3.5 0 0 0-2.5-3.35"/><path d="M16.5 5.1a3 3 0 0 1 0 5.8"/></ng-container>
+              }
+              @if (item.id==='logs') {
+                <ng-container><path d="M8 6h11M8 12h11M8 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01"/></ng-container>
+              }
+            </svg>
+          </a>
+        }
         <button class="mt-auto flex h-11 w-11 items-center justify-center rounded-xl text-neutral-400 hover:bg-[#161616] hover:text-white" title="Sair" (click)="logout()">
           <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/><path d="M13 16l4-4-4-4"/><path d="M17 12H9"/></svg>
         </button>
       </aside>
-
-      <div *ngIf="menuOpen" class="fixed inset-0 z-20 bg-black/60 lg:hidden" (click)="menuOpen=false"></div>
+    
+      @if (menuOpen) {
+        <div class="fixed inset-0 z-20 bg-black/60 lg:hidden" (click)="menuOpen=false"></div>
+      }
       <main class="bo-main"><router-outlet /></main>
     </div>
-  `
+    `
 })
 export class BackofficeLayoutComponent {
   menuOpen = false;

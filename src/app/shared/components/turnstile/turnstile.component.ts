@@ -1,19 +1,22 @@
-import { CommonModule } from '@angular/common';
+
 import { AfterViewInit, Component, ElementRef, Input, NgZone, OnDestroy, ViewChild } from '@angular/core';
 
 @Component({
-  selector: 'app-turnstile',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-turnstile',
+    imports: [],
+    template: `
     <div class="flex w-full justify-center">
       <div class="flex w-[300px] flex-col items-stretch gap-3">
         <div #widget class="min-h-[65px] w-[300px]"></div>
-        <p *ngIf="errorMessage" class="text-center text-sm text-red-700">{{ errorMessage }}</p>
-        <button *ngIf="errorMessage" type="button" class="btn-secondary !py-2 text-sm" (click)="retry()">Tentar novamente</button>
+        @if (errorMessage) {
+          <p class="text-center text-sm text-red-700">{{ errorMessage }}</p>
+        }
+        @if (errorMessage) {
+          <button type="button" class="btn-secondary !py-2 text-sm" (click)="retry()">Tentar novamente</button>
+        }
       </div>
     </div>
-  `
+    `
 })
 export class TurnstileComponent implements AfterViewInit, OnDestroy {
   @ViewChild('widget', { static: true }) widget!: ElementRef<HTMLElement>;

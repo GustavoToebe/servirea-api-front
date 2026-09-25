@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Escala, EscalaFilters, MESES } from '../../../escalas/models/escala.model';
@@ -6,30 +6,33 @@ import { EscalasService } from '../../../escalas/services/escalas.service';
 import { ExportService } from '../../../escalas/services/export.service';
 
 @Component({
-  selector: 'app-relatorios-home',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-relatorios-home',
+    imports: [FormsModule],
+    template: `
     <div class="space-y-6">
       <div>
         <h1 class="text-2xl font-black">Relatórios e exportações</h1>
         <p class="text-sm text-slate-500">Ao abrir, a lista já vem no mês atual. Troque o filtro se quiser ver outro período.</p>
       </div>
-
+    
       <section class="card p-5">
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label class="label">Ano</label>
             <select class="field" [(ngModel)]="filters.ano">
               <option [ngValue]="null">Todos</option>
-              <option *ngFor="let y of years" [ngValue]="y">{{ y }}</option>
+              @for (y of years; track y) {
+                <option [ngValue]="y">{{ y }}</option>
+              }
             </select>
           </div>
           <div>
             <label class="label">Mês</label>
             <select class="field" [(ngModel)]="filters.mes">
               <option [ngValue]="null">Todos</option>
-              <option *ngFor="let m of months; let i=index" [ngValue]="i+1">{{ m }}</option>
+              @for (m of months; track m; let i = $index) {
+                <option [ngValue]="i+1">{{ m }}</option>
+              }
             </select>
           </div>
           <div>
@@ -46,30 +49,38 @@ import { ExportService } from '../../../escalas/services/export.service';
           </div>
         </div>
       </section>
-
+    
       <section class="card p-6">
         <div class="mb-5">
           <h2 class="text-lg font-black">Escalas finalizadas</h2>
           <p class="text-sm text-slate-500">Somente escalas finalizadas aparecem aqui. O PDF e a imagem PNG saem no formato da planilha, com os dias separados e as funções coloridas.</p>
         </div>
-        <div *ngIf="loading" class="py-8 text-center text-slate-500">Carregando...</div>
-        <div *ngIf="error" class="rounded-xl bg-red-50 p-4 text-red-700">{{ error }}</div>
+        @if (loading) {
+          <div class="py-8 text-center text-slate-500">Carregando...</div>
+        }
+        @if (error) {
+          <div class="rounded-xl bg-red-50 p-4 text-red-700">{{ error }}</div>
+        }
         <div class="divide-y divide-slate-100">
-          <div *ngFor="let e of rows" class="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <strong>{{ e.titulo }}</strong>
-              <div class="text-sm text-slate-500">{{ months[e.mes-1] }} / {{ e.ano }} • {{ e.tipo==='SEMANAL' ? 'Semanal' : 'Mensal / fim de semana' }}</div>
+          @for (e of rows; track e) {
+            <div class="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <strong>{{ e.titulo }}</strong>
+                <div class="text-sm text-slate-500">{{ months[e.mes-1] }} / {{ e.ano }} • {{ e.tipo==='SEMANAL' ? 'Semanal' : 'Mensal / fim de semana' }}</div>
+              </div>
+              <div class="flex gap-2">
+                <button class="btn-primary !py-2" (click)="pdf(e)">Baixar PDF</button>
+                <button class="btn-secondary !py-2" (click)="png(e)">Baixar PNG</button>
+              </div>
             </div>
-            <div class="flex gap-2">
-              <button class="btn-primary !py-2" (click)="pdf(e)">Baixar PDF</button>
-              <button class="btn-secondary !py-2" (click)="png(e)">Baixar PNG</button>
-            </div>
-          </div>
-          <div *ngIf="!loading && !rows.length" class="py-8 text-center text-sm text-slate-400">Nenhuma escala finalizada neste filtro.</div>
+          }
+          @if (!loading && !rows.length) {
+            <div class="py-8 text-center text-sm text-slate-400">Nenhuma escala finalizada neste filtro.</div>
+          }
         </div>
       </section>
     </div>
-  `
+    `
 })
 export class RelatoriosHomeComponent implements OnInit {
   rows: Escala[] = [];

@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -12,10 +12,9 @@ import { InscricoesApiService } from '../../../pessoas/services/inscricoes-api.s
 type InscricaoView = 'form' | 'enviando' | 'sucesso' | 'erro';
 
 @Component({
-  selector: 'app-inscricao-publica',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, TurnstileComponent],
-  template: `
+    selector: 'app-inscricao-publica',
+    imports: [ReactiveFormsModule, RouterLink, TurnstileComponent],
+    template: `
     <div class="min-h-screen bg-app">
       <header class="border-b border-slate-200 bg-white">
         <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 md:px-8">
@@ -29,164 +28,181 @@ type InscricaoView = 'form' | 'enviando' | 'sucesso' | 'erro';
           <a routerLink="/login" class="text-sm font-semibold text-brand-blue">Acesso da coordenação</a>
         </div>
       </header>
-
+    
       <main class="mx-auto max-w-6xl space-y-6 px-4 py-8 md:px-8">
-        <div *ngIf="view === 'form' || view === 'enviando'" class="space-y-6">
-          <div>
-            <h1 class="text-2xl font-black text-slate-900">Ficha de inscrição</h1>
-            <p class="text-sm text-slate-500">A coordenação analisa os dados antes de incluir a pessoa nas escalas. Responsável é opcional.</p>
-          </div>
-
-          <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
-            <section class="card p-6">
-              <h2 class="mb-4 text-lg font-black">Quem se inscreve</h2>
-              <div class="grid gap-4 md:grid-cols-2">
-                <div class="md:col-span-2"><label class="label">Nome completo *</label><input class="field" formControlName="nomeCompleto"></div>
-                <div><label class="label">Nascimento</label><input class="field" type="date" formControlName="dataNascimento"></div>
-                <div><label class="label">Sexo</label><input class="field" formControlName="sexo"></div>
-                <div><label class="label">CPF</label><input class="field" formControlName="cpf"></div>
-                <div><label class="label">RG</label><input class="field" formControlName="rg"></div>
-                <div>
-                  <label class="label">Tipo *</label>
-                  <select class="field" formControlName="tipo">
-                    <option *ngFor="let t of tipos" [value]="t">{{ tipoLabel[t] }}</option>
-                  </select>
-                </div>
-              </div>
-            </section>
-
-            <section class="card p-6">
-              <div class="mb-4 flex items-center justify-between"><h2 class="text-lg font-black">E-mails</h2><button type="button" class="btn-secondary" (click)="addEmail()">＋</button></div>
-              <div formArrayName="emails" class="space-y-3">
-                <div *ngFor="let g of emails.controls; let i=index" [formGroupName]="i" class="grid gap-3 md:grid-cols-12">
-                  <input class="field md:col-span-3" formControlName="tipo" placeholder="Tipo">
-                  <input class="field md:col-span-6" type="email" formControlName="email" placeholder="e-mail">
-                  <label class="flex items-center gap-2 md:col-span-2"><input type="checkbox" formControlName="principal"> Principal</label>
-                  <button type="button" class="text-sm text-red-600" (click)="emails.removeAt(i)">Excluir</button>
-                </div>
-              </div>
-            </section>
-
-            <section class="card p-6">
-              <div class="mb-4 flex items-center justify-between"><h2 class="text-lg font-black">Telefones</h2><button type="button" class="btn-secondary" (click)="addTelefone()">＋</button></div>
-              <div formArrayName="telefones" class="space-y-3">
-                <div *ngFor="let g of telefones.controls; let i=index" [formGroupName]="i" class="grid gap-3 md:grid-cols-12">
-                  <input class="field md:col-span-3" formControlName="tipo" placeholder="Tipo">
-                  <input class="field md:col-span-6" formControlName="numero" placeholder="número">
-                  <label class="flex items-center gap-2 md:col-span-2"><input type="checkbox" formControlName="principal"> Principal</label>
-                  <button type="button" class="text-sm text-red-600" (click)="telefones.removeAt(i)">Excluir</button>
-                </div>
-              </div>
-            </section>
-
-            <section class="card p-6">
-              <div class="mb-2 flex items-center justify-between">
-                <div>
-                  <h2 class="text-lg font-black">Responsáveis</h2>
-                  <p class="text-sm text-slate-500">Opcional. Se informar algum, marque exatamente um como principal.</p>
-                </div>
-                <button type="button" class="btn-secondary" (click)="addResponsavel()">＋ Responsável</button>
-              </div>
-              <div formArrayName="responsaveis" class="space-y-4">
-                <div *ngFor="let g of responsaveis.controls; let i=index" [formGroupName]="i" class="rounded-2xl border border-slate-200 p-4">
-                  <div class="grid gap-3 md:grid-cols-2">
-                    <div class="md:col-span-2"><label class="label">Nome *</label><input class="field" formControlName="nome"></div>
-                    <div>
-                      <label class="label">É (parentesco) *</label>
-                      <input class="field" formControlName="parentesco" [attr.list]="'par-'+i">
-                      <datalist [id]="'par-'+i"><option *ngFor="let p of parentescos" [value]="p"></option></datalist>
-                    </div>
-                    <div><label class="label">De (inverso)</label><input class="field" formControlName="parentescoInverso" placeholder="Filho, Filha…"></div>
-                    <div><label class="label">E-mail</label><input class="field" type="email" formControlName="email"></div>
-                    <div><label class="label">Telefone</label><input class="field" formControlName="telefone"></div>
-                    <label class="flex items-center gap-2"><input type="checkbox" formControlName="principal"> Principal</label>
-                  </div>
-                  <button type="button" class="mt-3 text-sm text-red-600" (click)="responsaveis.removeAt(i)">Remover</button>
-                </div>
-              </div>
-            </section>
-
-            <section class="card p-6">
-              <h2 class="mb-4 text-lg font-black">Endereço</h2>
-              <div class="grid gap-4 md:grid-cols-4">
-                <div class="md:col-span-2"><label class="label">Rua</label><input class="field" formControlName="rua"></div>
-                <div><label class="label">Número</label><input class="field" formControlName="numero"></div>
-                <div><label class="label">Complemento</label><input class="field" formControlName="complemento"></div>
-                <div><label class="label">Bairro</label><input class="field" formControlName="bairro"></div>
-                <div><label class="label">CEP</label><input class="field" formControlName="cep"></div>
-                <div><label class="label">Cidade</label><input class="field" formControlName="cidade"></div>
-                <div><label class="label">UF</label><input class="field" formControlName="uf" maxlength="2"></div>
-              </div>
-            </section>
-
-            <section class="card p-6">
-              <h2 class="mb-4 text-lg font-black">Perfil na paróquia</h2>
-              <div class="grid gap-4 md:grid-cols-2">
-                <div><label class="label">Catequese</label><input class="field" formControlName="etapaCatequese"></div>
-                <div>
-                  <label class="label">Horário de estudo</label>
-                  <select class="field" formControlName="horarioEstudo">
-                    <option value="">—</option>
-                    <option value="MANHA">Manhã</option>
-                    <option value="TARDE">Tarde</option>
-                    <option value="NOITE">Noite</option>
-                  </select>
-                </div>
-                <div><label class="label">Eucaristia</label><input class="field" formControlName="eucaristiaAno"></div>
-                <div><label class="label">Crisma</label><input class="field" formControlName="crismaAno"></div>
-              </div>
-              <div class="mt-4 grid gap-3 sm:grid-cols-3">
-                <label *ngFor="let f of funcoes" class="flex items-center gap-2 rounded-xl border p-3">
-                  <input type="checkbox" [checked]="hasFuncao(f)" (change)="toggleFuncao(f, $event)"> {{ funcaoLabel[f] }}
-                </label>
-              </div>
-              <label class="mt-4 flex items-center gap-2"><input type="checkbox" formControlName="autorizaWhatsapp"> Autoriza WhatsApp</label>
-              <div class="mt-4">
-                <label class="label">Foto</label>
-                <input type="file" accept="image/jpeg,image/png,image/webp,image/heic" (change)="onPhoto($event)">
-                <img *ngIf="photoPreview" [src]="photoPreview" class="mt-3 h-32 w-32 rounded-2xl object-cover" alt="Prévia">
-                <button *ngIf="photoPreview" type="button" class="mt-2 text-sm text-red-600" (click)="removePhoto()">Remover foto</button>
-              </div>
-              <div class="mt-4"><label class="label">Observações</label><textarea class="field min-h-28" formControlName="observacoes"></textarea></div>
-            </section>
-
-            <section class="card p-6">
-              <h2 class="text-lg font-black">Proteção contra envios automáticos</h2>
-              <p class="mt-1 text-sm text-slate-500">Confirme que você não é um robô antes de enviar.</p>
-              <div class="mt-4">
-                <app-turnstile *ngIf="turnstileSiteKey" [siteKey]="turnstileSiteKey"></app-turnstile>
-              </div>
-            </section>
-
-            <div *ngIf="error" class="rounded-xl bg-red-50 p-4 text-red-700">{{ error }}</div>
-
-            <div class="sticky bottom-4 flex flex-wrap justify-end gap-3 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
-              <button type="submit" class="btn-primary" [disabled]="view === 'enviando' || form.invalid || (!!turnstileSiteKey && !turnstileToken)">
-                {{ view === 'enviando' ? 'Enviando inscrição...' : 'Enviar inscrição' }}
-              </button>
+        @if (view === 'form' || view === 'enviando') {
+          <div class="space-y-6">
+            <div>
+              <h1 class="text-2xl font-black text-slate-900">Ficha de inscrição</h1>
+              <p class="text-sm text-slate-500">A coordenação analisa os dados antes de incluir a pessoa nas escalas. Responsável é opcional.</p>
             </div>
-          </form>
-        </div>
-
-        <section *ngIf="view === 'sucesso'" class="card mx-auto max-w-2xl p-8 text-center">
-          <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-2xl text-emerald-700">✓</div>
-          <h1 class="text-2xl font-black text-slate-900">Inscrição enviada com sucesso!</h1>
-          <p class="mt-3 text-sm text-slate-600">A coordenação vai analisar os dados. Guarde o código abaixo caso precise falar sobre esta inscrição.</p>
-          <div class="mt-5 rounded-2xl bg-slate-50 p-4">
-            <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Código da inscrição</div>
-            <div class="mt-1 break-all font-mono text-sm font-bold text-slate-900">{{ inscricaoId }}</div>
+            <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
+              <section class="card p-6">
+                <h2 class="mb-4 text-lg font-black">Quem se inscreve</h2>
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div class="md:col-span-2"><label class="label">Nome completo *</label><input class="field" formControlName="nomeCompleto"></div>
+                  <div><label class="label">Nascimento</label><input class="field" type="date" formControlName="dataNascimento"></div>
+                  <div><label class="label">Sexo</label><input class="field" formControlName="sexo"></div>
+                  <div><label class="label">CPF</label><input class="field" formControlName="cpf"></div>
+                  <div><label class="label">RG</label><input class="field" formControlName="rg"></div>
+                  <div>
+                    <label class="label">Tipo *</label>
+                    <select class="field" formControlName="tipo">
+                      @for (t of tipos; track t) {
+                        <option [value]="t">{{ tipoLabel[t] }}</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+              </section>
+              <section class="card p-6">
+                <div class="mb-4 flex items-center justify-between"><h2 class="text-lg font-black">E-mails</h2><button type="button" class="btn-secondary" (click)="addEmail()">＋</button></div>
+                <div formArrayName="emails" class="space-y-3">
+                  @for (g of emails.controls; track g; let i = $index) {
+                    <div [formGroupName]="i" class="grid gap-3 md:grid-cols-12">
+                      <input class="field md:col-span-3" formControlName="tipo" placeholder="Tipo">
+                      <input class="field md:col-span-6" type="email" formControlName="email" placeholder="e-mail">
+                      <label class="flex items-center gap-2 md:col-span-2"><input type="checkbox" formControlName="principal"> Principal</label>
+                      <button type="button" class="text-sm text-red-600" (click)="emails.removeAt(i)">Excluir</button>
+                    </div>
+                  }
+                </div>
+              </section>
+              <section class="card p-6">
+                <div class="mb-4 flex items-center justify-between"><h2 class="text-lg font-black">Telefones</h2><button type="button" class="btn-secondary" (click)="addTelefone()">＋</button></div>
+                <div formArrayName="telefones" class="space-y-3">
+                  @for (g of telefones.controls; track g; let i = $index) {
+                    <div [formGroupName]="i" class="grid gap-3 md:grid-cols-12">
+                      <input class="field md:col-span-3" formControlName="tipo" placeholder="Tipo">
+                      <input class="field md:col-span-6" formControlName="numero" placeholder="número">
+                      <label class="flex items-center gap-2 md:col-span-2"><input type="checkbox" formControlName="principal"> Principal</label>
+                      <button type="button" class="text-sm text-red-600" (click)="telefones.removeAt(i)">Excluir</button>
+                    </div>
+                  }
+                </div>
+              </section>
+              <section class="card p-6">
+                <div class="mb-2 flex items-center justify-between">
+                  <div>
+                    <h2 class="text-lg font-black">Responsáveis</h2>
+                    <p class="text-sm text-slate-500">Opcional. Se informar algum, marque exatamente um como principal.</p>
+                  </div>
+                  <button type="button" class="btn-secondary" (click)="addResponsavel()">＋ Responsável</button>
+                </div>
+                <div formArrayName="responsaveis" class="space-y-4">
+                  @for (g of responsaveis.controls; track g; let i = $index) {
+                    <div [formGroupName]="i" class="rounded-2xl border border-slate-200 p-4">
+                      <div class="grid gap-3 md:grid-cols-2">
+                        <div class="md:col-span-2"><label class="label">Nome *</label><input class="field" formControlName="nome"></div>
+                        <div>
+                          <label class="label">É (parentesco) *</label>
+                          <input class="field" formControlName="parentesco" [attr.list]="'par-'+i">
+                          <datalist [id]="'par-'+i">@for (p of parentescos; track p) {
+                            <option [value]="p"></option>
+                          }</datalist>
+                        </div>
+                        <div><label class="label">De (inverso)</label><input class="field" formControlName="parentescoInverso" placeholder="Filho, Filha…"></div>
+                        <div><label class="label">E-mail</label><input class="field" type="email" formControlName="email"></div>
+                        <div><label class="label">Telefone</label><input class="field" formControlName="telefone"></div>
+                        <label class="flex items-center gap-2"><input type="checkbox" formControlName="principal"> Principal</label>
+                      </div>
+                      <button type="button" class="mt-3 text-sm text-red-600" (click)="responsaveis.removeAt(i)">Remover</button>
+                    </div>
+                  }
+                </div>
+              </section>
+              <section class="card p-6">
+                <h2 class="mb-4 text-lg font-black">Endereço</h2>
+                <div class="grid gap-4 md:grid-cols-4">
+                  <div class="md:col-span-2"><label class="label">Rua</label><input class="field" formControlName="rua"></div>
+                  <div><label class="label">Número</label><input class="field" formControlName="numero"></div>
+                  <div><label class="label">Complemento</label><input class="field" formControlName="complemento"></div>
+                  <div><label class="label">Bairro</label><input class="field" formControlName="bairro"></div>
+                  <div><label class="label">CEP</label><input class="field" formControlName="cep"></div>
+                  <div><label class="label">Cidade</label><input class="field" formControlName="cidade"></div>
+                  <div><label class="label">UF</label><input class="field" formControlName="uf" maxlength="2"></div>
+                </div>
+              </section>
+              <section class="card p-6">
+                <h2 class="mb-4 text-lg font-black">Perfil na paróquia</h2>
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div><label class="label">Catequese</label><input class="field" formControlName="etapaCatequese"></div>
+                  <div>
+                    <label class="label">Horário de estudo</label>
+                    <select class="field" formControlName="horarioEstudo">
+                      <option value="">—</option>
+                      <option value="MANHA">Manhã</option>
+                      <option value="TARDE">Tarde</option>
+                      <option value="NOITE">Noite</option>
+                    </select>
+                  </div>
+                  <div><label class="label">Eucaristia</label><input class="field" formControlName="eucaristiaAno"></div>
+                  <div><label class="label">Crisma</label><input class="field" formControlName="crismaAno"></div>
+                </div>
+                <div class="mt-4 grid gap-3 sm:grid-cols-3">
+                  @for (f of funcoes; track f) {
+                    <label class="flex items-center gap-2 rounded-xl border p-3">
+                      <input type="checkbox" [checked]="hasFuncao(f)" (change)="toggleFuncao(f, $event)"> {{ funcaoLabel[f] }}
+                    </label>
+                  }
+                </div>
+                <label class="mt-4 flex items-center gap-2"><input type="checkbox" formControlName="autorizaWhatsapp"> Autoriza WhatsApp</label>
+                <div class="mt-4">
+                  <label class="label">Foto</label>
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/heic" (change)="onPhoto($event)">
+                  @if (photoPreview) {
+                    <img [src]="photoPreview" class="mt-3 h-32 w-32 rounded-2xl object-cover" alt="Prévia">
+                  }
+                  @if (photoPreview) {
+                    <button type="button" class="mt-2 text-sm text-red-600" (click)="removePhoto()">Remover foto</button>
+                  }
+                </div>
+                <div class="mt-4"><label class="label">Observações</label><textarea class="field min-h-28" formControlName="observacoes"></textarea></div>
+              </section>
+              <section class="card p-6">
+                <h2 class="text-lg font-black">Proteção contra envios automáticos</h2>
+                <p class="mt-1 text-sm text-slate-500">Confirme que você não é um robô antes de enviar.</p>
+                <div class="mt-4">
+                  @if (turnstileSiteKey) {
+                    <app-turnstile [siteKey]="turnstileSiteKey"></app-turnstile>
+                  }
+                </div>
+              </section>
+              @if (error) {
+                <div class="rounded-xl bg-red-50 p-4 text-red-700">{{ error }}</div>
+              }
+              <div class="sticky bottom-4 flex flex-wrap justify-end gap-3 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
+                <button type="submit" class="btn-primary" [disabled]="view === 'enviando' || form.invalid || (!!turnstileSiteKey && !turnstileToken)">
+                  {{ view === 'enviando' ? 'Enviando inscrição...' : 'Enviar inscrição' }}
+                </button>
+              </div>
+            </form>
           </div>
-          <button type="button" class="btn-secondary mt-6" (click)="resetForm()">Enviar outra inscrição</button>
-        </section>
-
-        <section *ngIf="view === 'erro'" class="card mx-auto max-w-2xl p-8 text-center">
-          <h1 class="text-2xl font-black text-slate-900">Não foi possível enviar</h1>
-          <p class="mt-3 text-sm text-red-700">{{ error }}</p>
-          <button type="button" class="btn-primary mt-6" (click)="view = 'form'">Voltar ao formulário</button>
-        </section>
+        }
+    
+        @if (view === 'sucesso') {
+          <section class="card mx-auto max-w-2xl p-8 text-center">
+            <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-2xl text-emerald-700">✓</div>
+            <h1 class="text-2xl font-black text-slate-900">Inscrição enviada com sucesso!</h1>
+            <p class="mt-3 text-sm text-slate-600">A coordenação vai analisar os dados. Guarde o código abaixo caso precise falar sobre esta inscrição.</p>
+            <div class="mt-5 rounded-2xl bg-slate-50 p-4">
+              <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Código da inscrição</div>
+              <div class="mt-1 break-all font-mono text-sm font-bold text-slate-900">{{ inscricaoId }}</div>
+            </div>
+            <button type="button" class="btn-secondary mt-6" (click)="resetForm()">Enviar outra inscrição</button>
+          </section>
+        }
+    
+        @if (view === 'erro') {
+          <section class="card mx-auto max-w-2xl p-8 text-center">
+            <h1 class="text-2xl font-black text-slate-900">Não foi possível enviar</h1>
+            <p class="mt-3 text-sm text-red-700">{{ error }}</p>
+            <button type="button" class="btn-primary mt-6" (click)="view = 'form'">Voltar ao formulário</button>
+          </section>
+        }
       </main>
     </div>
-  `
+    `
 })
 export class InscricaoPublicaComponent implements OnInit, OnDestroy {
   @ViewChild(TurnstileComponent) turnstile?: TurnstileComponent;

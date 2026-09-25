@@ -12,136 +12,186 @@ import { EscalasService } from '../../services/escalas.service';
 import { ExportService } from '../../services/export.service';
 
 @Component({
-  selector: 'app-escala-builder',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, VolunteerPickerComponent],
-  template: `
+    selector: 'app-escala-builder',
+    imports: [CommonModule, ReactiveFormsModule, RouterLink, VolunteerPickerComponent],
+    template: `
     <div class="space-y-6">
       <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div><a routerLink="/escalas" class="text-sm font-semibold text-brand-blue">← Voltar para escalas</a><h1 class="mt-2 text-2xl font-black">{{ id ? 'Montagem da escala' : 'Nova escala' }}</h1><p class="text-sm text-slate-500">A grade segue o modelo escolhido. Festas em dia de semana entram na semanal; festas no fim de semana entram na mensal.</p></div>
-        <div class="flex flex-wrap gap-2" *ngIf="id"><span class="badge" [ngClass]="statusClass(status)">{{ statusLabel(status) }}</span><button *ngIf="status==='FINALIZADA'" class="btn-secondary !py-2" (click)="exportPdf()">Exportar PDF</button><button *ngIf="status==='FINALIZADA'" class="btn-secondary !py-2" (click)="exportPng()">Exportar PNG</button></div>
-      </div>
-
-      <div *ngIf="loading" class="card p-10 text-center text-slate-500">Carregando escala...</div>
-      <ng-container *ngIf="!loading">
-        <section class="card p-5">
-          <form [formGroup]="form" class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-            <div class="xl:col-span-2"><label class="label">Título *</label><input class="field" formControlName="titulo" [disabled]="readOnly"></div>
-            <div><label class="label">Modelo *</label><select class="field" formControlName="tipo" [attr.disabled]="readOnly ? true : null" (change)="metaChanged()"><option value="SEMANAL">Semanal (dias úteis)</option><option value="MENSAL">Mensal (sábados e domingos)</option></select></div>
-            <div><label class="label">Ano *</label><input class="field" type="number" min="2020" max="2100" formControlName="ano" [readonly]="readOnly" (change)="metaChanged()"></div>
-            <div><label class="label">Mês *</label><select class="field" formControlName="mes" [attr.disabled]="readOnly ? true : null" (change)="metaChanged()"><option *ngFor="let m of months; let i=index" [ngValue]="i+1">{{ m }}</option></select></div>
-            <div class="md:col-span-2 xl:col-span-5"><label class="label">Observação</label><textarea class="field min-h-20" formControlName="observacao" [readonly]="readOnly"></textarea></div>
-          </form>
-        </section>
-
-        <div class="rounded-2xl border border-violet-100 bg-violet-50 p-4 text-sm text-slate-700">
-          <strong>Como funciona:</strong> a escala mensal fica só com sábados e domingos; a semanal, com os dias úteis. Se a festa da Igreja cair no fim de semana, o nome aparece na mensal; se cair em dia de semana, aparece na semanal. Você ainda pode adicionar ou excluir um dia na mão.
-        </div>
-
-        <section *ngIf="!readOnly" class="card p-5">
-          <h2 class="mb-3 text-sm font-black uppercase tracking-wide text-slate-600">Adicionar um dia</h2>
-          <div class="grid gap-3 md:grid-cols-[1fr_140px_1fr_auto] md:items-end">
-            <div>
-              <label class="label">Data</label>
-              <div class="relative">
-                <input class="field date-input-br" type="date" lang="pt-BR" [value]="addDate" (change)="setAddDate($event)">
-                <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-800">{{ dateBr(addDate) }}</span>
-              </div>
+        @if (id) {
+          <div class="flex flex-wrap gap-2"><span class="badge" [ngClass]="statusClass(status)">{{ statusLabel(status) }}</span>@if (status==='FINALIZADA') {
+          <button class="btn-secondary !py-2" (click)="exportPdf()">Exportar PDF</button>
+          }@if (status==='FINALIZADA') {
+          <button class="btn-secondary !py-2" (click)="exportPng()">Exportar PNG</button>
+        }</div>
+      }
+    </div>
+    
+    @if (loading) {
+      <div class="card p-10 text-center text-slate-500">Carregando escala...</div>
+    }
+    @if (!loading) {
+      <section class="card p-5">
+        <form [formGroup]="form" class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <div class="xl:col-span-2"><label class="label">Título *</label><input class="field" formControlName="titulo" [disabled]="readOnly"></div>
+          <div><label class="label">Modelo *</label><select class="field" formControlName="tipo" [attr.disabled]="readOnly ? true : null" (change)="metaChanged()"><option value="SEMANAL">Semanal (dias úteis)</option><option value="MENSAL">Mensal (sábados e domingos)</option></select></div>
+          <div><label class="label">Ano *</label><input class="field" type="number" min="2020" max="2100" formControlName="ano" [readonly]="readOnly" (change)="metaChanged()"></div>
+          <div><label class="label">Mês *</label><select class="field" formControlName="mes" [attr.disabled]="readOnly ? true : null" (change)="metaChanged()">@for (m of months; track m; let i = $index) {
+          <option [ngValue]="i+1">{{ m }}</option>
+        }</select></div>
+        <div class="md:col-span-2 xl:col-span-5"><label class="label">Observação</label><textarea class="field min-h-20" formControlName="observacao" [readonly]="readOnly"></textarea></div>
+      </form>
+    </section>
+    <div class="rounded-2xl border border-violet-100 bg-violet-50 p-4 text-sm text-slate-700">
+      <strong>Como funciona:</strong> a escala mensal fica só com sábados e domingos; a semanal, com os dias úteis. Se a festa da Igreja cair no fim de semana, o nome aparece na mensal; se cair em dia de semana, aparece na semanal. Você ainda pode adicionar ou excluir um dia na mão.
+    </div>
+    @if (!readOnly) {
+      <section class="card p-5">
+        <h2 class="mb-3 text-sm font-black uppercase tracking-wide text-slate-600">Adicionar um dia</h2>
+        <div class="grid gap-3 md:grid-cols-[1fr_140px_1fr_auto] md:items-end">
+          <div>
+            <label class="label">Data</label>
+            <div class="relative">
+              <input class="field date-input-br" type="date" lang="pt-BR" [value]="addDate" (change)="setAddDate($event)">
+              <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-800">{{ dateBr(addDate) }}</span>
             </div>
-            <div><label class="label">Horário</label><input class="field" type="time" [value]="addTime" (change)="setAddTime($event)"></div>
-            <div>
-              <label class="label">Celebração</label>
-              <input class="field" list="celebracoes-sugeridas" [value]="addCelebration" (input)="setAddCelebration($event)" placeholder="Ex.: Missa, Páscoa">
-              <datalist id="celebracoes-sugeridas"><option *ngFor="let t of celebrationOptions" [value]="t"></option></datalist>
-            </div>
-            <button class="btn-primary" type="button" (click)="addDay()">＋ Adicionar dia</button>
           </div>
-        </section>
-
-        <!-- Layout semanal: grade horizontal parecida com a planilha enviada -->
-        <section *ngIf="form.controls.tipo.value === 'SEMANAL'" class="card overflow-visible">
-          <div class="overflow-x-auto">
-            <table class="w-full min-w-[1450px] text-left text-sm">
-              <thead>
-                <tr class="bg-red-700 text-white">
-                  <th class="px-3 py-3" colspan="2">ESCALA SEMANAL</th>
-                  <th class="px-3 py-3 text-center" colspan="7">{{ months[form.controls.mes.value-1] | uppercase }} {{ form.controls.ano.value }}</th>
-                </tr>
-                <tr class="bg-red-600 text-white">
-                  <th class="w-28 px-3 py-3">Data</th>
-                  <th class="w-48 px-3 py-3">Dia / horário</th>
-                  <th *ngFor="let col of weeklyColumns" class="min-w-44 px-3 py-3 text-center">{{ col.label }}</th>
-                  <th *ngIf="!readOnly" class="w-16 px-3 py-3"></th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-200">
-                <tr *ngFor="let event of events" class="align-top hover:bg-slate-50">
+          <div><label class="label">Horário</label><input class="field" type="time" [value]="addTime" (change)="setAddTime($event)"></div>
+          <div>
+            <label class="label">Celebração</label>
+            <input class="field" list="celebracoes-sugeridas" [value]="addCelebration" (input)="setAddCelebration($event)" placeholder="Ex.: Missa, Páscoa">
+            <datalist id="celebracoes-sugeridas">@for (t of celebrationOptions; track t) {
+              <option [value]="t"></option>
+            }</datalist>
+          </div>
+          <button class="btn-primary" type="button" (click)="addDay()">＋ Adicionar dia</button>
+        </div>
+      </section>
+    }
+    <!-- Layout semanal: grade horizontal parecida com a planilha enviada -->
+    @if (form.controls.tipo.value === 'SEMANAL') {
+      <section class="card overflow-visible">
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[1450px] text-left text-sm">
+            <thead>
+              <tr class="bg-red-700 text-white">
+                <th class="px-3 py-3" colspan="2">ESCALA SEMANAL</th>
+                <th class="px-3 py-3 text-center" colspan="7">{{ months[form.controls.mes.value-1] | uppercase }} {{ form.controls.ano.value }}</th>
+              </tr>
+              <tr class="bg-red-600 text-white">
+                <th class="w-28 px-3 py-3">Data</th>
+                <th class="w-48 px-3 py-3">Dia / horário</th>
+                @for (col of weeklyColumns; track col) {
+                  <th class="min-w-44 px-3 py-3 text-center">{{ col.label }}</th>
+                }
+                @if (!readOnly) {
+                  <th class="w-16 px-3 py-3"></th>
+                }
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              @for (event of events; track event) {
+                <tr class="align-top hover:bg-slate-50">
                   <td class="px-3 py-3">
                     <div class="font-black">{{ dateShort(event.data) }}</div>
-                    <div *ngIf="event.celebracao && event.celebracao !== 'Missa'" class="mt-1 text-[11px] font-bold text-red-700">{{ event.celebracao }}</div>
+                    @if (event.celebracao && event.celebracao !== 'Missa') {
+                      <div class="mt-1 text-[11px] font-bold text-red-700">{{ event.celebracao }}</div>
+                    }
                   </td>
                   <td class="px-3 py-3">
                     <div class="font-bold capitalize text-brand-blue">{{ weekday(event.data) }}</div>
                     <input class="mt-1 w-24 rounded-lg border border-slate-300 px-2 py-1.5 text-xs" type="time" [value]="event.horario.slice(0,5)" [disabled]="readOnly" (change)="changeTime(event, $event)">
-                    <input *ngIf="!readOnly" class="mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs" [value]="event.celebracao" (change)="changeCelebration(event, $event)" placeholder="Celebração">
+                    @if (!readOnly) {
+                      <input class="mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs" [value]="event.celebracao" (change)="changeCelebration(event, $event)" placeholder="Celebração">
+                    }
                   </td>
-                  <td *ngFor="let col of weeklyColumns" class="px-2 py-2">
-                    <ng-container *ngIf="slotFor(event, col.funcao, col.posicao) as slot">
-                      <app-volunteer-picker [volunteers]="volunteers" [selectedId]="slot.voluntario_id" [excludeIds]="usedIds(event, slot.voluntario_id)" [disabled]="readOnly" (selectedIdChange)="selectVolunteer(event, slot, $event)" />
-                    </ng-container>
-                  </td>
-                  <td *ngIf="!readOnly" class="px-2 py-2 align-top">
-                    <button type="button" class="text-xs font-bold text-red-600 hover:underline" (click)="removeDay(event)">Excluir</button>
-                  </td>
+                  @for (col of weeklyColumns; track col) {
+                    <td class="px-2 py-2">
+                      @if (slotFor(event, col.funcao, col.posicao); as slot) {
+                        <app-volunteer-picker [volunteers]="volunteers" [selectedId]="slot.voluntario_id" [excludeIds]="usedIds(event, slot.voluntario_id)" [disabled]="readOnly" (selectedIdChange)="selectVolunteer(event, slot, $event)" />
+                      }
+                    </td>
+                  }
+                  @if (!readOnly) {
+                    <td class="px-2 py-2 align-top">
+                      <button type="button" class="text-xs font-bold text-red-600 hover:underline" (click)="removeDay(event)">Excluir</button>
+                    </td>
+                  }
                 </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- Layout mensal/fim de semana: blocos separados por missa -->
-        <section *ngIf="form.controls.tipo.value === 'MENSAL'" class="space-y-5">
-          <div *ngFor="let event of events; let eventIndex=index" class="card overflow-visible">
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+    <!-- Layout mensal/fim de semana: blocos separados por missa -->
+    @if (form.controls.tipo.value === 'MENSAL') {
+      <section class="space-y-5">
+        @for (event of events; track event; let eventIndex = $index) {
+          <div class="card overflow-visible">
             <div class="flex flex-col gap-3 border-b border-red-200 bg-red-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div class="text-xs font-bold uppercase tracking-wider text-red-700">{{ weekday(event.data) }}</div>
                 <div class="text-lg font-black">{{ date(event.data) }} • {{ event.horario.slice(0,5) }}</div>
-                <div *ngIf="event.celebracao && event.celebracao !== 'Missa'" class="mt-1 text-sm font-bold text-red-800">{{ event.celebracao }}</div>
+                @if (event.celebracao && event.celebracao !== 'Missa') {
+                  <div class="mt-1 text-sm font-bold text-red-800">{{ event.celebracao }}</div>
+                }
               </div>
               <div class="flex flex-wrap items-center gap-2">
                 <input class="field !w-32 !py-2" type="time" [value]="event.horario.slice(0,5)" [disabled]="readOnly" (change)="changeTime(event, $event)">
                 <input class="field !w-52 !py-2" list="celebracoes-sugeridas" [value]="event.celebracao" [disabled]="readOnly" (change)="changeCelebration(event, $event)">
-                <button *ngIf="!readOnly" type="button" class="btn-secondary !border-red-200 !py-2 !text-red-600" (click)="removeDay(event)">Excluir dia</button>
+                @if (!readOnly) {
+                  <button type="button" class="btn-secondary !border-red-200 !py-2 !text-red-600" (click)="removeDay(event)">Excluir dia</button>
+                }
               </div>
             </div>
-
             <div class="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
-              <div *ngFor="let slot of event.vagas" class="rounded-xl border border-slate-200 p-3">
-                <div class="mb-2 flex items-center justify-between"><label class="text-xs font-black uppercase tracking-wide" [class.text-brand-blue]="slot.funcao==='MISSAL'" [class.text-slate-600]="slot.funcao!=='MISSAL'">{{ funcaoLabel(slot.funcao) }}{{ multiLabel(event, slot) }}</label></div>
-                <app-volunteer-picker [volunteers]="volunteers" [selectedId]="slot.voluntario_id" [excludeIds]="usedIds(event, slot.voluntario_id)" [disabled]="readOnly" (selectedIdChange)="selectVolunteer(event, slot, $event)" />
-              </div>
+              @for (slot of event.vagas; track slot) {
+                <div class="rounded-xl border border-slate-200 p-3">
+                  <div class="mb-2 flex items-center justify-between"><label class="text-xs font-black uppercase tracking-wide" [class.text-brand-blue]="slot.funcao==='MISSAL'" [class.text-slate-600]="slot.funcao!=='MISSAL'">{{ funcaoLabel(slot.funcao) }}{{ multiLabel(event, slot) }}</label></div>
+                  <app-volunteer-picker [volunteers]="volunteers" [selectedId]="slot.voluntario_id" [excludeIds]="usedIds(event, slot.voluntario_id)" [disabled]="readOnly" (selectedIdChange)="selectVolunteer(event, slot, $event)" />
+                </div>
+              }
             </div>
           </div>
-        </section>
-
-        <div *ngIf="!events.length" class="card p-8 text-center text-slate-500">Nenhum evento foi gerado. Confira ano, mês e modelo.</div>
-        <div *ngIf="error" class="rounded-xl bg-red-50 p-4 text-red-700">{{ error }}</div>
-
-        <div class="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
-          <div class="text-sm text-slate-500"><strong>{{ filledCount() }}</strong> de <strong>{{ totalSlots() }}</strong> vagas preenchidas</div>
-          <div class="flex flex-wrap justify-end gap-2">
-            <button *ngIf="status==='RASCUNHO'" class="btn-secondary" type="button" (click)="regenerate()">Recriar grade</button>
-            <button *ngIf="status==='RASCUNHO'" class="btn-primary" type="button" [disabled]="saving || form.invalid" (click)="saveDraft()">{{ saving ? 'Salvando...' : 'Salvar rascunho' }}</button>
-            <button *ngIf="status==='RASCUNHO'" class="btn-primary !bg-emerald-600 hover:!bg-emerald-700" type="button" [disabled]="saving || form.invalid" (click)="finalize()">Finalizar escala</button>
-            <button *ngIf="id && status!=='CANCELADA'" class="btn-secondary !border-red-200 !text-red-600" type="button" (click)="cancelScale()">Cancelar escala</button>
-            <button *ngIf="id && status==='FINALIZADA'" class="btn-secondary" type="button" (click)="reopen()">Reabrir como rascunho</button>
-            <button *ngIf="id && status==='CANCELADA'" class="btn-secondary" type="button" (click)="reopen()">Restaurar como rascunho</button>
-            <button *ngIf="id && status==='CANCELADA'" class="btn-danger" type="button" (click)="remove()">Excluir definitivamente</button>
-          </div>
-        </div>
-      </ng-container>
+        }
+      </section>
+    }
+    @if (!events.length) {
+      <div class="card p-8 text-center text-slate-500">Nenhum evento foi gerado. Confira ano, mês e modelo.</div>
+    }
+    @if (error) {
+      <div class="rounded-xl bg-red-50 p-4 text-red-700">{{ error }}</div>
+    }
+    <div class="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
+      <div class="text-sm text-slate-500"><strong>{{ filledCount() }}</strong> de <strong>{{ totalSlots() }}</strong> vagas preenchidas</div>
+      <div class="flex flex-wrap justify-end gap-2">
+        @if (status==='RASCUNHO') {
+          <button class="btn-secondary" type="button" (click)="regenerate()">Recriar grade</button>
+        }
+        @if (status==='RASCUNHO') {
+          <button class="btn-primary" type="button" [disabled]="saving || form.invalid" (click)="saveDraft()">{{ saving ? 'Salvando...' : 'Salvar rascunho' }}</button>
+        }
+        @if (status==='RASCUNHO') {
+          <button class="btn-primary !bg-emerald-600 hover:!bg-emerald-700" type="button" [disabled]="saving || form.invalid" (click)="finalize()">Finalizar escala</button>
+        }
+        @if (id && status!=='CANCELADA') {
+          <button class="btn-secondary !border-red-200 !text-red-600" type="button" (click)="cancelScale()">Cancelar escala</button>
+        }
+        @if (id && status==='FINALIZADA') {
+          <button class="btn-secondary" type="button" (click)="reopen()">Reabrir como rascunho</button>
+        }
+        @if (id && status==='CANCELADA') {
+          <button class="btn-secondary" type="button" (click)="reopen()">Restaurar como rascunho</button>
+        }
+        @if (id && status==='CANCELADA') {
+          <button class="btn-danger" type="button" (click)="remove()">Excluir definitivamente</button>
+        }
+      </div>
     </div>
-  `
+    }
+    </div>
+    `
 })
 export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
   id: string | null = null;
