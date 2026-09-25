@@ -24,6 +24,9 @@ describe('rotas da aplicação', () => {
     expect(routes.some(r => r.path === 'login')).toBeTrue();
     expect(routes.some(r => r.path === 'inscricao')).toBeTrue();
     expect(routes.some(r => r.path === 'suporte')).toBeTrue();
+    const definirSenha = routes.find(r => r.path === 'reset-password');
+    expect(definirSenha).toBeDefined();
+    expect(definirSenha?.canActivate).toBeUndefined();
     const filhos = routes.find(r => r.path === '')?.children || [];
     expect(filhos.find(r => r.path === 'voluntarios')?.redirectTo).toBe('pessoas');
   });

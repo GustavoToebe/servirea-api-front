@@ -33,6 +33,9 @@ import { TenantResumo } from '../../../../core/auth/auth.models';
             <button class="btn-primary w-full" type="submit" [disabled]="loading || form.invalid">
               {{ loading ? 'Entrando...' : 'Entrar' }}
             </button>
+            <p class="text-center text-sm">
+              <a routerLink="/reset-password" class="font-semibold text-brand-blue">Esqueci minha senha</a>
+            </p>
           </form>
         }
     
