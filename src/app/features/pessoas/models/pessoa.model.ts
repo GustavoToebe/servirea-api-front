@@ -1,5 +1,5 @@
 export type PessoaPapel = 'VOLUNTARIO' | 'RESPONSAVEL';
-export type TipoVoluntario = 'COROINHA' | 'ACOLITO' | 'AMBOS';
+export type TipoVoluntario = 'COROINHA' | 'ACOLITO' | 'AMBOS' | 'MESC';
 export type FuncaoEscala = 'MISSAL' | 'CRUZ' | 'CREDENCIA' | 'VELA' | 'COLETA' | 'SINO' | 'OUTRO';
 export type HorarioEstudo = 'MANHA' | 'TARDE' | 'NOITE';
 
@@ -43,6 +43,8 @@ export interface VoluntarioPerfil {
   horarioEstudo?: HorarioEstudo | null;
   autorizaWhatsapp: boolean;
   funcoesHabilitadas: FuncaoEscala[];
+  mandatoInicio?: string | null;
+  mandatoFim?: string | null;
 }
 
 export interface Pessoa {
@@ -121,6 +123,8 @@ export interface VoluntarioLista {
   horarioEstudo: HorarioEstudo | null;
   autorizaWhatsapp: boolean;
   funcoesHabilitadas: FuncaoEscala[];
+  mandatoInicio?: string | null;
+  mandatoFim?: string | null;
   dataNascimento?: string | null;
 }
 
@@ -137,8 +141,46 @@ export const FUNCOES_LABEL: Record<FuncaoEscala, string> = {
 export const TIPO_LABEL: Record<TipoVoluntario, string> = {
   COROINHA: 'Coroinha',
   ACOLITO: 'Acólito',
-  AMBOS: 'Coroinha / Acólito'
+  AMBOS: 'Coroinha / Acólito',
+  MESC: 'Ministro (MESC)'
 };
+
+export const TIPOS_VOLUNTARIO: TipoVoluntario[] = ['COROINHA', 'ACOLITO', 'AMBOS', 'MESC'];
+
+export function tipoBadgeClass(tipo: TipoVoluntario): string {
+  return tipo === 'MESC' ? 'bg-amber-50 text-amber-800' : 'bg-violet-50 text-brand-blue';
+}
+
+function dataBr(iso: string): string {
+  const [ano, mes, dia] = iso.split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+
+function hojeIso(): string {
+  const agora = new Date();
+  const mes = String(agora.getMonth() + 1).padStart(2, '0');
+  const dia = String(agora.getDate()).padStart(2, '0');
+  return `${agora.getFullYear()}-${mes}-${dia}`;
+}
+
+/** Mandato que vence em até `dias` dias, inclusive os já vencidos. */
+export function mandatoNoPrazo(fim: string | null | undefined, dias = 90): boolean {
+  if (!fim) return false;
+  const limite = new Date();
+  limite.setHours(12, 0, 0, 0);
+  limite.setDate(limite.getDate() + dias);
+  const mes = String(limite.getMonth() + 1).padStart(2, '0');
+  const dia = String(limite.getDate()).padStart(2, '0');
+  return fim <= `${limite.getFullYear()}-${mes}-${dia}`;
+}
+
+export function mandatoRotulo(inicio: string | null | undefined, fim: string | null | undefined): string {
+  if (!inicio && !fim) return '';
+  if (fim && fim < hojeIso()) return `Mandato vencido em ${dataBr(fim)}`;
+  if (inicio && fim) return `Mandato de ${dataBr(inicio)} a ${dataBr(fim)}`;
+  if (fim) return `Mandato até ${dataBr(fim)}`;
+  return `Investidura em ${dataBr(inicio!)}`;
+}
 
 export const PARENTESCOS = [
   'Pai', 'Mãe', 'Avô', 'Avó', 'Tio', 'Tia', 'Irmão', 'Irmã',

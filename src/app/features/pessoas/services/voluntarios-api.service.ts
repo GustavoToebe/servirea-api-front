@@ -17,6 +17,8 @@ interface VoluntarioResponse {
   horarioEstudo: VoluntarioLista['horarioEstudo'];
   autorizaWhatsapp: boolean;
   funcoesHabilitadas: VoluntarioLista['funcoesHabilitadas'];
+  mandatoInicio: string | null;
+  mandatoFim: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -86,7 +88,9 @@ export class VoluntariosApiService {
       crismaAno: v.crismaAno,
       horarioEstudo: v.horarioEstudo,
       autorizaWhatsapp: v.autorizaWhatsapp,
-      funcoesHabilitadas: v.funcoesHabilitadas || []
+      funcoesHabilitadas: v.funcoesHabilitadas || [],
+      mandatoInicio: v.mandatoInicio,
+      mandatoFim: v.mandatoFim
     };
   }
 }

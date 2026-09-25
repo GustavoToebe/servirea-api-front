@@ -3,7 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HasPendingChanges } from '../../../core/guards/pending-changes.guard';
-import { FUNCOES_FORM, FUNCOES_LABEL, FuncaoEscala, PARENTESCOS, PARENTESCOS_DEPENDENTE, Pessoa, PessoaPapel, PessoaRequest, Relacao, RelacaoRequest, TIPO_LABEL } from '../models/pessoa.model';
+import { FUNCOES_FORM, FUNCOES_LABEL, FuncaoEscala, PARENTESCOS, PARENTESCOS_DEPENDENTE, Pessoa, PessoaPapel, PessoaRequest, Relacao, RelacaoRequest, TIPO_LABEL, TIPOS_VOLUNTARIO, TipoVoluntario } from '../models/pessoa.model';
 import { PessoasService } from '../services/pessoas.service';
 import { VoluntariosApiService } from '../services/voluntarios-api.service';
 import { readPhotoPreview, validatePhotoFile } from '../../../shared/utils/photo.utils';
@@ -194,7 +194,10 @@ import { readPhotoPreview, validatePhotoFile } from '../../../shared/utils/photo
                     </div>
                     <div><label class="label">Eucaristia</label><input class="field" formControlName="eucaristiaAno"></div>
                     <div><label class="label">Crisma</label><input class="field" formControlName="crismaAno"></div>
+                    <div><label class="label">Investidura do mandato</label><input class="field" type="date" formControlName="mandatoInicio"></div>
+                    <div><label class="label">Vencimento do mandato</label><input class="field" type="date" formControlName="mandatoFim"></div>
                   </div>
+                  <p class="mt-3 text-sm text-slate-500">O mandato vale sobretudo para o ministro da comunhão. As duas datas são opcionais.</p>
                   <div class="mt-4 grid gap-3 sm:grid-cols-3">
                     @for (f of funcoes; track f) {
                       <label class="flex items-center gap-2 rounded-xl border p-3">
@@ -244,7 +247,7 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
   parentescosDependente = PARENTESCOS_DEPENDENTE;
   funcoes = FUNCOES_FORM;
   funcaoLabel = FUNCOES_LABEL;
-  tipos: Array<'COROINHA' | 'ACOLITO' | 'AMBOS'> = ['COROINHA', 'ACOLITO', 'AMBOS'];
+  tipos: TipoVoluntario[] = TIPOS_VOLUNTARIO;
   tipoLabel = TIPO_LABEL;
   form: FormGroup = this.fb.group({
     nomeCompleto: ['', Validators.required],
@@ -272,6 +275,8 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
       crismaAno: [''],
       horarioEstudo: [''],
       autorizaWhatsapp: [false],
+      mandatoInicio: [''],
+      mandatoFim: [''],
       funcoesHabilitadas: this.fb.control<FuncaoEscala[]>([])
     })
   });
@@ -453,6 +458,8 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
         crismaAno: p.voluntario?.crismaAno || '',
         horarioEstudo: p.voluntario?.horarioEstudo || '',
         autorizaWhatsapp: p.voluntario?.autorizaWhatsapp ?? false,
+        mandatoInicio: p.voluntario?.mandatoInicio || '',
+        mandatoFim: p.voluntario?.mandatoFim || '',
         funcoesHabilitadas: p.voluntario?.funcoesHabilitadas || []
       }
     });
@@ -521,6 +528,8 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
       crismaAno: v.voluntario.crismaAno || null,
       horarioEstudo: v.voluntario.horarioEstudo || null,
       autorizaWhatsapp: !!v.voluntario.autorizaWhatsapp,
+      mandatoInicio: v.voluntario.mandatoInicio || null,
+      mandatoFim: v.voluntario.mandatoFim || null,
       funcoesHabilitadas: v.voluntario.funcoesHabilitadas || []
     } : null;
     const blank = (s: string) => s?.trim() ? s.trim() : null;

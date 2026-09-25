@@ -1,14 +1,15 @@
 
+import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Pessoa, TIPO_LABEL, ageFromDate, contatoPrincipalEmail, contatoPrincipalTelefone, initials } from '../models/pessoa.model';
+import { Pessoa, TIPO_LABEL, ageFromDate, contatoPrincipalEmail, contatoPrincipalTelefone, initials, mandatoRotulo, tipoBadgeClass } from '../models/pessoa.model';
 import { PessoasService } from '../services/pessoas.service';
 import { VoluntariosApiService } from '../services/voluntarios-api.service';
 
 @Component({
     selector: 'app-pessoa-detail',
-    imports: [RouterLink],
+    imports: [CommonModule, RouterLink],
     template: `
     @if (pessoa) {
       <div class="mx-auto max-w-5xl space-y-6">
@@ -34,7 +35,10 @@ import { VoluntariosApiService } from '../services/voluntarios-api.service';
               <p class="mt-2 text-slate-500">{{ ageFromDate(pessoa.dataNascimento) ?? '—' }} anos</p>
               <p class="text-sm text-slate-600">{{ contatoPrincipalEmail(pessoa) || 'sem e-mail' }} · {{ contatoPrincipalTelefone(pessoa) || 'sem telefone' }}</p>
               @if (pessoa.voluntario) {
-                <p class="mt-2"><span class="badge bg-emerald-50 text-emerald-700">{{ tipoLabel[pessoa.voluntario.tipo] }}</span></p>
+                <p class="mt-2"><span class="badge" [ngClass]="tipoBadgeClass(pessoa.voluntario.tipo)">{{ tipoLabel[pessoa.voluntario.tipo] }}</span></p>
+                @if (mandatoDe(pessoa.voluntario.mandatoInicio, pessoa.voluntario.mandatoFim)) {
+                  <p class="mt-2 text-sm text-amber-800">{{ mandatoDe(pessoa.voluntario.mandatoInicio, pessoa.voluntario.mandatoFim) }}</p>
+                }
               }
             </div>
           </div>
@@ -94,6 +98,8 @@ export class PessoaDetailComponent implements OnInit {
   contatoPrincipalEmail = contatoPrincipalEmail;
   contatoPrincipalTelefone = contatoPrincipalTelefone;
   tipoLabel = TIPO_LABEL;
+  tipoBadgeClass = tipoBadgeClass;
+  mandatoDe = mandatoRotulo;
   private readonly destroyRef = inject(DestroyRef);
 
   endereco(p: Pessoa): string {

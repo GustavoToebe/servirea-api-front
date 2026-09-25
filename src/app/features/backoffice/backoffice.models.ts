@@ -32,6 +32,8 @@ export interface ParoquiaAdmin {
   cep: string | null;
   cidade: string | null;
   uf: string | null;
+  dioceseId: string | null;
+  dioceseNome: string | null;
   bairro: string | null;
   logradouro: string | null;
   numero: string | null;
@@ -66,6 +68,14 @@ export interface PrecoPlano {
   periodicidade: Periodicidade;
   valor: number;
   vigenteDesde: string;
+}
+
+export interface Diocese {
+  id: string;
+  nome: string;
+  uf: string | null;
+  cotaVoluntarios: number | null;
+  voluntariosAtivos: number;
 }
 
 export interface Plano {

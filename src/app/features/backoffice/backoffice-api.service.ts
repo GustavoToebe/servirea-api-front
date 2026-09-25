@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import {
   BackofficeLog,
   DashboardResponse,
+  Diocese,
   Financeiro,
   FiltroParoquia,
   ParoquiaAdmin,
@@ -23,6 +24,18 @@ export class BackofficeApiService {
 
   dashboard(): Observable<DashboardResponse> {
     return this.http.get<DashboardResponse>(`${this.base}/dashboard`);
+  }
+
+  listarDioceses(): Observable<Diocese[]> {
+    return this.http.get<Diocese[]>(`${this.base}/dioceses`);
+  }
+
+  criarDiocese(body: { nome: string; uf: string | null; cotaVoluntarios: number | null }): Observable<Diocese> {
+    return this.http.post<Diocese>(`${this.base}/dioceses`, body);
+  }
+
+  atualizarDiocese(id: string, body: { nome: string; uf: string | null; cotaVoluntarios: number | null }): Observable<Diocese> {
+    return this.http.put<Diocese>(`${this.base}/dioceses/${id}`, body);
   }
 
   listarParoquias(filtro: FiltroParoquia): Observable<ParoquiaAdmin[]> {

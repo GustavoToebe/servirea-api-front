@@ -6,7 +6,7 @@ import { environment } from '../../../../../environments/environment';
 import { TurnstileComponent } from '../../../../shared/components/turnstile/turnstile.component';
 import { readPhotoPreview, validatePhotoFile } from '../../../../shared/utils/photo.utils';
 import { InscricaoPublicaRequest, InscricaoResponsavelRequest } from '../../../pessoas/models/inscricao.model';
-import { FUNCOES_FORM, FUNCOES_LABEL, FuncaoEscala, PARENTESCOS, TIPO_LABEL } from '../../../pessoas/models/pessoa.model';
+import { FUNCOES_FORM, FUNCOES_LABEL, FuncaoEscala, PARENTESCOS, TIPO_LABEL, TIPOS_VOLUNTARIO, TipoVoluntario } from '../../../pessoas/models/pessoa.model';
 import { InscricoesApiService } from '../../../pessoas/services/inscricoes-api.service';
 
 type InscricaoView = 'form' | 'enviando' | 'sucesso' | 'erro';
@@ -217,7 +217,7 @@ export class InscricaoPublicaComponent implements OnInit, OnDestroy {
   parentescos = PARENTESCOS;
   funcoes = FUNCOES_FORM;
   funcaoLabel = FUNCOES_LABEL;
-  tipos: Array<'COROINHA' | 'ACOLITO' | 'AMBOS'> = ['COROINHA', 'ACOLITO', 'AMBOS'];
+  tipos: TipoVoluntario[] = TIPOS_VOLUNTARIO;
   tipoLabel = TIPO_LABEL;
   form: FormGroup = this.criarForm();
 

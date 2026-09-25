@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { Inscricao, StatusInscricao } from '../models/inscricao.model';
-import { Pessoa, TIPO_LABEL, TipoVoluntario, FUNCOES_LABEL, VoluntarioLista, ageFromDate, initials } from '../models/pessoa.model';
+import { Pessoa, TIPO_LABEL, TipoVoluntario, FUNCOES_LABEL, VoluntarioLista, ageFromDate, initials, mandatoRotulo, tipoBadgeClass } from '../models/pessoa.model';
 import { InscricoesApiService } from '../services/inscricoes-api.service';
 import { PessoasService } from '../services/pessoas.service';
 import { VoluntariosApiService } from '../services/voluntarios-api.service';
@@ -45,6 +45,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
           <button type="button" class="chip" [class.chip-on]="tipo==='COROINHA'" (click)="tipo='COROINHA'">Coroinhas</button>
           <button type="button" class="chip" [class.chip-on]="tipo==='ACOLITO'" (click)="tipo='ACOLITO'">Acólitos</button>
           <button type="button" class="chip" [class.chip-on]="tipo==='AMBOS'" (click)="tipo='AMBOS'">Coroinha / acólito</button>
+          <button type="button" class="chip" [class.chip-on]="tipo==='MESC'" (click)="tipo='MESC'">Ministros</button>
         </div>
       }
 
@@ -80,7 +81,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
                   <div class="flex flex-wrap items-center gap-2">
                     <h2 class="text-lg font-black">{{ p.nomeCompleto }}</h2>
                     @if (p.voluntario) {
-                      <span class="badge bg-violet-50 text-brand-blue">{{ tipoLabel[p.voluntario.tipo] }}</span>
+                      <span class="badge" [ngClass]="tipoBadgeClass(p.voluntario.tipo)">{{ tipoLabel[p.voluntario.tipo] }}</span>
                     }
                     @if (ageFromDate(p.dataNascimento) !== null) {
                       <span class="text-sm text-slate-500">{{ ageFromDate(p.dataNascimento) }} anos</span>
@@ -96,6 +97,9 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
                   </div>
                   @if (responsavelDe(p)) {
                     <p class="mt-2 text-sm text-slate-500">Responsável: {{ responsavelDe(p) }}</p>
+                  }
+                  @if (mandatoDe(p.voluntario?.mandatoInicio, p.voluntario?.mandatoFim)) {
+                    <p class="mt-1 text-sm text-amber-800">{{ mandatoDe(p.voluntario?.mandatoInicio, p.voluntario?.mandatoFim) }}</p>
                   }
                 </div>
                 <div class="flex gap-2">
@@ -123,7 +127,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
                 <div class="min-w-0 flex-1">
                   <div class="flex flex-wrap items-center gap-2">
                     <h2 class="text-lg font-black">{{ v.nomeCompleto }}</h2>
-                    <span class="badge bg-violet-50 text-brand-blue">{{ tipoLabel[v.tipo] }}</span>
+                    <span class="badge" [ngClass]="tipoBadgeClass(v.tipo)">{{ tipoLabel[v.tipo] }}</span>
                     @if (ageFromDate(v.dataNascimento) !== null) {
                       <span class="text-sm text-slate-500">{{ ageFromDate(v.dataNascimento) }} anos</span>
                     }
@@ -134,6 +138,9 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
                       <span class="badge bg-violet-50 text-violet-800">{{ funcoesLabel[funcao] }}</span>
                     }
                   </div>
+                  @if (mandatoDe(v.mandatoInicio, v.mandatoFim)) {
+                    <p class="mt-2 text-sm text-amber-800">{{ mandatoDe(v.mandatoInicio, v.mandatoFim) }}</p>
+                  }
                 </div>
                 <div class="flex gap-2">
                   <a [routerLink]="['/pessoas', v.id]" class="btn-secondary !px-3 !py-2">Ver</a>
@@ -208,6 +215,8 @@ export class PessoasListComponent implements OnInit {
   approveTarget: Inscricao | null = null;
   rejectTarget: Inscricao | null = null;
   tipoLabel = TIPO_LABEL;
+  tipoBadgeClass = tipoBadgeClass;
+  mandatoDe = mandatoRotulo;
   initials = initials;
   ageFromDate = ageFromDate;
 

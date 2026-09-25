@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { VoluntariosService } from '../../../voluntarios/services/voluntarios.service';
 import { EscalasService } from '../../../escalas/services/escalas.service';
 import { EscalaDetalhe, EscalaEvento, STATUS_LABEL, StatusEscala } from '../../../escalas/models/escala.model';
-import { FUNCOES_LABEL } from '../../../pessoas/models/pessoa.model';
+import { FUNCOES_LABEL, mandatoNoPrazo } from '../../../pessoas/models/pessoa.model';
 import { Voluntario } from '../../../voluntarios/models/voluntario.model';
 import { rotuloDia, tempoLiturgico } from '../../../escalas/data/calendario-liturgico';
 
@@ -39,7 +39,8 @@ interface MissaVista {
         <div class="card p-5">
           <div class="text-xs font-extrabold uppercase tracking-wider text-slate-500">Servidores ativos</div>
           <div class="mt-2 text-3xl font-black">{{ activeCount }}</div>
-          <div class="mt-2 text-xs text-slate-500">{{ coroinhas }} coroinhas · {{ acolitos }} acólitos</div>
+          <div class="mt-2 text-xs text-slate-500">{{ coroinhas }} coroinhas · {{ acolitos }} acólitos · {{ mesc }} ministros</div>
+          <div class="mt-1 text-xs text-amber-800">{{ mandatosAVencer }} mandatos a vencer em 90 dias</div>
           <a routerLink="/pessoas" class="mt-3 inline-block text-sm font-bold text-brand-blue">Ver pessoas →</a>
         </div>
         <div class="card p-5">
@@ -123,6 +124,8 @@ export class DashboardComponent implements OnInit {
   activeCount = 0;
   coroinhas = 0;
   acolitos = 0;
+  mesc = 0;
+  mandatosAVencer = 0;
   vagasAbertas = 0;
   presencaPct: number | null = null;
   liturgia = '';
@@ -172,6 +175,8 @@ export class DashboardComponent implements OnInit {
     this.activeCount = voluntarios.length;
     this.coroinhas = voluntarios.filter(v => v.tipo === 'COROINHA' || v.tipo === 'AMBOS').length;
     this.acolitos = voluntarios.filter(v => v.tipo === 'ACOLITO' || v.tipo === 'AMBOS').length;
+    this.mesc = voluntarios.filter(v => v.tipo === 'MESC').length;
+    this.mandatosAVencer = voluntarios.filter(v => mandatoNoPrazo(v.mandato_fim)).length;
   }
 
   private missasDe(escala: EscalaDetalhe): MissaVista[] {

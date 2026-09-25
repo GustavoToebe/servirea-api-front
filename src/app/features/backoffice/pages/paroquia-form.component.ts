@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { BackofficeApiService } from '../backoffice-api.service';
 import { ParoquiaFinanceiroComponent } from './paroquia-financeiro.component';
 import {
+  Diocese,
   ParoquiaAdmin,
   STATUS_PAROQUIA,
   StatusParoquia,
@@ -68,6 +69,15 @@ import {
                 <option value="CONTATO">Contato</option>
                 <option value="FINANCEIRO">Financeiro</option>
                 <option value="ADMINISTRATIVO">Administrativo</option>
+              </select>
+            </div>
+            <div class="md:col-span-2">
+              <label class="bo-label">Diocese</label>
+              <select class="bo-field" [(ngModel)]="form.dioceseId" name="dioceseId">
+                <option value="">Sem diocese</option>
+                @for (d of dioceses; track d.id) {
+                  <option [value]="d.id">{{ d.nome }}{{ d.uf ? ' (' + d.uf + ')' : '' }}{{ d.cotaVoluntarios ? ' · cota ' + d.cotaVoluntarios : '' }}</option>
+                }
               </select>
             </div>
             @if (id) {
@@ -157,10 +167,15 @@ export class ParoquiaFormComponent implements OnInit {
   statusLabel = (status: StatusParoquia) => STATUS_PAROQUIA[status];
   confirm: { title: string; message: string; action: 'bloquear' | 'desbloquear' | 'suporte' } | null = null;
   form = this.empty();
+  dioceses: Diocese[] = [];
 
   constructor(private api: BackofficeApiService, private route: ActivatedRoute, private router: Router) {}
 
   ngOnInit() {
+    this.api.listarDioceses().subscribe({
+      next: rows => this.dioceses = rows,
+      error: err => this.error = apiMessage(err)
+    });
     this.route.paramMap.subscribe(params => {
       this.id = params.get('id');
       this.notice = '';
@@ -191,7 +206,8 @@ export class ParoquiaFormComponent implements OnInit {
       numero: blankToNull(this.form.numero),
       complemento: blankToNull(this.form.complemento),
       observacoes: blankToNull(this.form.observacoes),
-      tipoEmail: blankToNull(this.form.tipoEmail)
+      tipoEmail: blankToNull(this.form.tipoEmail),
+      dioceseId: blankToNull(this.form.dioceseId)
     };
     const request = this.id
       ? this.api.atualizarParoquia(this.id, { ...common, vigenciaAte: this.form.vigenciaAte || null })
@@ -295,7 +311,8 @@ export class ParoquiaFormComponent implements OnInit {
       numero: paroquia.numero || '',
       complemento: paroquia.complemento || '',
       observacoes: paroquia.observacoes || '',
-      vigenciaAte: paroquia.vigenciaAte || ''
+      vigenciaAte: paroquia.vigenciaAte || '',
+      dioceseId: paroquia.dioceseId || ''
     };
   }
 
@@ -303,7 +320,7 @@ export class ParoquiaFormComponent implements OnInit {
     return {
       codigo: '', slug: '', nome: '', razaoSocial: '', cnpj: '', email: '', telefone: '',
       tipoEmail: '' as TipoEmail, cep: '', cidade: '', uf: '', bairro: '', logradouro: '',
-      numero: '', complemento: '', observacoes: '', vigenciaAte: '',
+      numero: '', complemento: '', observacoes: '', vigenciaAte: '', dioceseId: '',
       adminNome: '', adminEmail: '', adminSenha: ''
     };
   }

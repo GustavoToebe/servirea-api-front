@@ -1,12 +1,13 @@
 
 import { Component, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { apiMessage, DashboardResponse, formatMoney } from '../backoffice.models';
+import { apiMessage, DashboardResponse, Diocese, formatMoney } from '../backoffice.models';
 import { BackofficeApiService } from '../backoffice-api.service';
 
 @Component({
     selector: 'app-backoffice-dashboard',
-    imports: [RouterLink],
+    imports: [FormsModule, RouterLink],
     template: `
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
@@ -38,6 +39,50 @@ import { BackofficeApiService } from '../backoffice-api.service';
       </div>
     }
     
+    @if (!loading) {
+      <section class="bo-card mt-6 p-6">
+        <h2 class="text-lg font-bold">Cota por diocese</h2>
+        <p class="mt-1 max-w-2xl text-sm text-neutral-400">Teto de servidores ativos somados nas paróquias da diocese. Em branco, a diocese não tem teto. Quem já está ativo permanece; o limite vale na próxima ativação.</p>
+        @if (!dioceses.length) {
+          <p class="mt-4 text-sm text-neutral-500">Nenhuma diocese cadastrada.</p>
+        }
+        <div class="mt-4 space-y-3">
+          @for (d of dioceses; track d.id) {
+            <div class="grid items-end gap-3 border-b border-white/10 pb-3 md:grid-cols-[1fr_80px_140px_auto]">
+              <div>
+                <div class="font-bold">{{ d.nome }}{{ d.uf ? ' · ' + d.uf : '' }}</div>
+                <div class="text-xs text-neutral-500">{{ d.voluntariosAtivos }} ativos{{ d.cotaVoluntarios ? ' de ' + d.cotaVoluntarios : ' · sem teto' }}</div>
+              </div>
+              <div>
+                <label class="bo-label">UF</label>
+                <input class="bo-field" maxlength="2" [(ngModel)]="d.uf" [name]="'uf-' + d.id">
+              </div>
+              <div>
+                <label class="bo-label">Cota</label>
+                <input class="bo-field" type="number" min="1" [(ngModel)]="d.cotaVoluntarios" [name]="'cota-' + d.id" placeholder="Sem teto">
+              </div>
+              <button type="button" class="bo-btn-ghost" (click)="salvarDiocese(d)">Salvar</button>
+            </div>
+          }
+        </div>
+        <form class="mt-5 grid items-end gap-3 md:grid-cols-[1fr_80px_140px_auto]" (ngSubmit)="criarDiocese()">
+          <div>
+            <label class="bo-label">Nova diocese</label>
+            <input class="bo-field" [(ngModel)]="nova.nome" name="novaNome" required placeholder="Diocese de Cascavel">
+          </div>
+          <div>
+            <label class="bo-label">UF</label>
+            <input class="bo-field" maxlength="2" [(ngModel)]="nova.uf" name="novaUf" placeholder="PR">
+          </div>
+          <div>
+            <label class="bo-label">Cota</label>
+            <input class="bo-field" type="number" min="1" [(ngModel)]="nova.cota" name="novaCota" placeholder="Sem teto">
+          </div>
+          <button class="bo-btn" type="submit">Adicionar</button>
+        </form>
+      </section>
+    }
+
     <section class="bo-card mt-6 p-6">
       <h2 class="text-lg font-bold">Ações do operador</h2>
       <div class="mt-4 flex flex-wrap gap-3">
@@ -54,6 +99,8 @@ export class BackofficeDashboardComponent implements OnInit {
   loading = true;
   error = '';
   data: DashboardResponse | null = null;
+  dioceses: Diocese[] = [];
+  nova = { nome: '', uf: '', cota: null as number | null };
 
   constructor(private api: BackofficeApiService) {}
 
@@ -61,6 +108,41 @@ export class BackofficeDashboardComponent implements OnInit {
     this.api.dashboard().subscribe({
       next: data => { this.data = data; this.loading = false; },
       error: err => { this.error = apiMessage(err); this.loading = false; }
+    });
+    this.carregarDioceses();
+  }
+
+  criarDiocese() {
+    const nome = this.nova.nome.trim();
+    if (!nome) return;
+    this.api.criarDiocese({
+      nome,
+      uf: this.nova.uf.trim() || null,
+      cotaVoluntarios: this.nova.cota || null
+    }).subscribe({
+      next: () => {
+        this.nova = { nome: '', uf: '', cota: null };
+        this.carregarDioceses();
+      },
+      error: err => this.error = apiMessage(err)
+    });
+  }
+
+  salvarDiocese(diocese: Diocese) {
+    this.api.atualizarDiocese(diocese.id, {
+      nome: diocese.nome,
+      uf: diocese.uf?.trim() || null,
+      cotaVoluntarios: diocese.cotaVoluntarios || null
+    }).subscribe({
+      next: () => this.carregarDioceses(),
+      error: err => this.error = apiMessage(err)
+    });
+  }
+
+  private carregarDioceses() {
+    this.api.listarDioceses().subscribe({
+      next: rows => this.dioceses = rows,
+      error: err => this.error = apiMessage(err)
     });
   }
 

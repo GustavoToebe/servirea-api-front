@@ -87,7 +87,8 @@ export class VolunteerPickerComponent implements OnChanges {
   tipos: { value: TipoVoluntario; label: string }[] = [
     { value: 'COROINHA', label: 'Coroinha' },
     { value: 'ACOLITO', label: 'Acólito' },
-    { value: 'AMBOS', label: 'Acólito / Coroinha' }
+    { value: 'AMBOS', label: 'Acólito / Coroinha' },
+    { value: 'MESC', label: 'Ministro (MESC)' }
   ];
 
   constructor(private host: ElementRef<HTMLElement>) {}

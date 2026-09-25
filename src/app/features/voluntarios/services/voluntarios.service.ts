@@ -46,6 +46,8 @@ function paraVoluntarioAntigo(v: VoluntarioLista): Voluntario {
     horario_estudo: v.horarioEstudo,
     observacoes: null,
     autoriza_whatsapp: v.autorizaWhatsapp,
-    funcoes_habilitadas: v.funcoesHabilitadas
+    funcoes_habilitadas: v.funcoesHabilitadas,
+    mandato_inicio: v.mandatoInicio || null,
+    mandato_fim: v.mandatoFim || null
   };
 }

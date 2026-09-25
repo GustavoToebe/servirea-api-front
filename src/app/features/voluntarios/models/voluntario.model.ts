@@ -1,4 +1,4 @@
-export type TipoVoluntario = 'COROINHA' | 'ACOLITO' | 'AMBOS';
+export type TipoVoluntario = 'COROINHA' | 'ACOLITO' | 'AMBOS' | 'MESC';
 export type FuncaoEscala = 'MISSAL' | 'CRUZ' | 'CREDENCIA' | 'VELA' | 'COLETA' | 'SINO' | 'OUTRO';
 export type HorarioEstudo = 'MANHA' | 'TARDE' | 'NOITE';
 
@@ -34,6 +34,8 @@ export interface Voluntario {
   observacoes: string | null;
   autoriza_whatsapp: boolean;
   funcoes_habilitadas: FuncaoEscala[];
+  mandato_inicio?: string | null;
+  mandato_fim?: string | null;
   responsaveis?: Responsavel[];
   created_at?: string;
   updated_at?: string;
@@ -71,7 +73,8 @@ export const FUNCOES_LABEL: Record<FuncaoEscala, string> = {
 export const TIPO_VOLUNTARIO_LABEL: Record<TipoVoluntario, string> = {
   COROINHA: 'Coroinha',
   ACOLITO: 'Acólito',
-  AMBOS: 'Coroinha / Acólito'
+  AMBOS: 'Coroinha / Acólito',
+  MESC: 'Ministro (MESC)'
 };
 
 export const HORARIO_ESTUDO_LABEL: Record<HorarioEstudo, string> = {
@@ -87,6 +90,6 @@ export const PARENTESCOS = [
   'Padrinho', 'Madrinha', 'Responsável', 'Outro'
 ];
 
-export const TIPOS_VOLUNTARIO: TipoVoluntario[] = ['COROINHA', 'ACOLITO', 'AMBOS'];
+export const TIPOS_VOLUNTARIO: TipoVoluntario[] = ['COROINHA', 'ACOLITO', 'AMBOS', 'MESC'];
 export const FUNCOES_ESCALA: FuncaoEscala[] = ['MISSAL', 'CRUZ', 'CREDENCIA', 'VELA', 'COLETA', 'SINO', 'OUTRO'];
 export const HORARIOS_ESTUDO: HorarioEstudo[] = ['MANHA', 'TARDE', 'NOITE'];
