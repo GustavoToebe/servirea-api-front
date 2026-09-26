@@ -2,6 +2,10 @@
 
 **Propósito deste arquivo:** dump técnico completo para outra IA. Não é um README de usuário. Contém arquitetura, configs literais, rotas, serviços, SQL, Edge Functions, contratos de API, fluxos e problemas reais do código (setembro/2026).
 
+**Aviso (26/09/2026):** este arquivo é da época em que o front falava direto com o Supabase. Hoje o
+front usa a API Java (`servire-api-back`) em quase tudo. As instruções atuais estão em `AGENTS.md`;
+na dúvida, vale o código.
+
 **Atenção:** o `README.md` da raiz está **desatualizado** em vários pontos (cita Excel, filtros de suggest por função, e omite inscrição pública / Turnstile / Edge Functions). Este arquivo descreve o que o código realmente faz.
 
 ---
@@ -365,7 +369,9 @@ Só checa sessão. Sem roles.
 
 ### pendingChangesGuard
 
-Se `component.hasPendingChanges()` → `window.confirm(...)`. Implementado em:
+Se `component.hasPendingChanges()` → `DialogoService.confirmar(...)` ("Sair sem salvar" /
+"Continuar editando"), no visual do Servire. Desde 26/09/2026 não há `window.confirm` nem `alert`
+no app. Implementado em:
 
 - `VoluntarioFormComponent`
 - `InscricaoEditComponent`
