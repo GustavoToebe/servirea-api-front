@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { NumeroComponent } from '../../../../shared/components/numero/numero.component';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -16,7 +17,7 @@ interface CelebracaoVista {
 
 @Component({
     selector: 'app-escalas-list',
-    imports: [CommonModule, FormsModule, RouterLink],
+    imports: [CommonModule, FormsModule, RouterLink, NumeroComponent],
     template: `
     <div class="space-y-6">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -62,7 +63,7 @@ interface CelebracaoVista {
               <div>
                 <div class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ rotuloDia(item.evento.data) }} · {{ hora(item.evento.horario) }}</div>
                 <h2 class="mt-1 text-lg font-black">{{ item.evento.celebracao || 'Missa' }}</h2>
-                <div class="text-sm text-slate-500">{{ item.escala.titulo }} · {{ months[item.escala.mes - 1] }}</div>
+                <div class="text-sm text-slate-500">{{ item.escala.titulo }}<app-numero [numero]="item.escala.sequencial" /> · {{ months[item.escala.mes - 1] }}</div>
               </div>
               <span class="badge" [ngClass]="statusClass(item.escala.status)">{{ status(item.escala.status) }}</span>
             </div>

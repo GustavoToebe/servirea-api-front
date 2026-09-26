@@ -48,6 +48,8 @@ export interface VoluntarioPerfil {
 }
 
 export interface Pessoa {
+  /** Número curto na paróquia (V038), para ditar e copiar. */
+  sequencial?: number;
   id: string;
   papeis: PessoaPapel[];
   nomeCompleto: string;

@@ -1,4 +1,5 @@
 
+import { NumeroComponent } from '../../../shared/components/numero/numero.component';
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -8,13 +9,13 @@ import { InscricoesApiService } from '../services/inscricoes-api.service';
 
 @Component({
     selector: 'app-inscricao-detail',
-    imports: [RouterLink, ConfirmDialogComponent],
+    imports: [RouterLink, ConfirmDialogComponent, NumeroComponent],
     template: `
     @if (inscricao) {
       <div class="mx-auto max-w-4xl space-y-6">
         <a routerLink="/pessoas" [queryParams]="{ aba: inscricao.status === 'PENDENTE' ? 'aguardando' : 'historico' }" class="text-sm font-semibold text-brand-blue">← Voltar</a>
         <section class="card p-6">
-          <h1 class="text-3xl font-black">{{ inscricao.nomeCompleto }}</h1>
+          <h1 class="text-3xl font-black">{{ inscricao.nomeCompleto }}<app-numero [numero]="inscricao.sequencial" /></h1>
           <p class="text-slate-500">{{ tipoLabel[inscricao.tipo] }} · {{ inscricao.status }}</p>
           <p class="mt-2 text-sm">{{ inscricao.emails.length ? inscricao.emails[0].email : 'sem e-mail' }}</p>
         </section>

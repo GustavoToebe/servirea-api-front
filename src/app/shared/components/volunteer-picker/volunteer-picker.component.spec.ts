@@ -88,4 +88,19 @@ describe('VolunteerPickerComponent', () => {
     expect(emit).toHaveBeenCalledWith(null);
     expect(event.stopPropagation).toHaveBeenCalled();
   });
+
+  it('painel é fixo junto ao botão (não é cortado pelo cartão) e abre para cima sem espaço embaixo', () => {
+    const botao = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    spyOn(botao, 'getBoundingClientRect').and.returnValue(
+      { top: 100, bottom: 140, left: 30, width: 200 } as DOMRect);
+    component.toggleOpen();
+    expect(component.painel).toEqual({ left: 30, width: 200, top: 144, bottom: null });
+
+    component.open = false;
+    (botao.getBoundingClientRect as jasmine.Spy).and.returnValue(
+      { top: window.innerHeight - 50, bottom: window.innerHeight - 10, left: 30, width: 200 } as DOMRect);
+    component.toggleOpen();
+    expect(component.painel.top).toBeNull();
+    expect(component.painel.bottom).toBe(54);
+  });
 });

@@ -1,3 +1,4 @@
+import { NumeroComponent } from '../../../shared/components/numero/numero.component';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { mensagemApi } from '../../../core/api/api-error';
@@ -8,7 +9,7 @@ import { Perfil, UsuarioParoquia } from '../acesso.models';
 
 @Component({
   selector: 'app-usuarios-paroquia',
-  imports: [FormsModule, MascaraDirective],
+  imports: [FormsModule, MascaraDirective, NumeroComponent],
   template: `
     <div class="mx-auto max-w-3xl space-y-6">
       <div class="flex items-end justify-between gap-4">
@@ -31,7 +32,7 @@ import { Perfil, UsuarioParoquia } from '../acesso.models';
         @for (usuario of usuarios; track usuario.usuarioId) {
           <button type="button" class="card flex w-full items-center justify-between p-4 text-left" (click)="editar(usuario)">
             <span>
-              <span class="block font-extrabold">{{ usuario.nome }}</span>
+              <span class="block font-extrabold">{{ usuario.nome }}<app-numero [numero]="usuario.sequencial" /></span>
               <span class="block text-sm text-slate-500">{{ usuario.email }} · {{ usuario.perfilNome }}</span>
             </span>
             <span class="text-xs font-bold uppercase tracking-wide text-slate-400">

@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { NumeroComponent } from '../../../../shared/components/numero/numero.component';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -14,11 +15,11 @@ import { DialogoService } from '../../../../shared/services/dialogo.service';
 
 @Component({
     selector: 'app-escala-builder',
-    imports: [CommonModule, ReactiveFormsModule, RouterLink, VolunteerPickerComponent],
+    imports: [CommonModule, ReactiveFormsModule, RouterLink, VolunteerPickerComponent, NumeroComponent],
     template: `
     <div class="space-y-6">
       <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div><a routerLink="/escalas" class="text-sm font-semibold text-brand-blue">← Voltar para escalas</a><h1 class="mt-2 text-2xl font-black">{{ id ? 'Montagem da escala' : 'Nova escala' }}</h1><p class="text-sm text-slate-500">A grade segue o modelo escolhido. Festas em dia de semana entram na semanal; festas no fim de semana entram na mensal.</p></div>
+        <div><a routerLink="/escalas" class="text-sm font-semibold text-brand-blue">← Voltar para escalas</a><h1 class="mt-2 text-2xl font-black">{{ id ? 'Montagem da escala' : 'Nova escala' }}<app-numero [numero]="currentDetail?.sequencial" /></h1><p class="text-sm text-slate-500">A grade segue o modelo escolhido. Festas em dia de semana entram na semanal; festas no fim de semana entram na mensal.</p></div>
         @if (id) {
           <div class="flex flex-wrap gap-2"><span class="badge" [ngClass]="statusClass(status)">{{ statusLabel(status) }}</span>@if (status==='FINALIZADA') {
           <button class="btn-secondary !py-2" (click)="exportPdf()">Exportar PDF</button>

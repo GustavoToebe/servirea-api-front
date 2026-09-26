@@ -9,6 +9,7 @@ import { FuncaoEscala } from '../../voluntarios/models/voluntario.model';
 
 /** Contrato de `/escalas` na API Java (`EscalaResponse` e filhos). */
 interface EscalaApi {
+  sequencial: number;
   id: string;
   titulo: string;
   tipo: TipoEscala;
@@ -128,7 +129,7 @@ export class EscalasService {
       })).sort((a, b) => this.slotOrder(a) - this.slotOrder(b))
     })).sort((a, b) => `${a.data} ${a.horario}`.localeCompare(`${b.data} ${b.horario}`));
     const escala: Escala = {
-      id: r.id, titulo: r.titulo, tipo: r.tipo, ano: r.ano, mes: r.mes,
+      id: r.id, sequencial: r.sequencial, titulo: r.titulo, tipo: r.tipo, ano: r.ano, mes: r.mes,
       status: r.status, observacao: r.observacao, version: r.version
     };
     return { ...escala, eventos };

@@ -15,6 +15,8 @@ export interface SecaoCatalogo {
 }
 
 export interface Perfil {
+  /** Número curto na paróquia (V038). */
+  sequencial: number;
   id: string;
   nome: string;
   ativo: boolean;
@@ -25,6 +27,8 @@ export interface Perfil {
 }
 
 export interface UsuarioParoquia {
+  /** Número do usuário nesta paróquia (V038). */
+  sequencial: number;
   usuarioId: string;
   nome: string;
   email: string;

@@ -4,6 +4,8 @@ export type TipoEscala = 'SEMANAL' | 'MENSAL';
 export type StatusEscala = 'RASCUNHO' | 'FINALIZADA' | 'CANCELADA';
 
 export interface Escala {
+  /** Número curto da escala na paróquia (V038), para ditar e copiar. */
+  sequencial?: number | null;
   id: string;
   titulo: string;
   tipo: TipoEscala;

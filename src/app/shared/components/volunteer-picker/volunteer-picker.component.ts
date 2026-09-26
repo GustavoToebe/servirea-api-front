@@ -1,7 +1,10 @@
 
-import { Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TipoVoluntario, Voluntario } from '../../../features/voluntarios/models/voluntario.model';
+
+/** Altura aproximada do painel aberto (filtros + até 14 nomes). */
+const ALTURA_PAINEL = 330;
 
 @Component({
     selector: 'app-volunteer-picker',
@@ -25,7 +28,9 @@ import { TipoVoluntario, Voluntario } from '../../../features/voluntarios/models
       </button>
     
       @if (open && !disabled) {
-        <div class="absolute z-50 mt-1 w-full min-w-[240px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
+        <div class="fixed z-50 min-w-[240px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"
+          [style.left.px]="painel.left" [style.width.px]="painel.width"
+          [style.top.px]="painel.top" [style.bottom.px]="painel.bottom">
           <div class="space-y-2 border-b border-slate-100 p-2">
             <div class="flex flex-wrap gap-1">
               @for (t of tipos; track t) {
@@ -73,7 +78,7 @@ import { TipoVoluntario, Voluntario } from '../../../features/voluntarios/models
     </div>
     `
 })
-export class VolunteerPickerComponent implements OnChanges {
+export class VolunteerPickerComponent implements OnChanges, OnInit, OnDestroy {
   @Input() volunteers: Voluntario[] = [];
   @Input() selectedId: string | null = null;
   @Input() excludeIds: string[] = [];
@@ -82,6 +87,7 @@ export class VolunteerPickerComponent implements OnChanges {
 
   search = '';
   open = false;
+  painel: { left: number; width: number; top: number | null; bottom: number | null } = { left: 0, width: 0, top: 0, bottom: null };
   selectedName = '';
   tipoFiltro: TipoVoluntario | '' = '';
   tipos: { value: TipoVoluntario; label: string }[] = [
@@ -106,7 +112,49 @@ export class VolunteerPickerComponent implements OnChanges {
   toggleOpen() {
     if (this.disabled) return;
     this.open = !this.open;
-    if (this.open) this.search = '';
+    if (this.open) {
+      this.search = '';
+      this.posicionar();
+    }
+  }
+
+  /**
+   * O painel é `fixed`, calculado a partir do botão: o cartão do dia na escala
+   * tem `overflow-hidden` e cortava a lista (teste de telas de 26/09/2026).
+   * Sem espaço embaixo, abre para cima.
+   */
+  posicionar() {
+    const botao = this.host.nativeElement.querySelector('button')?.getBoundingClientRect();
+    if (!botao) return;
+    const alturaJanela = window.innerHeight;
+    const abreParaCima = alturaJanela - botao.bottom < ALTURA_PAINEL && botao.top > alturaJanela - botao.bottom;
+    this.painel = {
+      left: botao.left,
+      width: botao.width,
+      top: abreParaCima ? null : botao.bottom + 4,
+      bottom: abreParaCima ? alturaJanela - botao.top + 4 : null
+    };
+  }
+
+  @HostListener('window:resize')
+  aoRedimensionar() {
+    if (this.open) this.posicionar();
+  }
+
+  /** Captura: a página rola num container, não na janela; a lista interna do painel não conta. */
+  private readonly aoRolar = (evento: Event) => {
+    if (!this.open) return;
+    const alvo = evento.target;
+    if (alvo instanceof Node && this.host.nativeElement.contains(alvo)) return;
+    this.posicionar();
+  };
+
+  ngOnInit() {
+    document.addEventListener('scroll', this.aoRolar, true);
+  }
+
+  ngOnDestroy() {
+    document.removeEventListener('scroll', this.aoRolar, true);
   }
 
   setTipo(tipo: TipoVoluntario) {

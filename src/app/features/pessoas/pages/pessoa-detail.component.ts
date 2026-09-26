@@ -1,5 +1,6 @@
 
 import { CommonModule } from '@angular/common';
+import { NumeroComponent } from '../../../shared/components/numero/numero.component';
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -9,7 +10,7 @@ import { VoluntariosApiService } from '../services/voluntarios-api.service';
 
 @Component({
     selector: 'app-pessoa-detail',
-    imports: [CommonModule, RouterLink],
+    imports: [CommonModule, RouterLink, NumeroComponent],
     template: `
     @if (pessoa) {
       <div class="mx-auto max-w-5xl space-y-6">
@@ -27,7 +28,7 @@ import { VoluntariosApiService } from '../services/voluntarios-api.service';
             }
             <div>
               <div class="flex flex-wrap gap-2">
-                <h1 class="text-3xl font-black">{{ pessoa.nomeCompleto }}</h1>
+                <h1 class="text-3xl font-black">{{ pessoa.nomeCompleto }}<app-numero [numero]="pessoa.sequencial" /></h1>
                 @for (p of pessoa.papeis; track p) {
                   <span class="badge bg-violet-50 text-brand-blue">{{ p === 'VOLUNTARIO' ? 'Voluntário' : 'Responsável' }}</span>
                 }

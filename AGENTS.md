@@ -36,6 +36,9 @@ Rodar junto com as APIs e a Central no PC: README do `central-api-back`, seção
 - `shared/directives/mascara.directive.ts` — `<input appMascara="cpf">`, com reativo ou `ngModel`.
 - `shared/services/cep.service.ts` — endereço pelo CEP no ViaCEP.
 - `shared/services/dialogo.service.ts` + `shared/components/dialogo-host/` — confirmação e aviso.
+- `shared/components/numero/` — `<app-numero [numero]="x.sequencial" />`: número curto da paróquia "(12)" que copia
+  ao clicar; use ao lado do nome de todo cadastro que tem `sequencial`.
+- Lista suspensa dentro de cartão com `overflow-hidden`: painel `fixed` calculado pelo botão (ver `volunteer-picker`).
 
 ## Regras
 - **Nunca** `confirm()`/`alert()` do navegador: `await dialogo.confirmar({...})` / `dialogo.avisar(...)`

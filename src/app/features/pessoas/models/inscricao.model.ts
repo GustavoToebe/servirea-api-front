@@ -13,6 +13,8 @@ export interface InscricaoResponsavel {
 }
 
 export interface Inscricao {
+  /** Número curto na paróquia (V038). */
+  sequencial: number;
   id: string;
   nomeCompleto: string;
   dataNascimento: string | null;

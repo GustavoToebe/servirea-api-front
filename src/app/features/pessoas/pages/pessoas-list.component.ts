@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { NumeroComponent } from '../../../shared/components/numero/numero.component';
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -13,7 +14,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
 
 @Component({
     selector: 'app-pessoas-list',
-    imports: [CommonModule, FormsModule, RouterLink, ConfirmDialogComponent],
+    imports: [CommonModule, FormsModule, RouterLink, ConfirmDialogComponent, NumeroComponent],
     template: `
     <div class="space-y-6">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -52,7 +53,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
       @if (aba==='todas' || aba==='ativos' || aba==='inativos') {
         <div class="card p-5">
           <div class="grid gap-4 md:grid-cols-3">
-            <div class="md:col-span-2"><label class="label">Nome</label><input class="field" [(ngModel)]="nome" (keyup.enter)="load()" placeholder="Buscar por nome"></div>
+            <div class="md:col-span-2"><label class="label">Nome</label><input class="field" [(ngModel)]="nome" (keyup.enter)="load()" placeholder="Buscar por nome ou número"></div>
             <div class="flex items-end gap-2"><button class="btn-primary" (click)="load()">Filtrar</button></div>
           </div>
         </div>
@@ -79,7 +80,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
                 <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-violet-100 font-bold text-brand-blue">{{ initials(p.nomeCompleto) }}</div>
                 <div class="min-w-0 flex-1">
                   <div class="flex flex-wrap items-center gap-2">
-                    <h2 class="text-lg font-black">{{ p.nomeCompleto }}</h2>
+                    <h2 class="text-lg font-black">{{ p.nomeCompleto }}<app-numero [numero]="p.sequencial" /></h2>
                     @if (p.voluntario) {
                       <span class="badge" [ngClass]="tipoBadgeClass(p.voluntario.tipo)">{{ tipoLabel[p.voluntario.tipo] }}</span>
                     }
@@ -164,7 +165,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
             <article class="card p-5">
               <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                  <h2 class="text-lg font-black">{{ i.nomeCompleto }}</h2>
+                  <h2 class="text-lg font-black">{{ i.nomeCompleto }}<app-numero [numero]="i.sequencial" /></h2>
                   <p class="text-sm text-slate-500">{{ tipoLabel[i.tipo] }} · {{ ageFromDate(i.dataNascimento) ?? 'idade não informada' }} anos</p>
                   <p class="text-sm text-slate-600">Responsável: {{ principalNome(i) }}</p>
                 </div>

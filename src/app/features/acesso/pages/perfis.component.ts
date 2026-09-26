@@ -1,3 +1,4 @@
+import { NumeroComponent } from '../../../shared/components/numero/numero.component';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { mensagemApi } from '../../../core/api/api-error';
@@ -6,7 +7,7 @@ import { Perfil, SecaoCatalogo } from '../acesso.models';
 
 @Component({
   selector: 'app-perfis',
-  imports: [FormsModule],
+  imports: [FormsModule, NumeroComponent],
   template: `
     <div class="mx-auto max-w-3xl space-y-6">
       <div class="flex items-end justify-between gap-4">
@@ -26,7 +27,7 @@ import { Perfil, SecaoCatalogo } from '../acesso.models';
         @for (perfil of perfis; track perfil.id) {
           <button type="button" class="card flex w-full items-center justify-between p-4 text-left" (click)="editar(perfil)">
             <span>
-              <span class="block font-extrabold">{{ perfil.nome }}</span>
+              <span class="block font-extrabold">{{ perfil.nome }}<app-numero [numero]="perfil.sequencial" /></span>
               <span class="block text-sm text-slate-500">{{ perfil.usuarios }} {{ perfil.usuarios === 1 ? 'usuário' : 'usuários' }}</span>
             </span>
             <span class="text-xs font-bold uppercase tracking-wide text-slate-400">
