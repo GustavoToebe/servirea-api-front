@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { environment } from '../../../../environments/environment';
 import { Pessoa, PessoaRequest } from '../models/pessoa.model';
-import { PessoasService } from './pessoas.service';
+import { PessoasService, corpo } from './pessoas.service';
 
 const pessoa: Pessoa = {
   id: 'p-1',
@@ -90,6 +90,23 @@ describe('PessoasService', () => {
     expect(put.request.method).toBe('PUT');
     put.flush(pessoa);
     expect(await atualizar).toEqual(pessoa);
+  });
+
+  it('com foto, ficha e foto vão juntas numa chamada só (multipart)', async () => {
+    const foto = new File([new Uint8Array([1, 2, 3])], 'perfil.png', { type: 'image/png' });
+    const criar = service.criar(request, foto);
+    const post = http.expectOne(`${environment.apiUrl}/pessoas`);
+    const enviado = post.request.body as FormData;
+    expect(enviado instanceof FormData).toBeTrue();
+    expect(JSON.parse(await (enviado.get('dados') as Blob).text())).toEqual(request);
+    expect((enviado.get('dados') as Blob).type).toBe('application/json');
+    expect((enviado.get('foto') as File).name).toBe('perfil.png');
+    post.flush({ message: 'Storage não configurado.' }, { status: 503, statusText: 'Service Unavailable' });
+    await expectAsync(criar).toBeRejectedWithError('Storage não configurado.');
+  });
+
+  it('sem foto continua mandando JSON', () => {
+    expect(corpo(request, null)).toBe(request);
   });
 
   it('traduz erro de busca', async () => {

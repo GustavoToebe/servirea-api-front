@@ -1,5 +1,5 @@
 
-import { Component, NgZone, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { environment } from '../../../../../environments/environment';
@@ -9,6 +9,7 @@ import { MascaraDirective } from '../../../../shared/directives/mascara.directiv
 import { CepService } from '../../../../shared/services/cep.service';
 import { SEXOS, UFS, cepValido } from '../../../../shared/utils/formatos';
 import { Validar, erroDoCampo } from '../../../../shared/utils/validadores';
+import { focarPrimeiroInvalido } from '../../../../shared/utils/foco';
 import { InscricaoPublicaRequest, InscricaoResponsavelRequest } from '../../../pessoas/models/inscricao.model';
 import { FUNCOES_FORM, FUNCOES_LABEL, FuncaoEscala, PARENTESCOS, TIPO_LABEL, TIPOS_VOLUNTARIO, TipoVoluntario } from '../../../pessoas/models/pessoa.model';
 import { InscricoesApiService } from '../../../pessoas/services/inscricoes-api.service';
@@ -271,6 +272,7 @@ export class InscricaoPublicaComponent implements OnInit, OnDestroy {
   avisoCep = '';
   readonly erro = erroDoCampo;
   private cepService = inject(CepService);
+  private host = inject(ElementRef<HTMLElement>);
   form: FormGroup = this.criarForm();
 
   constructor(
@@ -370,11 +372,13 @@ export class InscricaoPublicaComponent implements OnInit, OnDestroy {
     if (this.form.get('nomeCompleto')?.invalid) {
       this.form.markAllAsTouched();
       this.error = 'Informe o nome completo.';
+      focarPrimeiroInvalido(this.host.nativeElement);
       return;
     }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.error = 'Corrija os campos marcados em vermelho.';
+      focarPrimeiroInvalido(this.host.nativeElement);
       return;
     }
     if (this.turnstileSiteKey && !this.turnstileToken) {

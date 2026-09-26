@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, ElementRef, OnInit, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HasPendingChanges } from '../../../core/guards/pending-changes.guard';
@@ -11,6 +11,7 @@ import { MascaraDirective } from '../../../shared/directives/mascara.directive';
 import { CepService } from '../../../shared/services/cep.service';
 import { SEXOS, UFS, cepValido, formatarCep, formatarCpf, formatarRg, formatarTelefone, normalizarSexo } from '../../../shared/utils/formatos';
 import { Validar, erroDoCampo } from '../../../shared/utils/validadores';
+import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
 
 @Component({
     selector: 'app-pessoa-form',
@@ -43,7 +44,8 @@ import { Validar, erroDoCampo } from '../../../shared/utils/validadores';
           <section class="card p-6">
             <h2 class="mb-4 text-lg font-black">Identidade</h2>
             <div class="grid gap-4 md:grid-cols-2">
-              <div class="md:col-span-2"><label class="label">Nome completo *</label><input class="field" formControlName="nomeCompleto"></div>
+              <div class="md:col-span-2"><label class="label">Nome completo *</label><input class="field" formControlName="nomeCompleto">
+                @if (form.get('nomeCompleto')?.invalid && form.get('nomeCompleto')?.touched) { <p class="mt-1 text-xs text-red-600">Informe o nome.</p> }</div>
               <div><label class="label">Nascimento</label><input class="field" type="date" formControlName="dataNascimento"></div>
               <div>
                 <label class="label">Sexo</label>
@@ -295,6 +297,7 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
   avisoCep = '';
   readonly erro = erroDoCampo;
   private cepService = inject(CepService);
+  private host = inject(ElementRef<HTMLElement>);
   form: FormGroup = this.fb.group({
     nomeCompleto: ['', Validators.required],
     dataNascimento: [''],
@@ -441,12 +444,14 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
     if (!this.papeis.size || this.form.get('nomeCompleto')?.invalid) {
       this.form.markAllAsTouched();
       this.error = 'Informe o nome e pelo menos um papel.';
+      focarPrimeiroInvalido(this.host.nativeElement);
       return;
     }
     const campos = ['cpf', 'rg', 'cep', 'uf', 'emails', 'telefones'];
     if (campos.some(c => this.form.get(c)?.invalid)) {
       campos.forEach(c => this.form.get(c)?.markAllAsTouched());
       this.error = 'Corrija os campos marcados em vermelho.';
+      focarPrimeiroInvalido(this.host.nativeElement);
       return;
     }
     const listasVisiveis = [
@@ -456,6 +461,7 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
     if (listasVisiveis.some(lista => lista.invalid)) {
       listasVisiveis.forEach(lista => lista.markAllAsTouched());
       this.error = 'Preencha o parentesco (e e-mail e telefone válidos, se informados) em cada relação.';
+      focarPrimeiroInvalido(this.host.nativeElement);
       return;
     }
     if (this.dependentes.controls.some(g => !g.get('pessoaId')?.value) && this.papeis.has('RESPONSAVEL')) {
@@ -466,12 +472,10 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
     this.error = '';
     try {
       const request = this.montarRequest();
+      const foto = this.papeis.has('VOLUNTARIO') ? this.photoFile : null;
       const salvo = this.id
-        ? await this.pessoas.atualizar(this.id, request)
-        : await this.pessoas.criar(request);
-      if (this.photoFile && this.papeis.has('VOLUNTARIO')) {
-        await this.voluntarios.enviarFoto(salvo.id, this.photoFile);
-      }
+        ? await this.pessoas.atualizar(this.id, request, foto)
+        : await this.pessoas.criar(request, foto);
       this.saved = true;
       await this.router.navigate(['/pessoas', salvo.id]);
     } catch (err) {

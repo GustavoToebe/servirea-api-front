@@ -47,6 +47,11 @@ button, input, select, textarea { font: inherit; }
     border-color: var(--brand);
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 15%, transparent);
   }
+  /* Campo que falta ou está errado fica vermelho depois de tentar salvar (26/09/2026). */
+  .field.ng-invalid.ng-touched {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+  }
   .label { @apply mb-1.5 block text-sm font-semibold text-slate-700; }
   .badge { @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold; }
   .chip {

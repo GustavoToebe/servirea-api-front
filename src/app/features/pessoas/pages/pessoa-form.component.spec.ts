@@ -48,6 +48,34 @@ describe('PessoaFormComponent (máscaras, validação e CEP)', () => {
     expect(fixture.componentInstance.error).toBe('Corrija os campos marcados em vermelho.');
   });
 
+  it('nome vazio fica vermelho e recebe o foco', async () => {
+    const fixture = montar(null);
+    await fixture.componentInstance.ngOnInit();
+    fixture.detectChanges();
+    document.body.appendChild(fixture.nativeElement);
+    await fixture.componentInstance.save();
+    fixture.detectChanges();
+    await new Promise(r => setTimeout(r));
+    const nome = fixture.nativeElement.querySelector('input[formcontrolname="nomeCompleto"]') as HTMLInputElement;
+    expect(nome.classList).toContain('ng-invalid');
+    expect(document.activeElement).toBe(nome);
+    expect(pessoas.criar).not.toHaveBeenCalled();
+    fixture.nativeElement.remove();
+  });
+
+  it('foto vai junto com a ficha (sem segunda chamada)', async () => {
+    const fixture = montar(null);
+    await fixture.componentInstance.ngOnInit();
+    const foto = new File([new Uint8Array([1])], 'f.png', { type: 'image/png' });
+    fixture.componentInstance.photoFile = foto;
+    fixture.componentInstance.form.patchValue({ nomeCompleto: 'Ana' });
+    pessoas.criar.and.rejectWith(new Error('Storage não configurado.'));
+    await fixture.componentInstance.save();
+    expect(pessoas.criar).toHaveBeenCalledWith(jasmine.anything(), foto);
+    expect(TestBed.inject(VoluntariosApiService).enviarFoto).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.error).toBe('Storage não configurado.');
+  });
+
   it('ficha antiga abre com sexo na lista e documentos formatados', async () => {
     const fixture = montar('p1');
     pessoas.buscar.and.resolveTo({

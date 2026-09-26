@@ -30,19 +30,33 @@ export class PessoasService {
     }
   }
 
-  async criar(request: PessoaRequest): Promise<Pessoa> {
+  /** Com foto, ficha e foto vão juntas: se a foto falhar, a API não grava a ficha. */
+  async criar(request: PessoaRequest, foto?: File | null): Promise<Pessoa> {
     try {
-      return await firstValueFrom(this.http.post<Pessoa>(this.base, request));
+      return await firstValueFrom(this.http.post<Pessoa>(this.base, corpo(request, foto)));
     } catch (erro) {
       throw new Error(mensagemApi(erro, 'Não foi possível criar o cadastro.'));
     }
   }
 
-  async atualizar(id: string, request: PessoaRequest): Promise<Pessoa> {
+  async atualizar(id: string, request: PessoaRequest, foto?: File | null): Promise<Pessoa> {
     try {
-      return await firstValueFrom(this.http.put<Pessoa>(`${this.base}/${id}`, request));
+      return await firstValueFrom(this.http.put<Pessoa>(`${this.base}/${id}`, corpo(request, foto)));
     } catch (erro) {
       throw new Error(mensagemApi(erro, 'Não foi possível atualizar o cadastro.'));
     }
   }
+}
+
+/**
+ * Sem foto, JSON puro. Com foto, multipart com a ficha na parte `dados`
+ * (26/09/2026: antes eram duas chamadas e a ficha ficava gravada quando a
+ * foto falhava; cada novo "Salvar" criava outra pessoa).
+ */
+export function corpo(request: PessoaRequest, foto?: File | null): PessoaRequest | FormData {
+  if (!foto) return request;
+  const form = new FormData();
+  form.append('dados', new Blob([JSON.stringify(request)], { type: 'application/json' }));
+  form.append('foto', foto);
+  return form;
 }

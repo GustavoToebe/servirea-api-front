@@ -40,6 +40,8 @@ Rodar junto com as APIs e a Central no PC: README do `central-api-back`, seção
 ## Regras
 - **Nunca** `confirm()`/`alert()` do navegador: `await dialogo.confirmar({...})` / `dialogo.avisar(...)`
   (o host já está no `AppComponent`). `app-confirm-dialog` segue para o caso com motivo obrigatório.
+- Salvar com campo inválido: `markAllAsTouched()` + `focarPrimeiroInvalido(host)` (`shared/utils/foco.ts`); o CSS pinta
+  `.field.ng-invalid.ng-touched` de vermelho.
 - Campo de documento/contato usa `appMascara` + validador de `formatos.ts`, mensagem embaixo do campo e
   conferência antes de salvar. Sexo e UF são listas (`SEXOS`, `UFS`).
 - Chamada para fora da API (ViaCEP etc.) vai por `fetch`, nunca pelo `HttpClient`, para o token da
