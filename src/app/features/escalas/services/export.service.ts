@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { AuthService } from '../../../core/auth/auth.service';
 import { EscalaDetalhe, EscalaEvento, MESES } from '../models/escala.model';
 import { FuncaoEscala } from '../../voluntarios/models/voluntario.model';
 
@@ -10,6 +11,8 @@ const HEADER = '#b71c1c';
 
 @Injectable({ providedIn: 'root' })
 export class ExportService {
+  private auth = inject(AuthService);
+
   async exportPdf(escala: EscalaDetalhe) {
     const canvas = await this.renderCanvas(escala);
     const img = canvas.toDataURL('image/png');
@@ -49,7 +52,10 @@ export class ExportService {
     const host = document.createElement('div');
     host.style.cssText = 'position:fixed;left:-12000px;top:0;width:1180px;background:#fff;padding:18px 18px 28px;font-family:Calibri,Arial,sans-serif;color:#111;';
     const month = MESES[escala.mes - 1].toUpperCase();
-    const title = `PARÓQUIA SÃO JOSÉ OPERÁRIO - ESCALA ${month}`;
+    // Nome da paróquia da sessão: o título era fixo ("PARÓQUIA SÃO JOSÉ
+    // OPERÁRIO") e toda paróquia nova sairia com o nome da primeira.
+    const paroquia = (this.auth.tenantNome() || 'Paróquia').toUpperCase();
+    const title = `${paroquia} - ESCALA ${month}`;
     const blocks = escala.eventos.map(event => this.eventBlock(event)).join('');
     host.innerHTML = `
       <table style="width:100%;border-collapse:collapse;table-layout:fixed;">

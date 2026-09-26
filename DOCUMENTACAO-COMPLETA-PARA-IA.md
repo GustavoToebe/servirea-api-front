@@ -48,10 +48,10 @@ Não há backend Node próprio. O “backend” é Supabase (PostgREST + Auth + 
 - RxJS **~7.8.1** (quase não usado; a maior parte é `async/await`)
 - Tailwind **3.4.14** + PostCSS + Autoprefixer
 - `@supabase/supabase-js` **^2.45.4**
-- `jspdf` **^2.5.2** + `html2canvas` **^1.4.1** (export PDF/PNG)
-- `jspdf-autotable` **^3.8.4** — **dependência instalada, não usada**
-- `xlsx` **^0.18.5** — **dependência instalada, não usada** (README mente que exporta Excel)
-- `@angular/animations` — instalado, **não usado**
+- `jspdf` **^4.2.1** + `html2canvas` **^1.4.1** (export PDF/PNG)
+- `jspdf-autotable`, `xlsx`, `@angular/animations`, `@angular/platform-browser-dynamic`
+  e `@supabase/supabase-js` foram **removidos** em 26/09/2026 (não eram usados; `jspdf` 2.x,
+  `jspdf-autotable` e `xlsx` tinham vulnerabilidades crítica/altas no `npm audit`)
 - Cloudflare Turnstile (script em `index.html`)
 
 ### Back / dados
@@ -820,11 +820,11 @@ Finalizada: formulário disabled; export PDF/PNG. Reabrir volta a RASCUNHO.
 
 ### 12.5 Export (`ExportService`)
 
-Monta HTML offscreen 1180px (tabela estilo planilha vermelha “PARÓQUIA SÃO JOSÉ OPERÁRIO - ESCALA {MÊS}”), `html2canvas` scale 2, PDF landscape ~A4 ou PNG download.
+Monta HTML offscreen 1180px (tabela estilo planilha vermelha “{NOME DA PARÓQUIA DA SESSÃO} - ESCALA {MÊS}”; até 26/09/2026 o nome era fixo “PARÓQUIA SÃO JOSÉ OPERÁRIO”), `html2canvas` scale 2, PDF landscape ~A4 ou PNG download.
 
 Layout fixo 8 colunas: DIA/HORÁRIO | Acólitos (Missal, Cruz, Vela, Velas, Sino, Sino) | Ofertório (Credência×2, Coleta×4). Semanal no builder tem 1 credência e 0 coleta — export mostra células vazias.
 
-`xlsx` **não é usado**. Relatórios = mesma listagem de escalas `FINALIZADA` + mesmos botões PDF/PNG.
+Não há export Excel (o `xlsx` foi removido). Relatórios = mesma listagem de escalas `FINALIZADA` + mesmos botões PDF/PNG.
 
 ### 12.6 Volunteer picker — o que o README erra
 
@@ -918,7 +918,7 @@ Filtros ativos/inativos: nome, idade (client-side), tipo, função (`contains` n
 18. **`tsconfig` `noPropertyAccessFromIndexSignature: false`** + vários `(clean as any)`.
 19. **Turnstile via `window` global** — frágil com múltiplas instâncias / HMR.
 20. **Função `cloudflare-turnstile` órfã** (deploy extra, superfície inútil).
-21. **xlsx / jspdf-autotable / animations / HttpClient** mortos. README promete Excel.
+21. ~~**xlsx / jspdf-autotable / animations** mortos. README promete Excel.~~ Removidos em 26/09/2026.
 22. **Zero testes.**
 23. **Auth sem recuperação de senha** na UI.
 24. **Wildcard `**` → `''`:** URL inválida manda para dashboard (se logado) ou login, sem 404.

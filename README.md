@@ -37,7 +37,7 @@ Projeto Angular + Tailwind + Supabase para substituir as planilhas usadas no cad
 - Status: Não finalizada (rascunho), Finalizada e Cancelada.
 - Confirmações de segurança para sair sem salvar, finalizar, cancelar, recriar a grade e excluir.
 - Exclusão permitida somente para escala cancelada (regra aplicada no front e no serviço).
-- Exportação de escala finalizada para PDF e Excel (.xlsx).
+- Exportação de escala finalizada para PDF e PNG.
 - Tela específica de Relatórios/Exportações.
 - SQL completo do Supabase com PostgreSQL, RLS, Storage, índices e view de compromissos.
 
