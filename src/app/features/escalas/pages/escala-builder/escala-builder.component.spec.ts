@@ -4,6 +4,7 @@ import { VoluntariosService } from '../../../voluntarios/services/voluntarios.se
 import { EscalaEvento } from '../../models/escala.model';
 import { EscalasService } from '../../services/escalas.service';
 import { ExportService } from '../../services/export.service';
+import { DialogoService } from '../../../../shared/services/dialogo.service';
 import { EscalaBuilderComponent } from './escala-builder.component';
 
 function evento(vagas: { id: string; funcao?: string }[] = []): EscalaEvento {
@@ -58,10 +59,10 @@ describe('EscalaBuilderComponent', () => {
   });
 
   it('bloqueia a mesma pessoa duas vezes na missa', () => {
-    spyOn(window, 'alert');
+    const aviso = spyOn(TestBed.inject(DialogoService), 'avisar').and.resolveTo();
     const ev = evento([{ id: 'a' }, { id: '' }]);
     component.selectVolunteer(ev, ev.vagas[1], 'a');
-    expect(window.alert).toHaveBeenCalled();
+    expect(aviso).toHaveBeenCalledWith('Esta pessoa já está alocada em outra função nesta mesma missa.');
     expect(ev.vagas[1].voluntario_id).toBeNull();
   });
 
@@ -74,12 +75,12 @@ describe('EscalaBuilderComponent', () => {
   });
 
   it('não adiciona dia repetido no mesmo horário', () => {
-    spyOn(window, 'alert');
+    const aviso = spyOn(TestBed.inject(DialogoService), 'avisar').and.resolveTo();
     component.events = [evento()];
     component.addDate = '2026-09-06';
     component.addTime = '19:00';
     component.addDay();
-    expect(window.alert).toHaveBeenCalled();
+    expect(aviso).toHaveBeenCalledWith('Já existe uma celebração neste dia e horário.');
     expect(component.events.length).toBe(1);
   });
 

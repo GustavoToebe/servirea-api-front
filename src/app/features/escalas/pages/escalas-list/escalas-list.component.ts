@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { rotuloDia } from '../../data/calendario-liturgico';
 import { EscalaDetalhe, EscalaEvento, MESES, STATUS_LABEL, StatusEscala } from '../../models/escala.model';
 import { EscalasService } from '../../services/escalas.service';
 import { ExportService } from '../../services/export.service';
+import { DialogoService } from '../../../../shared/services/dialogo.service';
 import { FUNCOES_LABEL } from '../../../pessoas/models/pessoa.model';
 
 interface CelebracaoVista {
@@ -106,6 +107,8 @@ export class EscalasListComponent implements OnInit {
     { id: 'CANCELADA', label: 'Cancelada' }
   ];
 
+  private dialogo = inject(DialogoService);
+
   constructor(private service: EscalasService, private exporter: ExportService) {}
 
   get proximo() {
@@ -155,7 +158,7 @@ export class EscalasListComponent implements OnInit {
   preenchidas(evento: EscalaEvento) { return evento.vagas.filter(v => v.voluntario_id).length; }
 
   async remove(e: EscalaDetalhe) {
-    if (!confirm(`Tem certeza que deseja excluir definitivamente a escala "${e.titulo}"? Esta ação não pode ser desfeita.`)) return;
+    if (!await this.dialogo.confirmar({ titulo: 'Excluir escala?', mensagem: `Excluir definitivamente a escala "${e.titulo}"? Esta ação não pode ser desfeita.`, confirmar: 'Excluir', perigo: true })) return;
     try {
       await this.service.deleteCancelled(e.id);
       await this.load();

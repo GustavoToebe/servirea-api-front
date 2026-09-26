@@ -4,6 +4,8 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { mensagemApi } from '../../../core/api/api-error';
 import { ParoquiaApiService } from '../paroquia-api.service';
 import { ContatoEmail, ContatoTelefone, Diocese, ParoquiaRequest } from '../paroquia.models';
+import { MascaraDirective } from '../../../shared/directives/mascara.directive';
+import { cnpjValido, emailValido, formatarCnpj, formatarTelefone, telefoneValido } from '../../../shared/utils/formatos';
 
 /**
  * Dados da paróquia (GET/PUT /tenant). A diocese é só informativa: escolhe
@@ -12,7 +14,7 @@ import { ContatoEmail, ContatoTelefone, Diocese, ParoquiaRequest } from '../paro
  */
 @Component({
   selector: 'app-paroquia',
-  imports: [FormsModule],
+  imports: [FormsModule, MascaraDirective],
   template: `
     <div class="mx-auto max-w-3xl space-y-6">
       <div>
@@ -40,7 +42,8 @@ import { ContatoEmail, ContatoTelefone, Diocese, ParoquiaRequest } from '../paro
               </label>
               <label class="block">
                 <span class="label">CNPJ</span>
-                <input class="field" name="cnpj" [(ngModel)]="cnpj">
+                <input class="field" name="cnpj" [(ngModel)]="cnpj" #cnpjCampo="ngModel" appMascara="cnpj" placeholder="00.000.000/0000-00">
+                @if (cnpjCampo.touched && cnpj && !cnpjValido(cnpj)) { <span class="mt-1 block text-xs text-red-600">CNPJ inválido.</span> }
               </label>
             </div>
             <label class="block">
@@ -66,7 +69,9 @@ import { ContatoEmail, ContatoTelefone, Diocese, ParoquiaRequest } from '../paro
                 <label class="block"><span class="label">Tipo</span>
                   <input class="field" [name]="'emailTipo' + i" [(ngModel)]="e.tipo"></label>
                 <label class="block"><span class="label">E-mail</span>
-                  <input class="field" type="email" [name]="'email' + i" [(ngModel)]="e.email"></label>
+                  <input class="field" type="email" [name]="'email' + i" [(ngModel)]="e.email" #emailCampo="ngModel" placeholder="nome@exemplo.com">
+                  @if (emailCampo.touched && e.email.trim() && !emailValido(e.email)) { <span class="mt-1 block text-xs text-red-600">E-mail inválido.</span> }
+                </label>
                 <label class="flex items-center gap-2 pb-3 text-sm font-semibold">
                   <input type="radio" name="emailPrincipal" [checked]="e.principal" (change)="principalEmail(i)"> Principal
                 </label>
@@ -87,7 +92,9 @@ import { ContatoEmail, ContatoTelefone, Diocese, ParoquiaRequest } from '../paro
                 <label class="block"><span class="label">Tipo</span>
                   <input class="field" [name]="'telTipo' + i" [(ngModel)]="t.tipo"></label>
                 <label class="block"><span class="label">Número</span>
-                  <input class="field" [name]="'tel' + i" [(ngModel)]="t.numero"></label>
+                  <input class="field" [name]="'tel' + i" [(ngModel)]="t.numero" #telCampo="ngModel" appMascara="telefone" inputmode="tel" placeholder="(00) 00000-0000">
+                  @if (telCampo.touched && t.numero.trim() && !telefoneValido(t.numero)) { <span class="mt-1 block text-xs text-red-600">Telefone inválido. Informe o DDD e o número.</span> }
+                </label>
                 <label class="flex items-center gap-2 pb-3 text-sm font-semibold">
                   <input type="radio" name="telPrincipal" [checked]="t.principal" (change)="principalTelefone(i)"> Principal
                 </label>
@@ -121,16 +128,19 @@ export class ParoquiaComponent implements OnInit {
   aviso = '';
   carregado = false;
   salvando = false;
+  readonly cnpjValido = cnpjValido;
+  readonly emailValido = emailValido;
+  readonly telefoneValido = telefoneValido;
 
   ngOnInit(): void {
     this.api.buscar().subscribe({
       next: p => {
         this.nome = p.nome;
         this.razaoSocial = p.razaoSocial || '';
-        this.cnpj = p.cnpj || '';
+        this.cnpj = formatarCnpj(p.cnpj);
         this.diocese = p.diocese || '';
         this.emails = p.emails.map(e => ({ ...e }));
-        this.telefones = p.telefones.map(t => ({ ...t }));
+        this.telefones = p.telefones.map(t => ({ ...t, numero: formatarTelefone(t.numero) }));
         this.carregado = true;
       },
       error: erro => this.erro = mensagemApi(erro, 'Não foi possível carregar a paróquia.')
@@ -163,9 +173,10 @@ export class ParoquiaComponent implements OnInit {
   }
 
   salvar(): void {
-    this.salvando = true;
-    this.erro = '';
     this.aviso = '';
+    this.erro = problemaNosDados(this) ?? '';
+    if (this.erro) return;
+    this.salvando = true;
     this.api.salvar(montarRequisicao(this)).subscribe({
       next: p => {
         this.salvando = false;
@@ -182,6 +193,16 @@ export class ParoquiaComponent implements OnInit {
       }
     });
   }
+}
+
+/** Mesmas regras da API: o primeiro problema, ou null. */
+export function problemaNosDados(f: { cnpj: string; emails: ContatoEmail[]; telefones: ContatoTelefone[] }): string | null {
+  if (f.cnpj.trim() && !cnpjValido(f.cnpj)) return 'CNPJ inválido.';
+  if (f.emails.some(e => e.email.trim() && !emailValido(e.email))) return 'Há um e-mail inválido.';
+  if (f.telefones.some(t => t.numero.trim() && !telefoneValido(t.numero))) {
+    return 'Há um telefone inválido. Informe o DDD e o número.';
+  }
+  return null;
 }
 
 /**

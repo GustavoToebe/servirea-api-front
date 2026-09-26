@@ -1,11 +1,13 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { mensagemApi } from '../../../core/api/api-error';
+import { MascaraDirective } from '../../../shared/directives/mascara.directive';
+import { formatarTelefone, telefoneValido } from '../../../shared/utils/formatos';
 import { AcessoApiService } from '../acesso-api.service';
 
 @Component({
   selector: 'app-meu-perfil',
-  imports: [FormsModule],
+  imports: [FormsModule, MascaraDirective],
   template: `
     <div class="mx-auto max-w-xl space-y-6">
       <div>
@@ -28,7 +30,11 @@ import { AcessoApiService } from '../acesso-api.service';
             <input class="mt-1 w-full rounded-xl border px-3 py-2" [value]="email" disabled>
           </label>
           <label class="block text-sm font-semibold">Telefone
-            <input class="mt-1 w-full rounded-xl border px-3 py-2" name="telefone" [(ngModel)]="telefone">
+            <input class="mt-1 w-full rounded-xl border px-3 py-2" name="telefone" [(ngModel)]="telefone" #telCampo="ngModel"
+              appMascara="telefone" inputmode="tel" placeholder="(00) 00000-0000">
+            @if (telCampo.touched && telefone.trim() && !telefoneValido(telefone)) {
+              <span class="mt-1 block text-xs font-normal text-red-600">Telefone inválido. Informe o DDD e o número.</span>
+            }
           </label>
           <label class="block text-sm font-semibold">Nova senha
             <input class="mt-1 w-full rounded-xl border px-3 py-2" type="password" name="senha" [(ngModel)]="senha" autocomplete="new-password">
@@ -51,13 +57,14 @@ export class MeuPerfilComponent implements OnInit {
   aviso = '';
   carregado = false;
   salvando = false;
+  readonly telefoneValido = telefoneValido;
 
   ngOnInit(): void {
     this.api.eu().subscribe({
       next: eu => {
         this.nome = eu.nome;
         this.email = eu.email;
-        this.telefone = eu.telefone || '';
+        this.telefone = formatarTelefone(eu.telefone);
         this.perfilNome = eu.perfil;
         this.carregado = true;
       },
@@ -66,9 +73,13 @@ export class MeuPerfilComponent implements OnInit {
   }
 
   salvar(): void {
+    this.aviso = '';
+    if (this.telefone.trim() && !telefoneValido(this.telefone)) {
+      this.erro = 'Telefone inválido. Informe o DDD e o número.';
+      return;
+    }
     this.salvando = true;
     this.erro = '';
-    this.aviso = '';
     this.api.salvarEu({
       nome: this.nome,
       tipoTelefone: this.telefone ? 'CELULAR' : null,

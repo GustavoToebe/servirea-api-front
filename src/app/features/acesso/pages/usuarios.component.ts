@@ -1,12 +1,14 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { mensagemApi } from '../../../core/api/api-error';
+import { MascaraDirective } from '../../../shared/directives/mascara.directive';
+import { emailValido, formatarTelefone, telefoneValido } from '../../../shared/utils/formatos';
 import { AcessoApiService } from '../acesso-api.service';
 import { Perfil, UsuarioParoquia } from '../acesso.models';
 
 @Component({
   selector: 'app-usuarios-paroquia',
-  imports: [FormsModule],
+  imports: [FormsModule, MascaraDirective],
   template: `
     <div class="mx-auto max-w-3xl space-y-6">
       <div class="flex items-end justify-between gap-4">
@@ -49,10 +51,18 @@ import { Perfil, UsuarioParoquia } from '../acesso.models';
             <input class="mt-1 w-full rounded-xl border px-3 py-2" name="nome" [(ngModel)]="form.nome" [disabled]="form.somenteLeitura" required>
           </label>
           <label class="block text-sm font-semibold">E-mail
-            <input class="mt-1 w-full rounded-xl border px-3 py-2" type="email" name="email" [(ngModel)]="form.email" [disabled]="form.somenteLeitura" required>
+            <input class="mt-1 w-full rounded-xl border px-3 py-2" type="email" name="email" [(ngModel)]="form.email" [disabled]="form.somenteLeitura" required
+              #emailCampo="ngModel" placeholder="nome@exemplo.com">
+            @if (emailCampo.touched && form.email.trim() && !emailValido(form.email)) {
+              <span class="mt-1 block text-xs font-normal text-red-600">E-mail inválido.</span>
+            }
           </label>
           <label class="block text-sm font-semibold">Telefone
-            <input class="mt-1 w-full rounded-xl border px-3 py-2" name="telefone" [(ngModel)]="form.telefone" [disabled]="form.somenteLeitura">
+            <input class="mt-1 w-full rounded-xl border px-3 py-2" name="telefone" [(ngModel)]="form.telefone" [disabled]="form.somenteLeitura"
+              #telCampo="ngModel" appMascara="telefone" inputmode="tel" placeholder="(00) 00000-0000">
+            @if (telCampo.touched && form.telefone.trim() && !telefoneValido(form.telefone)) {
+              <span class="mt-1 block text-xs font-normal text-red-600">Telefone inválido. Informe o DDD e o número.</span>
+            }
           </label>
           <label class="block text-sm font-semibold">Perfil
             <select class="mt-1 w-full rounded-xl border px-3 py-2" name="perfilId" [(ngModel)]="form.perfilId" required>
@@ -86,6 +96,8 @@ export class UsuariosComponent implements OnInit {
   erro = '';
   aviso = '';
   salvando = false;
+  readonly emailValido = emailValido;
+  readonly telefoneValido = telefoneValido;
   form: {
     usuarioId?: string;
     nome: string;
@@ -117,7 +129,7 @@ export class UsuariosComponent implements OnInit {
       usuarioId: usuario.usuarioId,
       nome: usuario.nome,
       email: usuario.email,
-      telefone: usuario.telefone || '',
+      telefone: formatarTelefone(usuario.telefone),
       perfilId: usuario.perfilId || '',
       ativo: usuario.ativo,
       somenteLeitura: usuario.somenteLeitura
@@ -126,6 +138,16 @@ export class UsuariosComponent implements OnInit {
 
   salvar(): void {
     if (!this.form) return;
+    if (!this.form.somenteLeitura) {
+      if (!emailValido(this.form.email)) {
+        this.erro = 'E-mail inválido.';
+        return;
+      }
+      if (this.form.telefone.trim() && !telefoneValido(this.form.telefone)) {
+        this.erro = 'Telefone inválido. Informe o DDD e o número.';
+        return;
+      }
+    }
     this.salvando = true;
     this.erro = '';
     this.api.salvarUsuario({

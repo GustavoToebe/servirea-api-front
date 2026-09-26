@@ -1,10 +1,14 @@
 
-import { Component, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, NgZone, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { environment } from '../../../../../environments/environment';
 import { TurnstileComponent } from '../../../../shared/components/turnstile/turnstile.component';
 import { readPhotoPreview, validatePhotoFile } from '../../../../shared/utils/photo.utils';
+import { MascaraDirective } from '../../../../shared/directives/mascara.directive';
+import { CepService } from '../../../../shared/services/cep.service';
+import { SEXOS, UFS, cepValido } from '../../../../shared/utils/formatos';
+import { Validar, erroDoCampo } from '../../../../shared/utils/validadores';
 import { InscricaoPublicaRequest, InscricaoResponsavelRequest } from '../../../pessoas/models/inscricao.model';
 import { FUNCOES_FORM, FUNCOES_LABEL, FuncaoEscala, PARENTESCOS, TIPO_LABEL, TIPOS_VOLUNTARIO, TipoVoluntario } from '../../../pessoas/models/pessoa.model';
 import { InscricoesApiService } from '../../../pessoas/services/inscricoes-api.service';
@@ -13,7 +17,7 @@ type InscricaoView = 'form' | 'enviando' | 'sucesso' | 'erro';
 
 @Component({
     selector: 'app-inscricao-publica',
-    imports: [ReactiveFormsModule, RouterLink, TurnstileComponent],
+    imports: [ReactiveFormsModule, RouterLink, TurnstileComponent, MascaraDirective],
     template: `
     <div class="parish min-h-screen bg-app">
       <header class="border-b border-slate-200 bg-white">
@@ -42,9 +46,25 @@ type InscricaoView = 'form' | 'enviando' | 'sucesso' | 'erro';
                 <div class="grid gap-4 md:grid-cols-2">
                   <div class="md:col-span-2"><label class="label">Nome completo *</label><input class="field" formControlName="nomeCompleto"></div>
                   <div><label class="label">Nascimento</label><input class="field" type="date" formControlName="dataNascimento"></div>
-                  <div><label class="label">Sexo</label><input class="field" formControlName="sexo"></div>
-                  <div><label class="label">CPF</label><input class="field" formControlName="cpf"></div>
-                  <div><label class="label">RG</label><input class="field" formControlName="rg"></div>
+                  <div>
+                    <label class="label">Sexo</label>
+                    <select class="field" formControlName="sexo">
+                      <option value="">—</option>
+                      @for (s of sexos; track s) {
+                        <option [value]="s">{{ s }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div>
+                    <label class="label">CPF</label>
+                    <input class="field" formControlName="cpf" appMascara="cpf" inputmode="numeric" placeholder="000.000.000-00">
+                    @if (erro(form.get('cpf')); as e) { <p class="mt-1 text-xs text-red-600">{{ e }}</p> }
+                  </div>
+                  <div>
+                    <label class="label">RG</label>
+                    <input class="field" formControlName="rg" appMascara="rg" placeholder="00.000.000-0">
+                    @if (erro(form.get('rg')); as e) { <p class="mt-1 text-xs text-red-600">{{ e }}</p> }
+                  </div>
                   <div>
                     <label class="label">Tipo *</label>
                     <select class="field" formControlName="tipo">
@@ -61,7 +81,10 @@ type InscricaoView = 'form' | 'enviando' | 'sucesso' | 'erro';
                   @for (g of emails.controls; track g; let i = $index) {
                     <div [formGroupName]="i" class="grid gap-3 md:grid-cols-12">
                       <input class="field md:col-span-3" formControlName="tipo" placeholder="Tipo">
-                      <input class="field md:col-span-6" type="email" formControlName="email" placeholder="e-mail">
+                      <div class="md:col-span-6">
+                        <input class="field" type="email" formControlName="email" placeholder="nome@exemplo.com">
+                        @if (erro(g.get('email')); as e) { <p class="mt-1 text-xs text-red-600">{{ e }}</p> }
+                      </div>
                       <label class="flex items-center gap-2 md:col-span-2"><input type="checkbox" formControlName="principal"> Principal</label>
                       <button type="button" class="text-sm text-red-600" (click)="emails.removeAt(i)">Excluir</button>
                     </div>
@@ -74,7 +97,10 @@ type InscricaoView = 'form' | 'enviando' | 'sucesso' | 'erro';
                   @for (g of telefones.controls; track g; let i = $index) {
                     <div [formGroupName]="i" class="grid gap-3 md:grid-cols-12">
                       <input class="field md:col-span-3" formControlName="tipo" placeholder="Tipo">
-                      <input class="field md:col-span-6" formControlName="numero" placeholder="número">
+                      <div class="md:col-span-6">
+                        <input class="field" formControlName="numero" appMascara="telefone" inputmode="tel" placeholder="(00) 00000-0000">
+                        @if (erro(g.get('numero')); as e) { <p class="mt-1 text-xs text-red-600">{{ e }}</p> }
+                      </div>
                       <label class="flex items-center gap-2 md:col-span-2"><input type="checkbox" formControlName="principal"> Principal</label>
                       <button type="button" class="text-sm text-red-600" (click)="telefones.removeAt(i)">Excluir</button>
                     </div>
@@ -102,8 +128,16 @@ type InscricaoView = 'form' | 'enviando' | 'sucesso' | 'erro';
                           }</datalist>
                         </div>
                         <div><label class="label">De (inverso)</label><input class="field" formControlName="parentescoInverso" placeholder="Filho, Filha…"></div>
-                        <div><label class="label">E-mail</label><input class="field" type="email" formControlName="email"></div>
-                        <div><label class="label">Telefone</label><input class="field" formControlName="telefone"></div>
+                        <div>
+                          <label class="label">E-mail</label>
+                          <input class="field" type="email" formControlName="email" placeholder="nome@exemplo.com">
+                          @if (erro(g.get('email')); as e) { <p class="mt-1 text-xs text-red-600">{{ e }}</p> }
+                        </div>
+                        <div>
+                          <label class="label">Telefone</label>
+                          <input class="field" formControlName="telefone" appMascara="telefone" inputmode="tel" placeholder="(00) 00000-0000">
+                          @if (erro(g.get('telefone')); as e) { <p class="mt-1 text-xs text-red-600">{{ e }}</p> }
+                        </div>
                         <label class="flex items-center gap-2"><input type="checkbox" formControlName="principal"> Principal</label>
                       </div>
                       <button type="button" class="mt-3 text-sm text-red-600" (click)="responsaveis.removeAt(i)">Remover</button>
@@ -114,13 +148,26 @@ type InscricaoView = 'form' | 'enviando' | 'sucesso' | 'erro';
               <section class="card p-6">
                 <h2 class="mb-4 text-lg font-black">Endereço</h2>
                 <div class="grid gap-4 md:grid-cols-4">
+                  <div>
+                    <label class="label">CEP</label>
+                    <input class="field" formControlName="cep" appMascara="cep" inputmode="numeric" placeholder="00000-000" (input)="buscarCep($any($event.target).value)">
+                    @if (erro(form.get('cep')); as e) { <p class="mt-1 text-xs text-red-600">{{ e }}</p> }
+                    @else if (avisoCep) { <p class="mt-1 text-xs text-slate-500">{{ avisoCep }}</p> }
+                  </div>
                   <div class="md:col-span-2"><label class="label">Rua</label><input class="field" formControlName="rua"></div>
                   <div><label class="label">Número</label><input class="field" formControlName="numero"></div>
                   <div><label class="label">Complemento</label><input class="field" formControlName="complemento"></div>
                   <div><label class="label">Bairro</label><input class="field" formControlName="bairro"></div>
-                  <div><label class="label">CEP</label><input class="field" formControlName="cep"></div>
                   <div><label class="label">Cidade</label><input class="field" formControlName="cidade"></div>
-                  <div><label class="label">UF</label><input class="field" formControlName="uf" maxlength="2"></div>
+                  <div>
+                    <label class="label">UF</label>
+                    <select class="field" formControlName="uf">
+                      <option value="">—</option>
+                      @for (uf of ufs; track uf) {
+                        <option [value]="uf">{{ uf }}</option>
+                      }
+                    </select>
+                  </div>
                 </div>
               </section>
               <section class="card p-6">
@@ -219,6 +266,11 @@ export class InscricaoPublicaComponent implements OnInit, OnDestroy {
   funcaoLabel = FUNCOES_LABEL;
   tipos: TipoVoluntario[] = TIPOS_VOLUNTARIO;
   tipoLabel = TIPO_LABEL;
+  sexos = SEXOS;
+  ufs = UFS;
+  avisoCep = '';
+  readonly erro = erroDoCampo;
+  private cepService = inject(CepService);
   form: FormGroup = this.criarForm();
 
   constructor(
@@ -259,8 +311,8 @@ export class InscricaoPublicaComponent implements OnInit, OnDestroy {
       nome: [''],
       parentesco: [''],
       parentescoInverso: [''],
-      email: [''],
-      telefone: [''],
+      email: ['', Validar.email],
+      telefone: ['', Validar.telefone],
       principal: [this.responsaveis.length === 0]
     }));
   }
@@ -295,10 +347,34 @@ export class InscricaoPublicaComponent implements OnInit, OnDestroy {
     this.photoPreview = null;
   }
 
+  /** CEP completo preenche rua, bairro, cidade e UF. */
+  async buscarCep(valor: string) {
+    this.avisoCep = '';
+    if (!cepValido(valor)) return;
+    this.avisoCep = 'Buscando endereço…';
+    const endereco = await this.cepService.buscar(valor);
+    if (!endereco) {
+      this.avisoCep = 'CEP não encontrado. Preencha o endereço.';
+      return;
+    }
+    this.avisoCep = '';
+    const campos: Record<string, string> = {
+      rua: endereco.logradouro, bairro: endereco.bairro, cidade: endereco.cidade, uf: endereco.uf
+    };
+    for (const [campo, valor] of Object.entries(campos)) {
+      if (valor) this.form.get(campo)!.setValue(valor);
+    }
+  }
+
   async submit() {
     if (this.form.get('nomeCompleto')?.invalid) {
       this.form.markAllAsTouched();
       this.error = 'Informe o nome completo.';
+      return;
+    }
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.error = 'Corrija os campos marcados em vermelho.';
       return;
     }
     if (this.turnstileSiteKey && !this.turnstileToken) {
@@ -342,15 +418,15 @@ export class InscricaoPublicaComponent implements OnInit, OnDestroy {
       nomeCompleto: ['', Validators.required],
       dataNascimento: [''],
       sexo: [''],
-      cpf: [''],
-      rg: [''],
+      cpf: ['', Validar.cpf],
+      rg: ['', Validar.rg],
       tipo: ['COROINHA', Validators.required],
       emails: this.fb.array([this.emailGroup(true)]),
       telefones: this.fb.array([this.telefoneGroup(true)]),
       responsaveis: this.fb.array([]),
-      cep: [''],
+      cep: ['', Validar.cep],
       cidade: [''],
-      uf: [''],
+      uf: ['', Validar.uf],
       rua: [''],
       numero: [''],
       complemento: [''],
@@ -366,11 +442,11 @@ export class InscricaoPublicaComponent implements OnInit, OnDestroy {
   }
 
   private emailGroup(principal: boolean) {
-    return this.fb.group({ tipo: ['E-mail pessoal'], email: ['', Validators.email], principal: [principal] });
+    return this.fb.group({ tipo: ['E-mail pessoal'], email: ['', Validar.email], principal: [principal] });
   }
 
   private telefoneGroup(principal: boolean) {
-    return this.fb.group({ tipo: ['celular'], numero: [''], principal: [principal] });
+    return this.fb.group({ tipo: ['celular'], numero: ['', Validar.telefone], principal: [principal] });
   }
 
   private montarRequest(): InscricaoPublicaRequest {

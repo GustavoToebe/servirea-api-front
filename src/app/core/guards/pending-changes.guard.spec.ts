@@ -1,31 +1,38 @@
+import { TestBed } from '@angular/core/testing';
+import { DialogoService } from '../../shared/services/dialogo.service';
 import { pendingChangesGuard } from './pending-changes.guard';
 
 describe('pendingChangesGuard', () => {
-  afterEach(() => {
-    (window.confirm as jasmine.Spy | undefined)?.and?.stub?.();
-  });
-
-  it('libera a saída sem confirmar quando não há alterações', () => {
-    const confirmSpy = spyOn(window, 'confirm');
-    const ok = pendingChangesGuard(
-      { hasPendingChanges: () => false },
+  function executar(pendente: boolean) {
+    return TestBed.runInInjectionContext(() => pendingChangesGuard(
+      { hasPendingChanges: () => pendente },
       {} as never,
       {} as never,
       {} as never
-    );
-    expect(ok).toBeTrue();
-    expect(confirmSpy).not.toHaveBeenCalled();
+    ));
+  }
+
+  it('libera a saída sem perguntar quando não há alterações', () => {
+    const confirmar = spyOn(TestBed.inject(DialogoService), 'confirmar');
+    expect(executar(false)).toBeTrue();
+    expect(confirmar).not.toHaveBeenCalled();
   });
 
-  it('pede confirmação quando há alterações pendentes', () => {
-    spyOn(window, 'confirm').and.returnValue(false);
-    const ok = pendingChangesGuard(
-      { hasPendingChanges: () => true },
-      {} as never,
-      {} as never,
-      {} as never
-    );
-    expect(ok).toBeFalse();
-    expect(window.confirm).toHaveBeenCalled();
+  it('pergunta no diálogo do Servire, não no confirm do navegador', async () => {
+    const nativo = spyOn(window, 'confirm');
+    const dialogo = TestBed.inject(DialogoService);
+    const resposta = executar(true) as Promise<boolean>;
+    expect(dialogo.aberto()?.confirmar).toBe('Sair sem salvar');
+    expect(dialogo.aberto()?.cancelar).toBe('Continuar editando');
+    dialogo.responder(false);
+    expect(await resposta).toBeFalse();
+    expect(nativo).not.toHaveBeenCalled();
+  });
+
+  it('sai quando o usuário confirma', async () => {
+    const dialogo = TestBed.inject(DialogoService);
+    const resposta = executar(true) as Promise<boolean>;
+    dialogo.responder(true);
+    expect(await resposta).toBeTrue();
   });
 });

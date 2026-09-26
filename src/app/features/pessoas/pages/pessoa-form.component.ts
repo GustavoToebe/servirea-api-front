@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HasPendingChanges } from '../../../core/guards/pending-changes.guard';
@@ -7,10 +7,14 @@ import { FUNCOES_FORM, FUNCOES_LABEL, FuncaoEscala, PARENTESCOS, PARENTESCOS_DEP
 import { PessoasService } from '../services/pessoas.service';
 import { VoluntariosApiService } from '../services/voluntarios-api.service';
 import { readPhotoPreview, validatePhotoFile } from '../../../shared/utils/photo.utils';
+import { MascaraDirective } from '../../../shared/directives/mascara.directive';
+import { CepService } from '../../../shared/services/cep.service';
+import { SEXOS, UFS, cepValido, formatarCep, formatarCpf, formatarRg, formatarTelefone, normalizarSexo } from '../../../shared/utils/formatos';
+import { Validar, erroDoCampo } from '../../../shared/utils/validadores';
 
 @Component({
     selector: 'app-pessoa-form',
-    imports: [CommonModule, ReactiveFormsModule, RouterLink],
+    imports: [CommonModule, ReactiveFormsModule, RouterLink, MascaraDirective],
     template: `
     <div class="mx-auto max-w-5xl space-y-6">
       <div class="flex items-center justify-between">
@@ -41,9 +45,25 @@ import { readPhotoPreview, validatePhotoFile } from '../../../shared/utils/photo
             <div class="grid gap-4 md:grid-cols-2">
               <div class="md:col-span-2"><label class="label">Nome completo *</label><input class="field" formControlName="nomeCompleto"></div>
               <div><label class="label">Nascimento</label><input class="field" type="date" formControlName="dataNascimento"></div>
-              <div><label class="label">Sexo</label><input class="field" formControlName="sexo"></div>
-              <div><label class="label">CPF</label><input class="field" formControlName="cpf"></div>
-              <div><label class="label">RG</label><input class="field" formControlName="rg"></div>
+              <div>
+                <label class="label">Sexo</label>
+                <select class="field" formControlName="sexo">
+                  <option value="">—</option>
+                  @for (s of sexos; track s) {
+                    <option [value]="s">{{ s }}</option>
+                  }
+                </select>
+              </div>
+              <div>
+                <label class="label">CPF</label>
+                <input class="field" formControlName="cpf" appMascara="cpf" inputmode="numeric" placeholder="000.000.000-00">
+                @if (erro(form.get('cpf')); as e) { <p class="mt-1 text-xs text-red-600">{{ e }}</p> }
+              </div>
+              <div>
+                <label class="label">RG</label>
+                <input class="field" formControlName="rg" appMascara="rg" placeholder="00.000.000-0">
+                @if (erro(form.get('rg')); as e) { <p class="mt-1 text-xs text-red-600">{{ e }}</p> }
+              </div>
             </div>
           </section>
           <section class="card p-6">
@@ -52,7 +72,10 @@ import { readPhotoPreview, validatePhotoFile } from '../../../shared/utils/photo
               @for (g of emails.controls; track g; let i = $index) {
                 <div [formGroupName]="i" class="grid gap-3 md:grid-cols-12">
                   <input class="field md:col-span-3" formControlName="tipo" placeholder="Tipo">
-                  <input class="field md:col-span-6" type="email" formControlName="email" placeholder="e-mail">
+                  <div class="md:col-span-6">
+                    <input class="field" type="email" formControlName="email" placeholder="nome@exemplo.com">
+                    @if (erro(g.get('email')); as e) { <p class="mt-1 text-xs text-red-600">{{ e }}</p> }
+                  </div>
                   <label class="flex items-center gap-2 md:col-span-2"><input type="checkbox" formControlName="principal"> Principal</label>
                   <button type="button" class="text-sm text-red-600" (click)="emails.removeAt(i)">Excluir</button>
                 </div>
@@ -65,7 +88,10 @@ import { readPhotoPreview, validatePhotoFile } from '../../../shared/utils/photo
               @for (g of telefones.controls; track g; let i = $index) {
                 <div [formGroupName]="i" class="grid gap-3 md:grid-cols-12">
                   <input class="field md:col-span-3" formControlName="tipo" placeholder="Tipo">
-                  <input class="field md:col-span-6" formControlName="numero" placeholder="número">
+                  <div class="md:col-span-6">
+                    <input class="field" formControlName="numero" appMascara="telefone" inputmode="tel" placeholder="(00) 00000-0000">
+                    @if (erro(g.get('numero')); as e) { <p class="mt-1 text-xs text-red-600">{{ e }}</p> }
+                  </div>
                   <label class="flex items-center gap-2 md:col-span-2"><input type="checkbox" formControlName="principal"> Principal</label>
                   <button type="button" class="text-sm text-red-600" (click)="telefones.removeAt(i)">Excluir</button>
                 </div>
@@ -122,11 +148,13 @@ import { readPhotoPreview, validatePhotoFile } from '../../../shared/utils/photo
                       </div>
                       <div>
                         <label class="label">E-mail</label>
-                        <input class="field" type="email" formControlName="emailNovo">
+                        <input class="field" type="email" formControlName="emailNovo" placeholder="nome@exemplo.com">
+                        @if (erro(g.get('emailNovo')); as e) { <p class="mt-1 text-xs text-red-600">{{ e }}</p> }
                       </div>
                       <div>
                         <label class="label">Telefone</label>
-                        <input class="field" formControlName="telefoneNovo">
+                        <input class="field" formControlName="telefoneNovo" appMascara="telefone" inputmode="tel" placeholder="(00) 00000-0000">
+                        @if (erro(g.get('telefoneNovo')); as e) { <p class="mt-1 text-xs text-red-600">{{ e }}</p> }
                       </div>
                     }
                     <div>
@@ -160,13 +188,26 @@ import { readPhotoPreview, validatePhotoFile } from '../../../shared/utils/photo
               <section class="card p-6">
                 <h2 class="mb-4 text-lg font-black">Endereço</h2>
                 <div class="grid gap-4 md:grid-cols-4">
+                  <div>
+                    <label class="label">CEP</label>
+                    <input class="field" formControlName="cep" appMascara="cep" inputmode="numeric" placeholder="00000-000" (input)="buscarCep($any($event.target).value)">
+                    @if (erro(form.get('cep')); as e) { <p class="mt-1 text-xs text-red-600">{{ e }}</p> }
+                    @else if (avisoCep) { <p class="mt-1 text-xs text-slate-500">{{ avisoCep }}</p> }
+                  </div>
                   <div class="md:col-span-2"><label class="label">Logradouro</label><input class="field" formControlName="logradouro"></div>
                   <div><label class="label">Número</label><input class="field" formControlName="numero"></div>
                   <div><label class="label">Complemento</label><input class="field" formControlName="complemento"></div>
                   <div><label class="label">Bairro</label><input class="field" formControlName="bairro"></div>
-                  <div><label class="label">CEP</label><input class="field" formControlName="cep"></div>
                   <div><label class="label">Cidade</label><input class="field" formControlName="cidade"></div>
-                  <div><label class="label">UF</label><input class="field" formControlName="uf" maxlength="2"></div>
+                  <div>
+                    <label class="label">UF</label>
+                    <select class="field" formControlName="uf">
+                      <option value="">—</option>
+                      @for (uf of ufs; track uf) {
+                        <option [value]="uf">{{ uf }}</option>
+                      }
+                    </select>
+                  </div>
                 </div>
               </section>
               @if (temPapel('VOLUNTARIO')) {
@@ -249,19 +290,24 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
   funcaoLabel = FUNCOES_LABEL;
   tipos: TipoVoluntario[] = TIPOS_VOLUNTARIO;
   tipoLabel = TIPO_LABEL;
+  sexos = SEXOS;
+  ufs = UFS;
+  avisoCep = '';
+  readonly erro = erroDoCampo;
+  private cepService = inject(CepService);
   form: FormGroup = this.fb.group({
     nomeCompleto: ['', Validators.required],
     dataNascimento: [''],
     sexo: [''],
-    cpf: [''],
-    rg: [''],
+    cpf: ['', Validar.cpf],
+    rg: ['', Validar.rg],
     emails: this.fb.array([this.emailGroup(true)]),
     telefones: this.fb.array([this.telefoneGroup(true)]),
     responsaveis: this.fb.array([]),
     dependentes: this.fb.array([]),
-    cep: [''],
+    cep: ['', Validar.cep],
     cidade: [''],
-    uf: [''],
+    uf: ['', Validar.uf],
     logradouro: [''],
     numero: [''],
     complemento: [''],
@@ -371,10 +417,36 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
     this.form.markAsDirty();
   }
 
+  /** CEP completo preenche logradouro, bairro, cidade e UF (o número fica com o usuário). */
+  async buscarCep(valor: string) {
+    this.avisoCep = '';
+    if (!cepValido(valor)) return;
+    this.avisoCep = 'Buscando endereço…';
+    const endereco = await this.cepService.buscar(valor);
+    if (!endereco) {
+      this.avisoCep = 'CEP não encontrado. Preencha o endereço.';
+      return;
+    }
+    this.avisoCep = '';
+    const campos: Record<string, string> = {
+      logradouro: endereco.logradouro, bairro: endereco.bairro, cidade: endereco.cidade, uf: endereco.uf
+    };
+    for (const [campo, valor] of Object.entries(campos)) {
+      if (valor) this.form.get(campo)!.setValue(valor);
+    }
+    this.form.markAsDirty();
+  }
+
   async save() {
     if (!this.papeis.size || this.form.get('nomeCompleto')?.invalid) {
       this.form.markAllAsTouched();
       this.error = 'Informe o nome e pelo menos um papel.';
+      return;
+    }
+    const campos = ['cpf', 'rg', 'cep', 'uf', 'emails', 'telefones'];
+    if (campos.some(c => this.form.get(c)?.invalid)) {
+      campos.forEach(c => this.form.get(c)?.markAllAsTouched());
+      this.error = 'Corrija os campos marcados em vermelho.';
       return;
     }
     const listasVisiveis = [
@@ -383,7 +455,7 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
     ];
     if (listasVisiveis.some(lista => lista.invalid)) {
       listasVisiveis.forEach(lista => lista.markAllAsTouched());
-      this.error = 'Preencha o parentesco (e um e-mail válido, se informado) em cada relação.';
+      this.error = 'Preencha o parentesco (e e-mail e telefone válidos, se informados) em cada relação.';
       return;
     }
     if (this.dependentes.controls.some(g => !g.get('pessoaId')?.value) && this.papeis.has('RESPONSAVEL')) {
@@ -414,19 +486,19 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
   }
 
   private emailGroup(principal: boolean) {
-    return this.fb.group({ tipo: ['E-mail pessoal'], email: ['', Validators.email], principal: [principal] });
+    return this.fb.group({ tipo: ['E-mail pessoal'], email: ['', Validar.email], principal: [principal] });
   }
 
   private telefoneGroup(principal: boolean) {
-    return this.fb.group({ tipo: ['celular'], numero: [''], principal: [principal] });
+    return this.fb.group({ tipo: ['celular'], numero: ['', Validar.telefone], principal: [principal] });
   }
 
   private relacaoGroup(r: Partial<Relacao> = {}) {
     return this.fb.group({
       pessoaId: [r.pessoaId || ''],
       nomeNovo: [''],
-      emailNovo: ['', Validators.email],
-      telefoneNovo: [''],
+      emailNovo: ['', Validar.email],
+      telefoneNovo: ['', Validar.telefone],
       parentesco: [r.parentesco || '', Validators.required],
       parentescoInverso: [r.parentescoInverso || ''],
       principal: [!!r.principal]
@@ -439,12 +511,12 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
     this.form.patchValue({
       nomeCompleto: p.nomeCompleto,
       dataNascimento: p.dataNascimento || '',
-      sexo: p.sexo || '',
-      cpf: p.cpf || '',
-      rg: p.rg || '',
-      cep: p.cep || '',
+      sexo: normalizarSexo(p.sexo),
+      cpf: formatarCpf(p.cpf),
+      rg: formatarRg(p.rg),
+      cep: formatarCep(p.cep),
       cidade: p.cidade || '',
-      uf: p.uf || '',
+      uf: (p.uf || '').toUpperCase(),
       logradouro: p.logradouro || '',
       numero: p.numero || '',
       complemento: p.complemento || '',
@@ -465,12 +537,12 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
     });
     this.emails.clear();
     for (const e of p.emails) {
-      this.emails.push(this.fb.group({ tipo: [e.tipo], email: [e.email], principal: [e.principal] }));
+      this.emails.push(this.fb.group({ tipo: [e.tipo], email: [e.email, Validar.email], principal: [e.principal] }));
     }
     if (!this.emails.length) this.addEmail();
     this.telefones.clear();
     for (const t of p.telefones) {
-      this.telefones.push(this.fb.group({ tipo: [t.tipo], numero: [t.numero], principal: [t.principal] }));
+      this.telefones.push(this.fb.group({ tipo: [t.tipo], numero: [formatarTelefone(t.numero), Validar.telefone], principal: [t.principal] }));
     }
     if (!this.telefones.length) this.addTelefone();
     this.responsaveis.clear();

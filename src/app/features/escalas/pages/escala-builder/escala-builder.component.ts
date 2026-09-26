@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HasPendingChanges } from '../../../../core/guards/pending-changes.guard';
@@ -10,6 +10,7 @@ import { EscalaDetalhe, EscalaEvento, MESES, STATUS_LABEL, StatusEscala, TipoEsc
 import { TITULOS_CELEBRACAO } from '../../data/calendario-liturgico';
 import { EscalasService } from '../../services/escalas.service';
 import { ExportService } from '../../services/export.service';
+import { DialogoService } from '../../../../shared/services/dialogo.service';
 
 @Component({
     selector: 'app-escala-builder',
@@ -225,6 +226,8 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
 
   get readOnly() { return this.status !== 'RASCUNHO'; }
 
+  private dialogo = inject(DialogoService);
+
   constructor(private fb: FormBuilder, private route: ActivatedRoute, private router: Router, private service: EscalasService, private volunteersService: VoluntariosService, private exporter: ExportService) {}
 
   async ngOnInit() {
@@ -258,15 +261,15 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
     this.syncAddDate();
   }
 
-  regenerate() {
+  async regenerate() {
     if (this.readOnly) return;
     const filled=this.filledCount();
-    if (filled && !confirm(`A grade possui ${filled} vaga(s) preenchida(s). Recriar a grade apagará essas seleções. Deseja continuar?`)) return;
+    if (filled && !await this.dialogo.confirmar({ titulo: 'Recriar a grade?', mensagem: `A grade possui ${filled} vaga(s) preenchida(s). Recriar a grade apagará essas seleções.`, confirmar: 'Recriar', perigo: true })) return;
     const {tipo,ano,mes}=this.form.getRawValue(); this.events=this.service.buildDefaultEvents(tipo,ano,mes); this.eventsDirty=true;
   }
 
   selectVolunteer(event: EscalaEvento, slot: any, id: string | null) {
-    if (id && this.usedIds(event, slot.voluntario_id).includes(id)) { alert('Esta pessoa já está alocada em outra função nesta mesma missa.'); return; }
+    if (id && this.usedIds(event, slot.voluntario_id).includes(id)) { void this.dialogo.avisar('Esta pessoa já está alocada em outra função nesta mesma missa.'); return; }
     slot.voluntario_id=id; slot.voluntario=id?this.volunteers.find(v=>v.id===id)||null:null; this.eventsDirty=true;
   }
   usedIds(event: EscalaEvento, current: string | null) { return event.vagas.map(v=>v.voluntario_id).filter((x):x is string=>!!x && x!==current); }
@@ -278,10 +281,10 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
 
   addDay() {
     if (this.readOnly) return;
-    if (!this.addDate || !this.addTime) { alert('Informe a data e o horário.'); return; }
+    if (!this.addDate || !this.addTime) { void this.dialogo.avisar('Informe a data e o horário.'); return; }
     const time = this.addTime.slice(0, 5);
     if (this.events.some(e => e.data === this.addDate && e.horario.slice(0, 5) === time)) {
-      alert('Já existe uma celebração neste dia e horário.');
+      void this.dialogo.avisar('Já existe uma celebração neste dia e horário.');
       return;
     }
     const { tipo } = this.form.getRawValue();
@@ -290,9 +293,9 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
     this.eventsDirty = true;
   }
 
-  removeDay(event: EscalaEvento) {
+  async removeDay(event: EscalaEvento) {
     if (this.readOnly) return;
-    if (!confirm(`Excluir ${this.date(event.data)} às ${event.horario.slice(0, 5)} (${event.celebracao}) desta escala?`)) return;
+    if (!await this.dialogo.confirmar({ titulo: 'Excluir celebração?', mensagem: `Excluir ${this.date(event.data)} às ${event.horario.slice(0, 5)} (${event.celebracao}) desta escala?`, confirmar: 'Excluir', perigo: true })) return;
     this.events = this.events.filter(e => e !== event);
     this.eventsDirty = true;
   }
@@ -305,8 +308,8 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
   async saveDraft() { await this.persist('RASCUNHO', false); }
   async finalize() {
     const missing=this.totalSlots()-this.filledCount();
-    if (missing>0 && !confirm(`Ainda existem ${missing} vaga(s) sem nome. Deseja finalizar mesmo assim?`)) return;
-    if (!confirm('Tem certeza que deseja finalizar esta escala? Ela ficará bloqueada para edição até ser reaberta.')) return;
+    if (missing>0 && !await this.dialogo.confirmar({ titulo: 'Vagas sem nome', mensagem: `Ainda existem ${missing} vaga(s) sem nome. Deseja finalizar mesmo assim?`, confirmar: 'Continuar' })) return;
+    if (!await this.dialogo.confirmar({ titulo: 'Finalizar escala?', mensagem: 'A escala ficará bloqueada para edição até ser reaberta.', confirmar: 'Finalizar' })) return;
     await this.persist('FINALIZADA', true);
   }
 
@@ -321,9 +324,9 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
     }catch(e:any){this.error=e?.message||'Não foi possível salvar a escala.';}finally{this.saving=false;}
   }
 
-  async cancelScale(){if(!this.id)return;if(!confirm(`Tem certeza que deseja cancelar a escala ${MESES[this.form.controls.mes.value-1]} / ${this.form.controls.ano.value}?`))return;try{this.currentDetail=await this.service.setStatus(this.id,'CANCELADA');this.status='CANCELADA';this.form.disable({emitEvent:false});this.saved=true;}catch(e:any){this.error=e?.message||'Erro ao cancelar escala.';}}
-  async reopen(){if(!this.id)return;if(!confirm('Deseja reabrir esta escala como não finalizada? Ela voltará a aceitar alterações.'))return;try{this.currentDetail=await this.service.setStatus(this.id,'RASCUNHO');this.status='RASCUNHO';this.form.enable({emitEvent:false});this.saved=true;}catch(e:any){this.error=e?.message||'Erro ao reabrir escala.';}}
-  async remove(){if(!this.id)return;if(!confirm(`Tem certeza que deseja excluir definitivamente a escala de ${MESES[this.form.controls.mes.value-1]} / ${this.form.controls.ano.value}? Esta ação não pode ser desfeita.`))return;try{await this.service.deleteCancelled(this.id);this.saved=true;await this.router.navigate(['/escalas']);}catch(e:any){this.error=e?.message||'Erro ao excluir escala.';}}
+  async cancelScale(){if(!this.id)return;if(!await this.dialogo.confirmar({ titulo: 'Cancelar escala?', mensagem: `Tem certeza que deseja cancelar a escala ${MESES[this.form.controls.mes.value-1]} / ${this.form.controls.ano.value}?`, confirmar: 'Cancelar escala', cancelar: 'Voltar', perigo: true }))return;try{this.currentDetail=await this.service.setStatus(this.id,'CANCELADA');this.status='CANCELADA';this.form.disable({emitEvent:false});this.saved=true;}catch(e:any){this.error=e?.message||'Erro ao cancelar escala.';}}
+  async reopen(){if(!this.id)return;if(!await this.dialogo.confirmar({ titulo: 'Reabrir escala?', mensagem: 'A escala volta a ser não finalizada e aceita alterações de novo.', confirmar: 'Reabrir' }))return;try{this.currentDetail=await this.service.setStatus(this.id,'RASCUNHO');this.status='RASCUNHO';this.form.enable({emitEvent:false});this.saved=true;}catch(e:any){this.error=e?.message||'Erro ao reabrir escala.';}}
+  async remove(){if(!this.id)return;if(!await this.dialogo.confirmar({ titulo: 'Excluir escala?', mensagem: `Excluir definitivamente a escala de ${MESES[this.form.controls.mes.value-1]} / ${this.form.controls.ano.value}? Esta ação não pode ser desfeita.`, confirmar: 'Excluir', perigo: true }))return;try{await this.service.deleteCancelled(this.id);this.saved=true;await this.router.navigate(['/escalas']);}catch(e:any){this.error=e?.message||'Erro ao excluir escala.';}}
   async exportPdf(){if(!this.id)return;try{await this.exporter.exportPdf(await this.service.getById(this.id));}catch(e:any){this.error=e?.message||'Erro ao exportar PDF.';}}
   async exportPng(){if(!this.id)return;try{await this.exporter.exportPng(await this.service.getById(this.id));}catch(e:any){this.error=e?.message||'Erro ao exportar PNG.';}}
 

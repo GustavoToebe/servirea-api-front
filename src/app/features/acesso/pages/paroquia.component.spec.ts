@@ -1,4 +1,4 @@
-import { montarRequisicao } from './paroquia.component';
+import { montarRequisicao, problemaNosDados } from './paroquia.component';
 
 describe('montarRequisicao (tela Paróquia)', () => {
   const base = { nome: ' São José ', razaoSocial: '', cnpj: ' 12.345.678/0001-90 ', diocese: '  ', emails: [], telefones: [] };
@@ -28,5 +28,16 @@ describe('montarRequisicao (tela Paróquia)', () => {
     expect(corpo.emails[0].principal).toBeTrue();
     expect(corpo.emails[1].tipo).toBe('E-mail');
     expect(corpo.telefones).toEqual([{ tipo: 'Fixo', numero: '4533330000', principal: true }]);
+  });
+
+  it('confere CNPJ (inclusive alfanumérico), e-mail e telefone antes de salvar', () => {
+    const vazio = { cnpj: '', emails: [], telefones: [] };
+    expect(problemaNosDados(vazio)).toBeNull();
+    expect(problemaNosDados({ ...vazio, cnpj: '12.ABC.345/01DE-35' })).toBeNull();
+    expect(problemaNosDados({ ...vazio, cnpj: '12.345.678/0001-90' })).toBe('CNPJ inválido.');
+    expect(problemaNosDados({ ...vazio, emails: [{ tipo: 'x', email: 'secretaria@paroquia', principal: true }] }))
+      .toBe('Há um e-mail inválido.');
+    expect(problemaNosDados({ ...vazio, telefones: [{ tipo: 'x', numero: '3333-0000', principal: true }] }))
+      .toContain('telefone inválido');
   });
 });
