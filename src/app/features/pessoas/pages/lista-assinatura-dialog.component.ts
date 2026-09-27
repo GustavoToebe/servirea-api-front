@@ -1,0 +1,98 @@
+import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../../core/auth/auth.service';
+import { ItemAssinatura, ListaAssinaturaService, ORDENAR_POR, Ordem, OrdenarPor } from '../services/lista-assinatura.service';
+
+/**
+ * Modal da lista de assinatura (27/09/2026): muda só o título (e o subtítulo), a ordem e o formato.
+ * O subtítulo vem com o nome da paróquia; a cidade a pessoa acrescenta se quiser.
+ */
+@Component({
+  selector: 'app-lista-assinatura-dialog',
+  imports: [FormsModule],
+  template: `
+    @if (open) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" (click)="aoClicarFundo($event)">
+        <div class="card w-full max-w-lg p-6" role="dialog" aria-modal="true" aria-label="Gerar lista de assinatura">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h3 class="text-lg font-black text-slate-900">🖨 Lista de assinatura</h3>
+              <p class="mt-1 text-sm text-slate-500">{{ itens.length }} pessoa(s) selecionada(s).</p>
+            </div>
+            <button type="button" class="rounded-lg px-2 py-1 text-slate-400 hover:text-slate-700" aria-label="Fechar" (click)="fechar.emit()">✕</button>
+          </div>
+          <div class="mt-5 grid gap-4 sm:grid-cols-2">
+            <div class="sm:col-span-2"><label class="label" for="la-titulo">Título *</label>
+              <input id="la-titulo" class="field" [(ngModel)]="titulo" maxlength="120"></div>
+            <div class="sm:col-span-2"><label class="label" for="la-subtitulo">Subtítulo</label>
+              <input id="la-subtitulo" class="field" [(ngModel)]="subtitulo" maxlength="160" placeholder="Paróquia / Cidade - UF"></div>
+            <div><label class="label" for="la-ordenar">Ordenar por</label>
+              <select id="la-ordenar" class="field" [(ngModel)]="ordenarPor">
+                @for (o of opcoesOrdem; track o.valor) { <option [ngValue]="o.valor">{{ o.rotulo }}</option> }
+              </select></div>
+            <div><label class="label" for="la-ordem">Tipo de ordem</label>
+              <select id="la-ordem" class="field" [(ngModel)]="ordem">
+                <option ngValue="ASC">Crescente</option>
+                <option ngValue="DESC">Decrescente</option>
+              </select></div>
+          </div>
+          @if (erro) { <p class="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{{ erro }}</p> }
+          <div class="mt-6 flex flex-wrap items-center justify-between gap-2">
+            <button type="button" class="btn-secondary" (click)="fechar.emit()">Cancelar</button>
+            <div class="flex gap-2">
+              <button type="button" class="btn-secondary" [disabled]="gerando" (click)="gerar('IMAGEM')">Gerar imagem</button>
+              <button type="button" class="btn-primary" [disabled]="gerando" (click)="gerar('PDF')">{{ gerando ? 'Gerando...' : 'Gerar PDF' }}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  `
+})
+export class ListaAssinaturaDialogComponent implements OnChanges {
+  private servico = inject(ListaAssinaturaService);
+  private auth = inject(AuthService);
+
+  @Input() open = false;
+  @Input() itens: ItemAssinatura[] = [];
+  @Output() fechar = new EventEmitter<void>();
+
+  readonly opcoesOrdem = ORDENAR_POR;
+  titulo = '';
+  subtitulo = '';
+  ordenarPor: OrdenarPor = 'NOME';
+  ordem: Ordem = 'ASC';
+  gerando = false;
+  erro = '';
+
+  ngOnChanges(): void {
+    if (!this.open) return;
+    this.erro = '';
+    // Mantém o que a pessoa digitou entre uma lista e outra; só preenche na primeira vez.
+    this.titulo ||= `Lista de assinatura - ${new Date().getFullYear()}`;
+    this.subtitulo ||= (this.auth.tenantNome() || '').toUpperCase();
+  }
+
+  aoClicarFundo(evento: MouseEvent): void {
+    if (evento.target === evento.currentTarget && !this.gerando) this.fechar.emit();
+  }
+
+  async gerar(formato: 'PDF' | 'IMAGEM'): Promise<void> {
+    if (!this.titulo.trim()) {
+      this.erro = 'Informe o título.';
+      return;
+    }
+    this.gerando = true;
+    this.erro = '';
+    const opcoes = { titulo: this.titulo.trim(), subtitulo: this.subtitulo.trim(), ordenarPor: this.ordenarPor, ordem: this.ordem };
+    try {
+      if (formato === 'PDF') await this.servico.gerarPdf(this.itens, opcoes);
+      else await this.servico.gerarImagem(this.itens, opcoes);
+      this.fechar.emit();
+    } catch {
+      this.erro = 'Não foi possível gerar o arquivo. Tente de novo.';
+    } finally {
+      this.gerando = false;
+    }
+  }
+}

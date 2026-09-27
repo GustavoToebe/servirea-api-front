@@ -4,6 +4,8 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { ItemAssinatura } from '../services/lista-assinatura.service';
+import { ListaAssinaturaDialogComponent } from './lista-assinatura-dialog.component';
 import { Inscricao, StatusInscricao } from '../models/inscricao.model';
 import { Pessoa, TIPO_LABEL, TipoVoluntario, FUNCOES_LABEL, VoluntarioLista, ageFromDate, initials, mandatoRotulo, tipoBadgeClass } from '../models/pessoa.model';
 import { InscricoesApiService } from '../services/inscricoes-api.service';
@@ -14,7 +16,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
 
 @Component({
     selector: 'app-pessoas-list',
-    imports: [CommonModule, FormsModule, RouterLink, ConfirmDialogComponent, NumeroComponent],
+    imports: [CommonModule, FormsModule, RouterLink, ConfirmDialogComponent, NumeroComponent, ListaAssinaturaDialogComponent],
     template: `
     <div class="space-y-6">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -65,7 +67,21 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
           <button type="button" class="rounded-full px-3 py-1.5 text-sm font-bold" [class.bg-slate-900]="historico==='REJEITADA'" [class.text-white]="historico==='REJEITADA'" [class.bg-slate-100]="historico!=='REJEITADA'" (click)="setHistorico('REJEITADA')">Rejeitadas</button>
         </div>
       }
-    
+
+      @if (!loading && idsVisiveis.length) {
+        <div class="card flex flex-wrap items-center gap-3 px-5 py-3">
+          <label class="flex cursor-pointer items-center gap-2 text-sm font-bold text-slate-700">
+            <input type="checkbox" class="h-5 w-5 cursor-pointer accent-[var(--brand)]" data-marcar-todos
+              [checked]="todosMarcados" [indeterminate]="algunsMarcados" (change)="marcarTodos($any($event.target).checked)">
+            Marcar todos
+          </label>
+          <span class="text-sm text-slate-500">{{ quantidadeMarcada }} selecionado(s)</span>
+          <button type="button" class="btn-primary ml-auto !py-2" [disabled]="!quantidadeMarcada" (click)="abrirLista()">
+            🖨 Gerar lista de assinatura
+          </button>
+        </div>
+      }
+
       @if (aba==='todas') {
         <div class="grid gap-3">
           @if (loading) {
@@ -75,8 +91,10 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
             <div class="card p-10 text-center text-slate-500">Nenhum cadastro.</div>
           }
           @for (p of pessoasVisiveis; track p.id) {
-            <article class="card p-5">
+            <article class="card p-5" [class.ring-2]="marcados.has(p.id)" [class.ring-violet-300]="marcados.has(p.id)">
               <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
+                <input type="checkbox" class="mt-3 h-5 w-5 shrink-0 cursor-pointer accent-[var(--brand)]" [attr.data-marcar]="p.id"
+                  [checked]="marcados.has(p.id)" (change)="alternar(p.id)" [attr.aria-label]="'Selecionar ' + p.nomeCompleto">
                 <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-violet-100 font-bold text-brand-blue">{{ initials(p.nomeCompleto) }}</div>
                 <div class="min-w-0 flex-1">
                   <div class="flex flex-wrap items-center gap-2">
@@ -122,8 +140,10 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
             <div class="card p-10 text-center text-slate-500">Nenhum cadastro.</div>
           }
           @for (v of rowsVisiveis; track v.id) {
-            <article class="card p-5">
+            <article class="card p-5" [class.ring-2]="marcados.has(v.id)" [class.ring-violet-300]="marcados.has(v.id)">
               <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
+                <input type="checkbox" class="mt-3 h-5 w-5 shrink-0 cursor-pointer accent-[var(--brand)]" [attr.data-marcar]="v.id"
+                  [checked]="marcados.has(v.id)" (change)="alternar(v.id)" [attr.aria-label]="'Selecionar ' + v.nomeCompleto">
                 <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-violet-100 font-bold text-brand-blue">{{ initials(v.nomeCompleto) }}</div>
                 <div class="min-w-0 flex-1">
                   <div class="flex flex-wrap items-center gap-2">
@@ -188,6 +208,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
       }
     </div>
     
+    <app-lista-assinatura-dialog [open]="listaAberta" [itens]="itensLista" (fechar)="listaAberta = false" />
     <app-confirm-dialog [open]="!!approveTarget" title="Aprovar inscrição"
       [message]="'Aprovar ' + (approveTarget?.nomeCompleto || '') + '? O cadastro será criado em /pessoas.'"
       confirmLabel="Aprovar" (cancel)="approveTarget=null" (confirm)="confirmApprove()">
@@ -220,6 +241,10 @@ export class PessoasListComponent implements OnInit {
   mandatoDe = mandatoRotulo;
   initials = initials;
   ageFromDate = ageFromDate;
+  /** Seleção para a lista de assinatura (27/09/2026): ids das pessoas marcadas na aba atual. */
+  marcados = new Set<string>();
+  listaAberta = false;
+  itensLista: ItemAssinatura[] = [];
 
   constructor(
     private pessoasApi: PessoasService,
@@ -257,6 +282,7 @@ export class PessoasListComponent implements OnInit {
         this.inscricoesApi.listar('PENDENTE')
       ]);
       this.counts = { pessoas: todas.length, ativos, inativos, pendentes: pendentes.length };
+      this.marcados.clear();
       this.pessoas = [];
       this.rows = [];
       this.inscricoes = [];
@@ -287,6 +313,56 @@ export class PessoasListComponent implements OnInit {
   get rowsVisiveis(): VoluntarioLista[] {
     if (!this.tipo) return this.rows;
     return this.rows.filter(v => v.tipo === this.tipo);
+  }
+
+  /** Ids da lista que está na tela (aba e filtro de tipo). */
+  get idsVisiveis(): string[] {
+    if (this.aba === 'todas') return this.pessoasVisiveis.map(p => p.id);
+    if (this.aba === 'ativos' || this.aba === 'inativos') return this.rowsVisiveis.map(v => v.id);
+    return [];
+  }
+
+  get quantidadeMarcada(): number {
+    return this.idsVisiveis.filter(id => this.marcados.has(id)).length;
+  }
+
+  get todosMarcados(): boolean {
+    const ids = this.idsVisiveis;
+    return ids.length > 0 && ids.every(id => this.marcados.has(id));
+  }
+
+  get algunsMarcados(): boolean {
+    return this.quantidadeMarcada > 0 && !this.todosMarcados;
+  }
+
+  alternar(id: string) {
+    if (this.marcados.has(id)) this.marcados.delete(id);
+    else this.marcados.add(id);
+  }
+
+  marcarTodos(marcar: boolean) {
+    for (const id of this.idsVisiveis) {
+      if (marcar) this.marcados.add(id);
+      else this.marcados.delete(id);
+    }
+  }
+
+  /** Só quem está visível e marcado entra (o filtro de tipo pode ter escondido alguém marcado antes). */
+  itensMarcados(): ItemAssinatura[] {
+    if (this.aba === 'todas') {
+      return this.pessoasVisiveis.filter(p => this.marcados.has(p.id)).map(p => ({
+        nome: p.nomeCompleto, numero: p.sequencial ?? null, nascimento: p.dataNascimento,
+        tipo: p.voluntario ? this.tipoLabel[p.voluntario.tipo] : 'Responsável'
+      }));
+    }
+    return this.rowsVisiveis.filter(v => this.marcados.has(v.id)).map(v => ({
+      nome: v.nomeCompleto, nascimento: v.dataNascimento ?? null, tipo: this.tipoLabel[v.tipo]
+    }));
+  }
+
+  abrirLista() {
+    this.itensLista = this.itensMarcados();
+    this.listaAberta = true;
   }
 
   responsavelDe(pessoa: Pessoa): string {
