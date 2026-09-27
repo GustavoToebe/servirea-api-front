@@ -1,3 +1,4 @@
+import { OlhoSenhaComponent } from '../../../shared/components/olho-senha/olho-senha.component';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { mensagemApi } from '../../../core/api/api-error';
@@ -7,7 +8,7 @@ import { AcessoApiService } from '../acesso-api.service';
 
 @Component({
   selector: 'app-meu-perfil',
-  imports: [FormsModule, MascaraDirective],
+  imports: [FormsModule, MascaraDirective, OlhoSenhaComponent],
   template: `
     <div class="mx-auto max-w-xl space-y-6">
       <div>
@@ -37,7 +38,7 @@ import { AcessoApiService } from '../acesso-api.service';
             }
           </label>
           <label class="block text-sm font-semibold">Nova senha
-            <input class="mt-1 w-full rounded-xl border px-3 py-2" type="password" name="senha" [(ngModel)]="senha" autocomplete="new-password">
+            <div class="relative mt-1"><input #campoSenha class="w-full rounded-xl border px-3 py-2 pr-11" type="password" name="senha" [(ngModel)]="senha" autocomplete="new-password"><app-olho-senha [campo]="campoSenha" /></div>
           </label>
           <button class="btn-primary" type="submit" [disabled]="salvando">Salvar</button>
         </form>

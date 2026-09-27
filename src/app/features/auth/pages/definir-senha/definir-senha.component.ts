@@ -1,3 +1,4 @@
+import { OlhoSenhaComponent } from '../../../../shared/components/olho-senha/olho-senha.component';
 import { Component, inject } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -21,7 +22,7 @@ function senhasIguais(grupo: AbstractControl): ValidationErrors | null {
  */
 @Component({
   selector: 'app-definir-senha',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, OlhoSenhaComponent],
   template: `
     <div class="parish relative grid min-h-screen place-items-center overflow-hidden bg-app p-4">
       <div class="relative w-full max-w-md rounded-3xl border border-white/70 bg-white p-8 shadow-[0_24px_60px_rgba(47,28,106,0.12)]">
@@ -36,11 +37,11 @@ function senhasIguais(grupo: AbstractControl): ValidationErrors | null {
             <form [formGroup]="senhaForm" (ngSubmit)="definir()" class="mt-6 space-y-4">
               <div>
                 <label class="label" for="senha">Nova senha</label>
-                <input id="senha" class="field" type="password" formControlName="senha" autocomplete="new-password">
+                <div class="relative"><input #campoSenha id="senha" class="field pr-11" type="password" formControlName="senha" autocomplete="new-password"><app-olho-senha [campo]="campoSenha" /></div>
               </div>
               <div>
                 <label class="label" for="confirmacao">Repita a senha</label>
-                <input id="confirmacao" class="field" type="password" formControlName="confirmacao" autocomplete="new-password">
+                <div class="relative"><input #campoConfirmacao id="confirmacao" class="field pr-11" type="password" formControlName="confirmacao" autocomplete="new-password"><app-olho-senha [campo]="campoConfirmacao" /></div>
               </div>
               @if (senhaForm.hasError('diferentes')) {
                 <p class="text-sm text-red-700">As senhas não são iguais.</p>

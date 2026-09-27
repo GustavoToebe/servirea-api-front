@@ -1,3 +1,4 @@
+import { OlhoSenhaComponent } from '../../../../shared/components/olho-senha/olho-senha.component';
 
 import { Component } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -7,7 +8,7 @@ import { TenantResumo } from '../../../../core/auth/auth.models';
 
 @Component({
     selector: 'app-login',
-    imports: [ReactiveFormsModule, RouterLink],
+    imports: [ReactiveFormsModule, RouterLink, OlhoSenhaComponent],
     template: `
     <div class="parish relative grid min-h-screen place-items-center overflow-hidden bg-app p-4">
       <div class="relative w-full max-w-md rounded-3xl border border-white/70 bg-white p-8 shadow-[0_24px_60px_rgba(47,28,106,0.12)]">
@@ -25,7 +26,7 @@ import { TenantResumo } from '../../../../core/auth/auth.models';
             </div>
             <div>
               <label class="label">Senha</label>
-              <input class="field" type="password" formControlName="senha" autocomplete="current-password">
+              <div class="relative"><input #campoSenha class="field pr-11" type="password" formControlName="senha" autocomplete="current-password"><app-olho-senha [campo]="campoSenha" /></div>
             </div>
             @if (error) {
               <div class="rounded-xl bg-red-50 p-3 text-sm text-red-700">{{ error }}</div>
