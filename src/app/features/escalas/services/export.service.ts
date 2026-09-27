@@ -99,7 +99,7 @@ export class ExportService {
     return `
       <tr>
         <td rowspan="3" style="border:1px solid #cfcfcf;padding:12px 10px;vertical-align:middle;background:#fff7f7;">
-          <div style="font-size:22px;font-weight:800;line-height:1.2;color:${RED};">${this.esc(this.dataCompleta(event.data))}</div>
+          <div style="font-size:18px;font-weight:800;line-height:1.2;">${this.esc(this.dataCompleta(event.data))}</div>
           <div style="margin-top:4px;font-size:18px;font-weight:800;line-height:1.2;">${this.esc(this.dayLabel(event.data))}</div>
           <div style="margin-top:6px;font-size:16px;font-weight:700;">${this.esc(event.horario.slice(0, 5))}hs</div>
           ${feast}
