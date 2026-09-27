@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { NumeroComponent } from '../../../../shared/components/numero/numero.component';
+import { CampoDataComponent } from '../../../../shared/components/datas/campo-data.component';
 import { Component, OnInit, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HasPendingChanges } from '../../../../core/guards/pending-changes.guard';
 import { VolunteerPickerComponent } from '../../../../shared/components/volunteer-picker/volunteer-picker.component';
@@ -15,7 +16,7 @@ import { DialogoService } from '../../../../shared/services/dialogo.service';
 
 @Component({
     selector: 'app-escala-builder',
-    imports: [CommonModule, ReactiveFormsModule, RouterLink, VolunteerPickerComponent, NumeroComponent],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, VolunteerPickerComponent, NumeroComponent, CampoDataComponent],
     template: `
     <div class="space-y-6">
       <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
@@ -53,10 +54,7 @@ import { DialogoService } from '../../../../shared/services/dialogo.service';
         <div class="grid gap-3 md:grid-cols-[1fr_140px_1fr_auto] md:items-end">
           <div>
             <label class="label">Data</label>
-            <div class="relative">
-              <input class="field date-input-br" type="date" lang="pt-BR" [value]="addDate" (change)="setAddDate($event)">
-              <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-800">{{ dateBr(addDate) }}</span>
-            </div>
+            <app-campo-data [ngModel]="addDate" (ngModelChange)="addDate = $event" [limpavel]="false" />
           </div>
           <div><label class="label">Horário</label><input class="field" type="time" [value]="addTime" (change)="setAddTime($event)"></div>
           <div>
@@ -276,7 +274,6 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
   usedIds(event: EscalaEvento, current: string | null) { return event.vagas.map(v=>v.voluntario_id).filter((x):x is string=>!!x && x!==current); }
   changeTime(e: EscalaEvento, ev: Event){e.horario=(ev.target as HTMLInputElement).value;this.eventsDirty=true;}
   changeCelebration(e: EscalaEvento, ev: Event){e.celebracao=(ev.target as HTMLInputElement).value;this.eventsDirty=true;}
-  setAddDate(ev: Event){this.addDate=(ev.target as HTMLInputElement).value;}
   setAddTime(ev: Event){this.addTime=(ev.target as HTMLInputElement).value;}
   setAddCelebration(ev: Event){this.addCelebration=(ev.target as HTMLInputElement).value;}
 
@@ -337,7 +334,6 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
   multiLabel(e:EscalaEvento,slot:any){const count=e.vagas.filter(v=>v.funcao===slot.funcao).length;return count>1?` ${slot.posicao}`:'';}
   slotFor(e: EscalaEvento, funcao: FuncaoEscala, posicao: number) { return e.vagas.find(v => v.funcao === funcao && v.posicao === posicao) || null; }
   date(v:string){return new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(`${v}T12:00:00`));}
-  dateBr(v:string){return v ? this.date(v) : 'dd/mm/aaaa';}
   dateShort(v:string){return new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'short'}).format(new Date(`${v}T12:00:00`)).replace('.','');}
   weekday(v:string){return new Intl.DateTimeFormat('pt-BR',{weekday:'long'}).format(new Date(`${v}T12:00:00`));}
   statusLabel(s:StatusEscala){return STATUS_LABEL[s];}

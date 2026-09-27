@@ -10,7 +10,8 @@
 export function focarPrimeiroInvalido(raiz: HTMLElement): void {
   setTimeout(() => {
     const alvo = raiz.querySelector<HTMLElement>(
-      '[data-invalido], input.ng-invalid.ng-touched, select.ng-invalid.ng-touched, textarea.ng-invalid.ng-touched');
+      '[data-invalido], input.ng-invalid.ng-touched, select.ng-invalid.ng-touched, textarea.ng-invalid.ng-touched, ' +
+      'app-campo-data.ng-invalid.ng-touched, app-campo-competencia.ng-invalid.ng-touched');
     if (!alvo) return;
     alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
     const foco = alvo.matches('input, select, textarea') ? alvo : alvo.querySelector<HTMLElement>('input, select, textarea');

@@ -8,6 +8,8 @@ import { PessoasService } from '../services/pessoas.service';
 import { VoluntariosApiService } from '../services/voluntarios-api.service';
 import { readPhotoPreview, validatePhotoFile } from '../../../shared/utils/photo.utils';
 import { MascaraDirective } from '../../../shared/directives/mascara.directive';
+import { CampoDataComponent } from '../../../shared/components/datas/campo-data.component';
+import { hojeIso } from '../../../shared/components/datas/datas';
 import { CepService } from '../../../shared/services/cep.service';
 import { SEXOS, UFS, cepValido, formatarCep, formatarCpf, formatarRg, formatarTelefone, normalizarSexo } from '../../../shared/utils/formatos';
 import { Validar, erroDoCampo } from '../../../shared/utils/validadores';
@@ -15,7 +17,7 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
 
 @Component({
     selector: 'app-pessoa-form',
-    imports: [CommonModule, ReactiveFormsModule, RouterLink, MascaraDirective],
+    imports: [CommonModule, ReactiveFormsModule, RouterLink, MascaraDirective, CampoDataComponent],
     template: `
     <div class="mx-auto max-w-5xl space-y-6">
       <div class="flex items-center justify-between">
@@ -46,7 +48,7 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
             <div class="grid gap-4 md:grid-cols-2">
               <div class="md:col-span-2"><label class="label">Nome completo *</label><input class="field" formControlName="nomeCompleto">
                 @if (form.get('nomeCompleto')?.invalid && form.get('nomeCompleto')?.touched) { <p class="mt-1 text-xs text-red-600">Informe o nome.</p> }</div>
-              <div><label class="label">Nascimento</label><input class="field" type="date" formControlName="dataNascimento"></div>
+              <div><label class="label">Nascimento</label><app-campo-data formControlName="dataNascimento" [max]="hoje" /></div>
               <div>
                 <label class="label">Sexo</label>
                 <select class="field" formControlName="sexo">
@@ -237,8 +239,8 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
                     </div>
                     <div><label class="label">Eucaristia</label><input class="field" formControlName="eucaristiaAno"></div>
                     <div><label class="label">Crisma</label><input class="field" formControlName="crismaAno"></div>
-                    <div><label class="label">Investidura do mandato</label><input class="field" type="date" formControlName="mandatoInicio"></div>
-                    <div><label class="label">Vencimento do mandato</label><input class="field" type="date" formControlName="mandatoFim"></div>
+                    <div><label class="label">Investidura do mandato</label><app-campo-data formControlName="mandatoInicio" /></div>
+                    <div><label class="label">Vencimento do mandato</label><app-campo-data formControlName="mandatoFim" /></div>
                   </div>
                   <p class="mt-3 text-sm text-slate-500">O mandato vale sobretudo para o ministro da comunhão. As duas datas são opcionais.</p>
                   <div class="mt-4 grid gap-3 sm:grid-cols-3">
@@ -275,6 +277,7 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
     `
 })
 export class PessoaFormComponent implements OnInit, HasPendingChanges {
+  readonly hoje = hojeIso();
   id: string | null = null;
   loading = true;
   saving = false;

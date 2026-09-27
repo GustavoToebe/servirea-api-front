@@ -38,7 +38,10 @@ Rodar junto com as APIs e a Central no PC: README do `central-api-back`, seção
 - `shared/services/dialogo.service.ts` + `shared/components/dialogo-host/` — confirmação e aviso.
 - `shared/components/numero/` — `<app-numero [numero]="x.sequencial" />`: número curto da paróquia "(12)" que copia
   ao clicar; use ao lado do nome de todo cadastro que tem `sequencial`.
-- Lista suspensa dentro de cartão com `overflow-hidden`: painel `fixed` calculado pelo botão (ver `volunteer-picker`).
+- Lista suspensa dentro de `.card` (tem `backdrop-filter` e `overflow-hidden`): painel movido para o `body` ao abrir
+  (ver `volunteer-picker` e `shared/components/datas/painel-flutuante.ts`).
+- Datas: nunca `type="date"`/`type="month"` nativo. `app-campo-data` (form control ISO, tela `DD/MM/AAAA`,
+  `[max]="hoje"` em nascimento) e `app-campo-competencia` (`AAAA-MM`, tela `MM/AAAA`), em `shared/components/datas/`.
 
 ## Regras
 - **Nunca** `confirm()`/`alert()` do navegador: `await dialogo.confirmar({...})` / `dialogo.avisar(...)`

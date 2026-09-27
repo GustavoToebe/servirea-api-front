@@ -6,6 +6,8 @@ import { environment } from '../../../../../environments/environment';
 import { TurnstileComponent } from '../../../../shared/components/turnstile/turnstile.component';
 import { readPhotoPreview, validatePhotoFile } from '../../../../shared/utils/photo.utils';
 import { MascaraDirective } from '../../../../shared/directives/mascara.directive';
+import { CampoDataComponent } from '../../../../shared/components/datas/campo-data.component';
+import { hojeIso } from '../../../../shared/components/datas/datas';
 import { CepService } from '../../../../shared/services/cep.service';
 import { SEXOS, UFS, cepValido } from '../../../../shared/utils/formatos';
 import { Validar, erroDoCampo } from '../../../../shared/utils/validadores';
@@ -18,7 +20,7 @@ type InscricaoView = 'form' | 'enviando' | 'sucesso' | 'erro';
 
 @Component({
     selector: 'app-inscricao-publica',
-    imports: [ReactiveFormsModule, RouterLink, TurnstileComponent, MascaraDirective],
+    imports: [ReactiveFormsModule, RouterLink, TurnstileComponent, MascaraDirective, CampoDataComponent],
     template: `
     <div class="parish min-h-screen bg-app">
       <header class="border-b border-slate-200 bg-white">
@@ -46,7 +48,7 @@ type InscricaoView = 'form' | 'enviando' | 'sucesso' | 'erro';
                 <h2 class="mb-4 text-lg font-black">Quem se inscreve</h2>
                 <div class="grid gap-4 md:grid-cols-2">
                   <div class="md:col-span-2"><label class="label">Nome completo *</label><input class="field" formControlName="nomeCompleto"></div>
-                  <div><label class="label">Nascimento</label><input class="field" type="date" formControlName="dataNascimento"></div>
+                  <div><label class="label">Nascimento</label><app-campo-data formControlName="dataNascimento" [max]="hoje" /></div>
                   <div>
                     <label class="label">Sexo</label>
                     <select class="field" formControlName="sexo">
@@ -253,6 +255,7 @@ type InscricaoView = 'form' | 'enviando' | 'sucesso' | 'erro';
     `
 })
 export class InscricaoPublicaComponent implements OnInit, OnDestroy {
+  readonly hoje = hojeIso();
   @ViewChild(TurnstileComponent) turnstile?: TurnstileComponent;
   view: InscricaoView = 'form';
   error = '';

@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { NumeroComponent } from '../../../../shared/components/numero/numero.component';
+import { CampoCompetenciaComponent } from '../../../../shared/components/datas/campo-competencia.component';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -17,7 +18,7 @@ interface CelebracaoVista {
 
 @Component({
     selector: 'app-escalas-list',
-    imports: [CommonModule, FormsModule, RouterLink, NumeroComponent],
+    imports: [CommonModule, FormsModule, RouterLink, NumeroComponent, CampoCompetenciaComponent],
     template: `
     <div class="space-y-6">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -32,12 +33,7 @@ interface CelebracaoVista {
       <div class="flex flex-wrap gap-2">
         <button type="button" class="chip" [class.chip-on]="mesmoMes(hojeAno, hojeMes)" (click)="irPara(hojeAno, hojeMes)">Este mês</button>
         <button type="button" class="chip" [class.chip-on]="mesmoMes(proximo.ano, proximo.mes)" (click)="irPara(proximo.ano, proximo.mes)">Próximo mês</button>
-        <select class="field !w-auto" [(ngModel)]="filters.ano" (ngModelChange)="load()">
-          @for (y of years; track y) { <option [ngValue]="y">{{ y }}</option> }
-        </select>
-        <select class="field !w-auto" [(ngModel)]="filters.mes" (ngModelChange)="load()">
-          @for (m of months; track m; let i = $index) { <option [ngValue]="i + 1">{{ m }}</option> }
-        </select>
+        <app-campo-competencia class="block w-36" [ngModel]="competencia()" (ngModelChange)="escolherCompetencia($event)" [limpavel]="false" />
       </div>
 
       <div class="flex flex-wrap gap-2">
@@ -100,7 +96,6 @@ export class EscalasListComponent implements OnInit {
   hojeAno = new Date().getFullYear();
   hojeMes = new Date().getMonth() + 1;
   filters = { ano: this.hojeAno, mes: this.hojeMes, tipo: '' as const, status: '' as StatusEscala | '' };
-  years = Array.from({ length: 8 }, (_, i) => new Date().getFullYear() + 2 - i);
   statusOpcoes: { id: StatusEscala | ''; label: string }[] = [
     { id: '', label: 'Todas' },
     { id: 'RASCUNHO', label: 'Não finalizada' },
@@ -125,6 +120,15 @@ export class EscalasListComponent implements OnInit {
 
   mesmoMes(ano: number, mes: number) {
     return this.filters.ano === ano && this.filters.mes === mes;
+  }
+
+  /** Mês do filtro em `AAAA-MM`, para o campo MM/AAAA. */
+  competencia() {
+    return `${this.filters.ano}-${String(this.filters.mes).padStart(2, '0')}`;
+  }
+
+  escolherCompetencia(competencia: string) {
+    if (competencia) this.irPara(Number(competencia.slice(0, 4)), Number(competencia.slice(5, 7)));
   }
 
   irPara(ano: number, mes: number) {

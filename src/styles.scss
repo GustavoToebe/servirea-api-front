@@ -228,18 +228,38 @@ html.dark .bo { color: #f5f5f5; background: #101010; }
   .bo-main { margin-left: 0; padding: 76px 16px 48px; }
 }
 
-.date-input-br {
-  color: transparent;
+
+/* Campos de data (27/09/2026): o painel abre no body, fora do .parish, por isso usa as variáveis do tema. */
+.cal-flutuante {
+  position: fixed; z-index: 60; padding: 12px;
+  background: #fff; border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: 0 18px 40px rgba(19, 27, 46, 0.18); color: var(--ink);
 }
-.date-input-br::-webkit-datetime-edit,
-.date-input-br::-webkit-datetime-edit-fields-wrapper,
-.date-input-br::-webkit-datetime-edit-text,
-.date-input-br::-webkit-datetime-edit-month-field,
-.date-input-br::-webkit-datetime-edit-day-field,
-.date-input-br::-webkit-datetime-edit-year-field {
-  color: transparent;
+html.dark .cal-flutuante { background: #1a1826; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6); }
+.campo-icone, .campo-x {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--muted); border-radius: 8px; padding: 4px;
 }
-.date-input-br::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  opacity: 1;
+.campo-icone { right: 10px; }
+.campo-icone:hover:not(:disabled), .campo-x:hover { color: var(--brand); }
+.campo-x { font-size: 11px; }
+.cal-nav { width: 30px; height: 30px; border-radius: 10px; color: var(--ink); font-size: 18px; line-height: 1; }
+.cal-nav:hover { background: color-mix(in srgb, var(--brand) 12%, transparent); }
+.cal-dia { border-radius: 10px; padding: 6px 0; color: var(--ink); }
+.cal-dia:hover:not(:disabled) { background: color-mix(in srgb, var(--brand) 12%, transparent); }
+.cal-dia.fora { color: var(--muted); opacity: .55; }
+.cal-dia.hoje { box-shadow: inset 0 0 0 1px var(--brand); }
+.cal-dia.faixa { background: color-mix(in srgb, var(--brand) 16%, transparent); border-radius: 0; }
+.cal-dia.escolhido { background: var(--brand); color: #fff; font-weight: 700; opacity: 1; }
+.cal-dia:disabled { opacity: .3; cursor: not-allowed; }
+.cal-link { color: var(--brand); font-size: 13px; font-weight: 700; }
+.cal-link:hover { color: var(--brand-hover); }
+.cal-link:disabled { opacity: .4; cursor: not-allowed; }
+/* Obrigatório vazio depois de tentar salvar: o ng-invalid fica no componente, não no input. */
+app-campo-data.ng-invalid.ng-touched .field,
+app-campo-competencia.ng-invalid.ng-touched .field {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
 }
+html.dark .cal-flutuante .field { background: rgba(255, 255, 255, 0.04); color: var(--ink); }
