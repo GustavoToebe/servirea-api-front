@@ -104,18 +104,28 @@ describe('VolunteerPickerComponent', () => {
     expect(component.painel.bottom).toBe(54);
   });
 
-  it('dentro de um cartão com backdrop-filter o painel abre embaixo do botão, não no canto da tela', () => {
+  it('num cartão com backdrop-filter e overflow-hidden o painel vai para o body, embaixo do botão', () => {
     const cartao = document.createElement('div');
-    cartao.style.cssText = 'backdrop-filter: blur(4px); position: absolute; left: 300px; top: 150px; width: 400px; padding: 20px;';
+    cartao.style.cssText = 'backdrop-filter: blur(4px); overflow: hidden; position: absolute; left: 300px; top: 150px; width: 400px; height: 60px; padding: 10px;';
     document.body.appendChild(cartao);
     try {
       cartao.appendChild(fixture.nativeElement);
       component.toggleOpen();
       fixture.detectChanges();
+      const painelEl = document.body.querySelector(':scope > div.fixed') as HTMLElement;
+      expect(painelEl).not.toBeNull();
+      expect(cartao.contains(painelEl)).toBeFalse();
       const botao = (fixture.nativeElement.querySelector('button') as HTMLButtonElement).getBoundingClientRect();
-      const painel = (fixture.nativeElement.querySelector('div.fixed') as HTMLElement).getBoundingClientRect();
+      const painel = painelEl.getBoundingClientRect();
       expect(Math.abs(painel.left - botao.left)).toBeLessThan(1);
       expect(Math.abs(painel.top - (botao.bottom + 4))).toBeLessThan(1);
+
+      // Clique dentro do painel (que está fora do host) não fecha; escolher fecha e remove.
+      component.onDocumentClick({ target: painelEl } as unknown as MouseEvent);
+      expect(component.open).toBeTrue();
+      component.choose(component.volunteers[0]);
+      fixture.detectChanges();
+      expect(document.body.contains(painelEl)).toBeFalse();
     } finally {
       cartao.remove();
     }

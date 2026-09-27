@@ -1,5 +1,5 @@
 
-import { Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TipoVoluntario, Voluntario } from '../../../features/voluntarios/models/voluntario.model';
 
@@ -28,7 +28,7 @@ const ALTURA_PAINEL = 330;
       </button>
     
       @if (open && !disabled) {
-        <div class="fixed z-50 min-w-[240px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"
+        <div #painelEl class="fixed z-50 min-w-[240px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"
           [style.left.px]="painel.left" [style.width.px]="painel.width"
           [style.top.px]="painel.top" [style.bottom.px]="painel.bottom">
           <div class="space-y-2 border-b border-slate-100 p-2">
@@ -106,7 +106,7 @@ export class VolunteerPickerComponent implements OnChanges, OnInit, OnDestroy {
   @HostListener('document:mousedown', ['$event'])
   onDocumentClick(event: MouseEvent) {
     if (!this.open) return;
-    if (!this.host.nativeElement.contains(event.target as Node)) this.open = false;
+    if (!this.dentro(event.target)) this.open = false;
   }
 
   toggleOpen() {
@@ -119,40 +119,30 @@ export class VolunteerPickerComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   /**
-   * O painel é `fixed`, calculado a partir do botão: o cartão do dia na escala
-   * tem `overflow-hidden` e cortava a lista (teste de telas de 26/09/2026).
-   * Sem espaço embaixo, abre para cima.
+   * O painel vai para o `body` assim que aparece: dentro do cartão do dia ele
+   * era cortado (`overflow-hidden`, #38) e, com o `backdrop-filter` do `.card`,
+   * o `fixed` era medido pelo cartão e abria no canto da tela (#39, 27/09/2026).
+   * No `body`, `fixed` é sempre a janela.
    */
+  @ViewChild('painelEl')
+  set painelEl(ref: ElementRef<HTMLElement> | undefined) {
+    this.painelNoBody = ref?.nativeElement ?? null;
+    if (this.painelNoBody) document.body.appendChild(this.painelNoBody);
+  }
+  private painelNoBody: HTMLElement | null = null;
+
+  /** Posição calculada pelo botão; sem espaço embaixo, abre para cima. */
   posicionar() {
     const botao = this.host.nativeElement.querySelector('button')?.getBoundingClientRect();
     if (!botao) return;
     const alturaJanela = window.innerHeight;
     const abreParaCima = alturaJanela - botao.bottom < ALTURA_PAINEL && botao.top > alturaJanela - botao.bottom;
-    const base = this.baseDoFixed();
     this.painel = {
-      left: botao.left - base.left,
+      left: botao.left,
       width: botao.width,
-      top: abreParaCima ? null : botao.bottom + 4 - base.top,
-      bottom: abreParaCima ? base.bottom - botao.top + 4 : null
+      top: abreParaCima ? null : botao.bottom + 4,
+      bottom: abreParaCima ? alturaJanela - botao.top + 4 : null
     };
-  }
-
-  /**
-   * Ancestral com `backdrop-filter`, `filter` ou `transform` (o `.card` tem
-   * `backdrop-filter`) vira a referência do `fixed`, e o painel abria no canto
-   * da tela (teste de telas de 27/09/2026). Devolve a caixa dessa referência.
-   */
-  private baseDoFixed(): { left: number; top: number; bottom: number } {
-    for (let el = this.host.nativeElement.parentElement; el; el = el.parentElement) {
-      const estilo = getComputedStyle(el);
-      const filtroDeFundo = estilo.backdropFilter || (estilo as CSSStyleDeclaration & { webkitBackdropFilter?: string }).webkitBackdropFilter;
-      if ((estilo.transform && estilo.transform !== 'none') || (estilo.filter && estilo.filter !== 'none')
-        || (filtroDeFundo && filtroDeFundo !== 'none')) {
-        const caixa = el.getBoundingClientRect();
-        return { left: caixa.left + el.clientLeft, top: caixa.top + el.clientTop, bottom: caixa.top + el.clientTop + el.clientHeight };
-      }
-    }
-    return { left: 0, top: 0, bottom: window.innerHeight };
   }
 
   @HostListener('window:resize')
@@ -163,10 +153,14 @@ export class VolunteerPickerComponent implements OnChanges, OnInit, OnDestroy {
   /** Captura: a página rola num container, não na janela; a lista interna do painel não conta. */
   private readonly aoRolar = (evento: Event) => {
     if (!this.open) return;
-    const alvo = evento.target;
-    if (alvo instanceof Node && this.host.nativeElement.contains(alvo)) return;
+    if (this.dentro(evento.target)) return;
     this.posicionar();
   };
+
+  private dentro(alvo: EventTarget | null): boolean {
+    return alvo instanceof Node
+      && (this.host.nativeElement.contains(alvo) || !!this.painelNoBody?.contains(alvo));
+  }
 
   ngOnInit() {
     document.addEventListener('scroll', this.aoRolar, true);
@@ -174,6 +168,7 @@ export class VolunteerPickerComponent implements OnChanges, OnInit, OnDestroy {
 
   ngOnDestroy() {
     document.removeEventListener('scroll', this.aoRolar, true);
+    this.painelNoBody?.remove();
   }
 
   setTipo(tipo: TipoVoluntario) {
