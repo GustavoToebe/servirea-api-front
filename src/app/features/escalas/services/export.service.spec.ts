@@ -73,5 +73,6 @@ describe('ExportService', () => {
     expect(titulo).toContain('PARÓQUIA SANTA MARIA - ESCALA OUTUBRO');
     expect(titulo).not.toContain('SÃO JOSÉ OPERÁRIO');
     expect(titulo).toContain('Ana &lt;Beatriz&gt;');
+    expect(titulo).toContain('04/10/2026');
   });
 });

@@ -18,7 +18,8 @@ describe('NumeroComponent', () => {
 
     expect(copiar).toHaveBeenCalledWith('2108');
     expect(linha).not.toHaveBeenCalled();
-    expect(botao.textContent).toContain('copiado');
+    expect(botao.textContent?.trim()).toBe('(2108)');
+    expect(botao.title).toBe('Copiado');
   });
 
   it('sem número não mostra nada', () => {

@@ -10,7 +10,7 @@ import { Component, input, signal } from '@angular/core';
     @if (numero() != null) {
       <button type="button" class="ml-1 whitespace-nowrap align-middle text-[0.8em] font-bold text-violet-600 hover:text-violet-800"
         [title]="copiado() ? 'Copiado' : 'Copiar o número'" (click)="copiar($event)">
-        ({{ numero() }}){{ copiado() ? ' copiado' : '' }}
+        ({{ numero() }})
       </button>
     }
   `

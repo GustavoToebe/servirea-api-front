@@ -103,4 +103,21 @@ describe('VolunteerPickerComponent', () => {
     expect(component.painel.top).toBeNull();
     expect(component.painel.bottom).toBe(54);
   });
+
+  it('dentro de um cartão com backdrop-filter o painel abre embaixo do botão, não no canto da tela', () => {
+    const cartao = document.createElement('div');
+    cartao.style.cssText = 'backdrop-filter: blur(4px); position: absolute; left: 300px; top: 150px; width: 400px; padding: 20px;';
+    document.body.appendChild(cartao);
+    try {
+      cartao.appendChild(fixture.nativeElement);
+      component.toggleOpen();
+      fixture.detectChanges();
+      const botao = (fixture.nativeElement.querySelector('button') as HTMLButtonElement).getBoundingClientRect();
+      const painel = (fixture.nativeElement.querySelector('div.fixed') as HTMLElement).getBoundingClientRect();
+      expect(Math.abs(painel.left - botao.left)).toBeLessThan(1);
+      expect(Math.abs(painel.top - (botao.bottom + 4))).toBeLessThan(1);
+    } finally {
+      cartao.remove();
+    }
+  });
 });

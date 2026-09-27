@@ -128,12 +128,31 @@ export class VolunteerPickerComponent implements OnChanges, OnInit, OnDestroy {
     if (!botao) return;
     const alturaJanela = window.innerHeight;
     const abreParaCima = alturaJanela - botao.bottom < ALTURA_PAINEL && botao.top > alturaJanela - botao.bottom;
+    const base = this.baseDoFixed();
     this.painel = {
-      left: botao.left,
+      left: botao.left - base.left,
       width: botao.width,
-      top: abreParaCima ? null : botao.bottom + 4,
-      bottom: abreParaCima ? alturaJanela - botao.top + 4 : null
+      top: abreParaCima ? null : botao.bottom + 4 - base.top,
+      bottom: abreParaCima ? base.bottom - botao.top + 4 : null
     };
+  }
+
+  /**
+   * Ancestral com `backdrop-filter`, `filter` ou `transform` (o `.card` tem
+   * `backdrop-filter`) vira a referência do `fixed`, e o painel abria no canto
+   * da tela (teste de telas de 27/09/2026). Devolve a caixa dessa referência.
+   */
+  private baseDoFixed(): { left: number; top: number; bottom: number } {
+    for (let el = this.host.nativeElement.parentElement; el; el = el.parentElement) {
+      const estilo = getComputedStyle(el);
+      const filtroDeFundo = estilo.backdropFilter || (estilo as CSSStyleDeclaration & { webkitBackdropFilter?: string }).webkitBackdropFilter;
+      if ((estilo.transform && estilo.transform !== 'none') || (estilo.filter && estilo.filter !== 'none')
+        || (filtroDeFundo && filtroDeFundo !== 'none')) {
+        const caixa = el.getBoundingClientRect();
+        return { left: caixa.left + el.clientLeft, top: caixa.top + el.clientTop, bottom: caixa.top + el.clientTop + el.clientHeight };
+      }
+    }
+    return { left: 0, top: 0, bottom: window.innerHeight };
   }
 
   @HostListener('window:resize')

@@ -70,12 +70,12 @@ export class ExportService {
           <col style="width:13%">
         </colgroup>
         <tr>
-          <td colspan="8" style="background:${HEADER};color:#fff;font-weight:800;text-align:center;padding:12px 10px;font-size:20px;letter-spacing:.4px;">${this.esc(title)}</td>
+          <td colspan="8" style="background:${HEADER};color:#fff;font-weight:800;text-align:center;padding:14px 10px;font-size:24px;letter-spacing:.4px;">${this.esc(title)}</td>
         </tr>
         <tr>
-          <td style="background:${HEADER};color:#fff;font-weight:800;padding:8px 10px;font-size:13px;">DIA / HORÁRIO</td>
-          <td colspan="4" style="background:${HEADER};color:#fff;font-weight:800;text-align:center;padding:8px;font-size:13px;">ACÓLITOS</td>
-          <td colspan="3" style="background:${HEADER};color:#fff;font-weight:800;text-align:center;padding:8px;font-size:13px;">OFERTÓRIO</td>
+          <td style="background:${HEADER};color:#fff;font-weight:800;padding:9px 10px;font-size:16px;">DIA / HORÁRIO</td>
+          <td colspan="4" style="background:${HEADER};color:#fff;font-weight:800;text-align:center;padding:9px;font-size:16px;">ACÓLITOS</td>
+          <td colspan="3" style="background:${HEADER};color:#fff;font-weight:800;text-align:center;padding:9px;font-size:16px;">OFERTÓRIO</td>
         </tr>
         ${blocks}
       </table>
@@ -94,13 +94,14 @@ export class ExportService {
     const coleta = this.people(event, 'COLETA');
     const hasColeta = event.vagas.some(v => v.funcao === 'COLETA');
     const feast = event.celebracao && event.celebracao !== 'Missa'
-      ? `<div style="margin-top:6px;font-size:11px;font-weight:800;color:${HEADER};">${this.esc(event.celebracao)}</div>`
+      ? `<div style="margin-top:6px;font-size:14px;font-weight:800;color:${HEADER};">${this.esc(event.celebracao)}</div>`
       : '';
     return `
       <tr>
         <td rowspan="3" style="border:1px solid #cfcfcf;padding:12px 10px;vertical-align:middle;background:#fff7f7;">
-          <div style="font-size:17px;font-weight:800;line-height:1.2;">${this.esc(this.dayLabel(event.data))}</div>
-          <div style="margin-top:6px;font-size:14px;font-weight:700;">${this.esc(event.horario.slice(0, 5))}hs</div>
+          <div style="font-size:22px;font-weight:800;line-height:1.2;color:${RED};">${this.esc(this.dataCompleta(event.data))}</div>
+          <div style="margin-top:4px;font-size:18px;font-weight:800;line-height:1.2;">${this.esc(this.dayLabel(event.data))}</div>
+          <div style="margin-top:6px;font-size:16px;font-weight:700;">${this.esc(event.horario.slice(0, 5))}hs</div>
           ${feast}
         </td>
         ${this.fn('Missal', BLUE)}${this.nm(missal)}${this.fn('Cruz', BLUE)}${this.nm(cruz)}
@@ -119,15 +120,15 @@ export class ExportService {
   }
 
   private fn(label: string, color: string): string {
-    return `<td style="border:1px solid #cfcfcf;padding:7px 8px;font-weight:800;color:${color};white-space:nowrap;font-size:13px;">${label}</td>`;
+    return `<td style="border:1px solid #cfcfcf;padding:9px 10px;font-weight:800;color:${color};white-space:nowrap;font-size:17px;">${label}</td>`;
   }
 
   private nm(name: string): string {
-    return `<td style="border:1px solid #cfcfcf;padding:7px 8px;font-size:13px;">${this.esc(name)}</td>`;
+    return `<td style="border:1px solid #cfcfcf;padding:9px 10px;font-size:17px;">${this.esc(name)}</td>`;
   }
 
   private empty(): string {
-    return `<td style="border:1px solid #cfcfcf;padding:7px 8px;"></td>`;
+    return `<td style="border:1px solid #cfcfcf;padding:9px 10px;"></td>`;
   }
 
   private person(event: EscalaEvento, funcao: FuncaoEscala, posicao: number): string {
@@ -146,6 +147,12 @@ export class ExportService {
     const day = String(d.getDate()).padStart(2, '0');
     const weekday = new Intl.DateTimeFormat('pt-BR', { weekday: 'long' }).format(d);
     return `${day}/${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}`;
+  }
+
+  /** "05/09/2026" em destaque acima de "05/Sábado" (teste de telas de 27/09/2026). */
+  private dataCompleta(iso: string): string {
+    const [ano, mes, dia] = iso.split('-');
+    return `${dia}/${mes}/${ano}`;
   }
 
   private fileName(e: EscalaDetalhe, ext: string) {
