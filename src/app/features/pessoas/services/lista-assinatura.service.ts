@@ -27,8 +27,8 @@ export const ORDENAR_POR: { valor: OrdenarPor; rotulo: string }[] = [
   { valor: 'TIPO', rotulo: 'Tipo (coroinha, acólito...)' }
 ];
 
-/** Linhas por folha A4 no PDF (cabeçalho + 25 linhas de assinatura cabem com folga). */
-export const LINHAS_POR_FOLHA = 25;
+/** Linhas por folha A4 no PDF (cabeçalho + 22 linhas altas, com espaço para assinar). */
+export const LINHAS_POR_FOLHA = 22;
 
 /**
  * Ordena a lista. Sem o dado (número, nascimento, tipo), a pessoa vai para o fim nos dois sentidos, e o
@@ -72,7 +72,7 @@ export class ListaAssinaturaService {
     const folhas = Math.max(1, Math.ceil(linhas.length / LINHAS_POR_FOLHA));
     for (let f = 0; f < folhas; f++) {
       const canvas = await this.desenhar(linhas.slice(f * LINHAS_POR_FOLHA, (f + 1) * LINHAS_POR_FOLHA), opcoes,
-        folhas > 1 ? `Folha ${f + 1} de ${folhas}` : '');
+        folhas > 1 ? `Folha ${f + 1} de ${folhas}` : '', f * LINHAS_POR_FOLHA);
       if (f > 0) doc.addPage();
       const margem = 10;
       const largura = 210 - margem * 2;
@@ -82,15 +82,16 @@ export class ListaAssinaturaService {
   }
 
   async gerarImagem(itens: ItemAssinatura[], opcoes: OpcoesListaAssinatura) {
-    const canvas = await this.desenhar(ordenar(itens, opcoes.ordenarPor, opcoes.ordem), opcoes, '');
+    const canvas = await this.desenhar(ordenar(itens, opcoes.ordenarPor, opcoes.ordem), opcoes, '', 0);
     const link = document.createElement('a');
     link.href = canvas.toDataURL('image/png');
     link.download = this.nomeArquivo(opcoes.titulo, 'png');
     link.click();
   }
 
-  private async desenhar(linhas: ItemAssinatura[], opcoes: OpcoesListaAssinatura, rodape: string): Promise<HTMLCanvasElement> {
-    const folha = this.montarFolha(linhas, opcoes, rodape);
+  private async desenhar(linhas: ItemAssinatura[], opcoes: OpcoesListaAssinatura, rodape: string,
+                         inicio: number): Promise<HTMLCanvasElement> {
+    const folha = this.montarFolha(linhas, opcoes, rodape, inicio);
     document.body.appendChild(folha);
     try {
       return await html2canvas(folha, { scale: 2, backgroundColor: '#ffffff' });
@@ -99,27 +100,31 @@ export class ListaAssinaturaService {
     }
   }
 
-  /** Visível para o teste: a folha em HTML antes de virar imagem. */
-  montarFolha(linhas: ItemAssinatura[], opcoes: OpcoesListaAssinatura, rodape: string): HTMLElement {
+  /**
+   * Visível para o teste: a folha em HTML antes de virar imagem. `inicio` continua a numeração na folha
+   * seguinte. Altura e `vertical-align` fixos: sem eles o html2canvas desenhava o nome encostado embaixo.
+   */
+  montarFolha(linhas: ItemAssinatura[], opcoes: OpcoesListaAssinatura, rodape: string, inicio = 0): HTMLElement {
     const folha = document.createElement('div');
     folha.style.cssText = 'position:fixed;left:-12000px;top:0;width:760px;background:#fff;padding:16px;'
       + 'font-family:Calibri,Arial,sans-serif;color:#111;';
     const borda = 'border:1px solid #222;';
-    const corpo = linhas.map(l => `
+    const celula = 'height:40px;padding:0 12px;vertical-align:middle;line-height:1.25;';
+    const corpo = linhas.map((l, i) => `
       <tr>
-        <td style="${borda}padding:8px 10px;font-size:15px;height:22px;">${this.esc(l.nome)}</td>
-        <td style="${borda}"></td>
+        <td style="${borda}${celula}font-size:19px;">${inicio + i + 1}. ${this.esc(l.nome)}</td>
+        <td style="${borda}${celula}"></td>
       </tr>`).join('');
     folha.innerHTML = `
       <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
         <colgroup><col style="width:48%"><col style="width:52%"></colgroup>
         <tr><td colspan="2" style="${borda}text-align:center;padding:14px 10px 26px;">
-          <div style="font-size:24px;font-weight:800;">${this.esc(opcoes.titulo)}</div>
-          ${opcoes.subtitulo ? `<div style="margin-top:4px;font-size:16px;font-weight:800;">${this.esc(opcoes.subtitulo)}</div>` : ''}
+          <div style="font-size:28px;font-weight:800;">${this.esc(opcoes.titulo)}</div>
+          ${opcoes.subtitulo ? `<div style="margin-top:6px;font-size:19px;font-weight:800;">${this.esc(opcoes.subtitulo)}</div>` : ''}
         </td></tr>
         <tr>
-          <th style="${borda}padding:8px;font-size:18px;font-weight:600;">Nome</th>
-          <th style="${borda}padding:8px;font-size:18px;font-weight:600;">Assinatura / Responsável</th>
+          <th style="${borda}padding:10px;font-size:21px;font-weight:700;vertical-align:middle;">Nome</th>
+          <th style="${borda}padding:10px;font-size:21px;font-weight:700;vertical-align:middle;">Assinatura / Responsável</th>
         </tr>
         ${corpo}
       </table>

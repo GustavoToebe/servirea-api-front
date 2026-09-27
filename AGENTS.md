@@ -43,7 +43,7 @@ Rodar junto com as APIs e a Central no PC: README do `central-api-back`, seção
 - Datas: nunca `type="date"`/`type="month"` nativo. `app-campo-data` (form control ISO, tela `DD/MM/AAAA`,
   `[max]="hoje"` em nascimento) e `app-campo-competencia` (`AAAA-MM`, tela `MM/AAAA`), em `shared/components/datas/`.
 - Lista de assinatura (`pessoas-list`): marcar todos/alguns e "Gerar lista de assinatura" (título, subtítulo, ordem;
-  PDF A4 com 25 linhas por folha ou imagem), `features/pessoas/services/lista-assinatura.service.ts`.
+  PDF A4 com 22 linhas numeradas por folha ou imagem; subtítulo com a cidade do cadastro da paróquia), `features/pessoas/services/lista-assinatura.service.ts`.
 - Campo de senha sempre com o olho: `<div class="relative"><input #s type="password" class="field pr-11"><app-olho-senha [campo]="s" /></div>`.
 
 ## Regras

@@ -21,6 +21,18 @@ export interface Paroquia {
   status: string;
   emails: ContatoEmail[];
   telefones: ContatoTelefone[];
+  endereco: Endereco | null;
+}
+
+/** Endereço da paróquia (27/09/2026); cidade e UF vão no subtítulo da lista de assinatura. */
+export interface Endereco {
+  cep: string | null;
+  logradouro: string | null;
+  numero: string | null;
+  complemento: string | null;
+  bairro: string | null;
+  cidade: string | null;
+  uf: string | null;
 }
 
 export interface Diocese {
@@ -36,4 +48,5 @@ export interface ParoquiaRequest {
   diocese: string | null;
   emails: ContatoEmail[];
   telefones: ContatoTelefone[];
+  endereco: Endereco;
 }

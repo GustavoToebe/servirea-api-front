@@ -30,6 +30,16 @@ describe('montarRequisicao (tela Paróquia)', () => {
     expect(corpo.telefones).toEqual([{ tipo: 'Fixo', numero: '4533330000', principal: true }]);
   });
 
+  it('manda o endereço com nulo no que está vazio e recusa CEP incompleto', () => {
+    const corpo = montarRequisicao({ ...base, endereco: {
+      cep: '85801-000', logradouro: ' Rua Paraná ', numero: '100', complemento: '', bairro: 'Centro', cidade: 'Cascavel', uf: 'PR' } });
+    expect(corpo.endereco).toEqual({
+      cep: '85801-000', logradouro: 'Rua Paraná', numero: '100', complemento: null, bairro: 'Centro', cidade: 'Cascavel', uf: 'PR' });
+    expect(montarRequisicao(base).endereco.cidade).toBeNull();
+    const semNada = { cnpj: '', emails: [], telefones: [] };
+    expect(problemaNosDados({ ...semNada, endereco: { ...corpo.endereco, cep: '85801' } })).toBe('CEP inválido.');
+  });
+
   it('confere CNPJ (inclusive alfanumérico), e-mail e telefone antes de salvar', () => {
     const vazio = { cnpj: '', emails: [], telefones: [] };
     expect(problemaNosDados(vazio)).toBeNull();

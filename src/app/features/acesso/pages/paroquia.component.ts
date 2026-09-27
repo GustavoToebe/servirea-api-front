@@ -3,9 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensagemApi } from '../../../core/api/api-error';
 import { ParoquiaApiService } from '../paroquia-api.service';
-import { ContatoEmail, ContatoTelefone, Diocese, ParoquiaRequest } from '../paroquia.models';
+import { ContatoEmail, ContatoTelefone, Diocese, Endereco, ParoquiaRequest } from '../paroquia.models';
 import { MascaraDirective } from '../../../shared/directives/mascara.directive';
-import { cnpjValido, emailValido, formatarCnpj, formatarTelefone, telefoneValido } from '../../../shared/utils/formatos';
+import { CepService } from '../../../shared/services/cep.service';
+import { UFS, cepValido, cnpjValido, emailValido, formatarCep, formatarCnpj, formatarTelefone, telefoneValido } from '../../../shared/utils/formatos';
+
+const ENDERECO_VAZIO: Endereco = { cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' };
 
 /**
  * Dados da paróquia (GET/PUT /tenant). A diocese é só informativa: escolhe
@@ -20,7 +23,7 @@ import { cnpjValido, emailValido, formatarCnpj, formatarTelefone, telefoneValido
       <div>
         <div class="text-xs font-extrabold uppercase tracking-wider text-brand-blue">Cadastro</div>
         <h1 class="text-2xl font-black text-slate-900">Paróquia</h1>
-        <p class="text-sm text-slate-500">Nome, diocese e contatos que aparecem para a coordenação.</p>
+        <p class="text-sm text-slate-500">Nome, diocese, endereço e contatos que aparecem para a coordenação.</p>
       </div>
       @if (erro) {
         <div class="rounded-xl bg-red-50 p-3 text-sm text-red-700">{{ erro }}</div>
@@ -57,6 +60,32 @@ import { cnpjValido, emailValido, formatarCnpj, formatarTelefone, telefoneValido
               </datalist>
               <span class="mt-1 block text-xs text-slate-500">Escolha uma da lista ou digite o nome. Deixe em branco se não quiser informar.</span>
             </label>
+          </section>
+
+          <section class="card space-y-4 p-5">
+            <h2 class="text-lg font-black">Endereço</h2>
+            <div class="grid gap-4 md:grid-cols-4">
+              <label class="block"><span class="label">CEP</span>
+                <input class="field" name="cep" [(ngModel)]="endereco.cep" appMascara="cep" inputmode="numeric" placeholder="00000-000"
+                  (input)="buscarCep($any($event.target).value)">
+                @if (avisoCep) { <span class="mt-1 block text-xs text-slate-500">{{ avisoCep }}</span> }
+              </label>
+              <label class="block md:col-span-2"><span class="label">Logradouro</span>
+                <input class="field" name="logradouro" [(ngModel)]="endereco.logradouro" placeholder="Rua, avenida..."></label>
+              <label class="block"><span class="label">Número</span>
+                <input class="field" name="numero" [(ngModel)]="endereco.numero"></label>
+              <label class="block"><span class="label">Complemento</span>
+                <input class="field" name="complemento" [(ngModel)]="endereco.complemento"></label>
+              <label class="block"><span class="label">Bairro</span>
+                <input class="field" name="bairro" [(ngModel)]="endereco.bairro"></label>
+              <label class="block"><span class="label">Cidade</span>
+                <input class="field" name="cidade" [(ngModel)]="endereco.cidade"></label>
+              <label class="block"><span class="label">UF</span>
+                <select class="field" name="uf" [(ngModel)]="endereco.uf">
+                  <option value="">—</option>
+                  @for (uf of ufs; track uf) { <option [value]="uf">{{ uf }}</option> }
+                </select></label>
+            </div>
           </section>
 
           <section class="card space-y-3 p-5">
@@ -116,7 +145,11 @@ import { cnpjValido, emailValido, formatarCnpj, formatarTelefone, telefoneValido
 export class ParoquiaComponent implements OnInit {
   private api = inject(ParoquiaApiService);
   private auth = inject(AuthService);
+  private cepService = inject(CepService);
 
+  endereco: Endereco = { ...ENDERECO_VAZIO };
+  avisoCep = '';
+  readonly ufs = UFS;
   nome = '';
   razaoSocial = '';
   cnpj = '';
@@ -141,6 +174,7 @@ export class ParoquiaComponent implements OnInit {
         this.diocese = p.diocese || '';
         this.emails = p.emails.map(e => ({ ...e }));
         this.telefones = p.telefones.map(t => ({ ...t, numero: formatarTelefone(t.numero) }));
+        this.endereco = paraTela(p.endereco);
         this.carregado = true;
       },
       error: erro => this.erro = mensagemApi(erro, 'Não foi possível carregar a paróquia.')
@@ -172,6 +206,23 @@ export class ParoquiaComponent implements OnInit {
     this.telefones.forEach((t, j) => t.principal = j === i);
   }
 
+  /** CEP completo preenche logradouro, bairro, cidade e UF (número e complemento ficam com a pessoa). */
+  async buscarCep(valor: string): Promise<void> {
+    this.avisoCep = '';
+    if (!cepValido(valor)) return;
+    this.avisoCep = 'Buscando endereço…';
+    const achado = await this.cepService.buscar(valor);
+    if (!achado) {
+      this.avisoCep = 'CEP não encontrado. Preencha o endereço.';
+      return;
+    }
+    this.avisoCep = '';
+    if (achado.logradouro) this.endereco.logradouro = achado.logradouro;
+    if (achado.bairro) this.endereco.bairro = achado.bairro;
+    if (achado.cidade) this.endereco.cidade = achado.cidade;
+    if (achado.uf) this.endereco.uf = achado.uf;
+  }
+
   salvar(): void {
     this.aviso = '';
     this.erro = problemaNosDados(this) ?? '';
@@ -183,6 +234,7 @@ export class ParoquiaComponent implements OnInit {
         this.diocese = p.diocese || '';
         this.emails = p.emails.map(e => ({ ...e }));
         this.telefones = p.telefones.map(t => ({ ...t }));
+        this.endereco = paraTela(p.endereco);
         this.auth.atualizarTenantNome(p.nome);
         this.aviso = 'Dados da paróquia salvos.';
         this.api.dioceses().subscribe({ next: lista => this.dioceses = lista, error: () => undefined });
@@ -196,8 +248,12 @@ export class ParoquiaComponent implements OnInit {
 }
 
 /** Mesmas regras da API: o primeiro problema, ou null. */
-export function problemaNosDados(f: { cnpj: string; emails: ContatoEmail[]; telefones: ContatoTelefone[] }): string | null {
+export function problemaNosDados(f: {
+  cnpj: string; emails: ContatoEmail[]; telefones: ContatoTelefone[]; endereco?: Endereco;
+}): string | null {
   if (f.cnpj.trim() && !cnpjValido(f.cnpj)) return 'CNPJ inválido.';
+  const cep = f.endereco?.cep?.trim();
+  if (cep && !cepValido(cep)) return 'CEP inválido.';
   if (f.emails.some(e => e.email.trim() && !emailValido(e.email))) return 'Há um e-mail inválido.';
   if (f.telefones.some(t => t.numero.trim() && !telefoneValido(t.numero))) {
     return 'Há um telefone inválido. Informe o DDD e o número.';
@@ -211,9 +267,10 @@ export function problemaNosDados(f: { cnpj: string; emails: ContatoEmail[]; tele
  */
 export function montarRequisicao(f: {
   nome: string; razaoSocial: string; cnpj: string; diocese: string;
-  emails: ContatoEmail[]; telefones: ContatoTelefone[];
+  emails: ContatoEmail[]; telefones: ContatoTelefone[]; endereco?: Endereco;
 }): ParoquiaRequest {
   const vazioParaNulo = (v: string) => v.trim() ? v.trim() : null;
+  const e = f.endereco ?? ENDERECO_VAZIO;
   const emails = f.emails
     .filter(e => e.email.trim())
     .map(e => ({ tipo: e.tipo.trim() || 'E-mail', email: e.email.trim(), principal: e.principal }));
@@ -229,6 +286,19 @@ export function montarRequisicao(f: {
     cnpj: vazioParaNulo(f.cnpj),
     diocese: vazioParaNulo(f.diocese),
     emails,
-    telefones
+    telefones,
+    endereco: {
+      cep: vazioParaNulo(e.cep ?? ''), logradouro: vazioParaNulo(e.logradouro ?? ''), numero: vazioParaNulo(e.numero ?? ''),
+      complemento: vazioParaNulo(e.complemento ?? ''), bairro: vazioParaNulo(e.bairro ?? ''),
+      cidade: vazioParaNulo(e.cidade ?? ''), uf: vazioParaNulo(e.uf ?? '')
+    }
+  };
+}
+
+/** Endereço da API (nulos) para os campos da tela (texto). */
+function paraTela(e: Endereco | null): Endereco {
+  return {
+    cep: formatarCep(e?.cep ?? ''), logradouro: e?.logradouro ?? '', numero: e?.numero ?? '',
+    complemento: e?.complemento ?? '', bairro: e?.bairro ?? '', cidade: e?.cidade ?? '', uf: e?.uf ?? ''
   };
 }

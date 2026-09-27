@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/auth/auth.service';
+import { ParoquiaApiService } from '../../acesso/paroquia-api.service';
 import { ItemAssinatura, ListaAssinaturaService, ORDENAR_POR, Ordem, OrdenarPor } from '../services/lista-assinatura.service';
 
 /**
@@ -52,6 +53,7 @@ import { ItemAssinatura, ListaAssinaturaService, ORDENAR_POR, Ordem, OrdenarPor 
 export class ListaAssinaturaDialogComponent implements OnChanges {
   private servico = inject(ListaAssinaturaService);
   private auth = inject(AuthService);
+  private paroquia = inject(ParoquiaApiService);
 
   @Input() open = false;
   @Input() itens: ItemAssinatura[] = [];
@@ -70,7 +72,17 @@ export class ListaAssinaturaDialogComponent implements OnChanges {
     this.erro = '';
     // Mantém o que a pessoa digitou entre uma lista e outra; só preenche na primeira vez.
     this.titulo ||= `Lista de assinatura - ${new Date().getFullYear()}`;
-    this.subtitulo ||= (this.auth.tenantNome() || '').toUpperCase();
+    if (this.subtitulo) return;
+    const nome = (this.auth.tenantNome() || '').toUpperCase();
+    this.subtitulo = nome;
+    // Com a cidade no cadastro da paróquia: "PARÓQUIA X / Cascavel - PR". Sem permissão de ver a paróquia, fica o nome.
+    this.paroquia.buscar().subscribe({
+      next: p => {
+        const cidade = [p.endereco?.cidade, p.endereco?.uf].filter(Boolean).join(' - ');
+        if (cidade && this.subtitulo === nome) this.subtitulo = `${nome} / ${cidade}`;
+      },
+      error: () => undefined
+    });
   }
 
   aoClicarFundo(evento: MouseEvent): void {

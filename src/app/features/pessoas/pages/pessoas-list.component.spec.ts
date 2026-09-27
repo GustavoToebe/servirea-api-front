@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { Pessoa } from '../models/pessoa.model';
@@ -25,6 +27,8 @@ describe('PessoasListComponent (lista de assinatura)', () => {
       imports: [PessoasListComponent],
       providers: [
         provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
         { provide: PessoasService, useValue: pessoas },
         { provide: VoluntariosApiService, useValue: voluntarios },

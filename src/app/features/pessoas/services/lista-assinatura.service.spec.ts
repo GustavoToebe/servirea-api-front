@@ -28,7 +28,11 @@ describe('lista de assinatura', () => {
     expect(texto).toContain('Reunião Coroinhas - 2026');
     expect(texto).toContain('PARÓQUIA X / Cascavel - PR');
     expect(texto).toContain('Assinatura / Responsável');
+    expect(texto).toContain('1. Ana <b>');
     expect(folha.innerHTML).toContain('Ana &lt;b&gt;');
+    const segunda = new ListaAssinaturaService().montarFolha([{ nome: 'Bia' }],
+      { titulo: 'T', subtitulo: '', ordenarPor: 'NOME', ordem: 'ASC' }, 'Folha 2 de 2', LINHAS_POR_FOLHA);
+    expect(segunda.textContent).toContain(`${LINHAS_POR_FOLHA + 1}. Bia`);
     expect(LINHAS_POR_FOLHA).toBeGreaterThan(15);
   });
 });

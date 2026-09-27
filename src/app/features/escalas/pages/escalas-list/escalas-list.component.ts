@@ -33,7 +33,7 @@ interface CelebracaoVista {
       <div class="flex flex-wrap gap-2">
         <button type="button" class="chip" [class.chip-on]="mesmoMes(hojeAno, hojeMes)" (click)="irPara(hojeAno, hojeMes)">Este mês</button>
         <button type="button" class="chip" [class.chip-on]="mesmoMes(proximo.ano, proximo.mes)" (click)="irPara(proximo.ano, proximo.mes)">Próximo mês</button>
-        <app-campo-competencia class="block w-36" [ngModel]="competencia()" (ngModelChange)="escolherCompetencia($event)" [limpavel]="false" />
+        <app-campo-competencia class="block w-44" [ngModel]="competencia()" (ngModelChange)="escolherCompetencia($event)" [limpavel]="false" />
       </div>
 
       <div class="flex flex-wrap gap-2">

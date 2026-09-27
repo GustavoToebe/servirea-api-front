@@ -14,7 +14,7 @@ import { PainelFlutuante } from './painel-flutuante';
   providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => CampoDataComponent), multi: true }],
   template: `
     <div class="relative" data-ancora>
-      <input class="field pr-16" [id]="idCampo()" inputmode="numeric" maxlength="10" autocomplete="off"
+      <input class="field" [class.pr-16]="limpavel()" [class.pr-10]="!limpavel()" [id]="idCampo()" inputmode="numeric" maxlength="10" autocomplete="off"
         [placeholder]="placeholder()" [value]="texto()" [disabled]="desabilitado()"
         (input)="digitar($any($event.target))" (click)="abrir()" (blur)="aoSair()" (keydown.enter)="$event.preventDefault(); fechar()">
       @if (valor() && !desabilitado() && limpavel()) {
