@@ -1,5 +1,7 @@
-import { Component, inject, OnInit } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { ActivatedRouteSnapshot, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgClass } from '@angular/common';
 import { AuthService } from '../../auth/auth.service';
 import { BARRA, CONTA, montarMenu } from '../menu';
@@ -83,7 +85,7 @@ import { SessaoAtual } from '../sessao-atual';
             <button class="rounded-full px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-white/60" (click)="logout()">Sair</button>
           </div>
         </header>
-        <section class="mx-auto max-w-7xl p-4 pb-24 md:p-8 lg:pb-8"><router-outlet /></section>
+        <section class="mx-auto p-4 pb-24 md:p-8 lg:pb-8" [class.max-w-7xl]="!larguraTotal" [class.max-w-none]="larguraTotal"><router-outlet /></section>
       </main>
 
       @if (maisAberto) {
@@ -133,12 +135,24 @@ export class MainLayoutComponent implements OnInit {
   maisAberto = false;
 
   recolhido = false;
+  /** Rota com `data.larguraTotal` (montagem da escala, PLANO-008) ocupa a largura toda. */
+  larguraTotal = false;
+  private destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
     this.sessao.carregar();
+    this.larguraTotal = this.rotaPedeLarguraTotal();
+    this.router.events.pipe(filter(e => e instanceof NavigationEnd), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.larguraTotal = this.rotaPedeLarguraTotal());
     try {
       this.recolhido = localStorage.getItem('servire.menuRecolhido') === 'true';
     } catch (e) {}
+  }
+
+  private rotaPedeLarguraTotal(): boolean {
+    let rota: ActivatedRouteSnapshot | null = this.router.routerState.snapshot.root;
+    while (rota?.firstChild) rota = rota.firstChild;
+    return !!rota?.data?.['larguraTotal'];
   }
 
   alternarRecolhido() {

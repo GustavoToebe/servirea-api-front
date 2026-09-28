@@ -2,6 +2,9 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HasPendingChanges } from '../../../core/guards/pending-changes.guard';
+import { CabecalhoPaginaComponent } from '../../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { RodapeFormComponent } from '../../../shared/components/rodape-form/rodape-form.component';
 import { DialogoService } from '../../../shared/services/dialogo.service';
 import { EditorHtmlComponent } from '../components/editor-html.component';
 import { EditorWhatsappComponent, whatsappParaHtml } from '../components/editor-whatsapp.component';
@@ -31,88 +34,89 @@ export function whatsappParaEmail(texto: string): string {
 @Component({
   selector: 'app-layout-form',
   standalone: true,
-  imports: [FormsModule, RouterLink, EditorHtmlComponent, EditorWhatsappComponent, PainelTagsComponent],
+  imports: [FormsModule, RouterLink, EditorHtmlComponent, EditorWhatsappComponent, PainelTagsComponent, CabecalhoPaginaComponent, RodapeFormComponent,
+    ModalComponent],
   template: `
     <div class="space-y-6">
-      <div class="flex items-center justify-between gap-3">
-        <h1 class="text-2xl font-black text-slate-900">{{ id ? 'Editar layout' : 'Novo layout' }}</h1>
-        <a routerLink="/layouts" class="btn-secondary">Voltar</a>
-      </div>
+      <app-cabecalho-pagina [titulo]="id ? 'Editar layout' : 'Novo layout'" subtitulo="Use as tags da direita para colocar os dados de cada pessoa no texto.">
+        <a acoes routerLink="/layouts" class="btn-secondary">Voltar</a>
+      </app-cabecalho-pagina>
 
       @if (carregando) {
         <div class="card p-10 text-center text-slate-500">Carregando...</div>
       } @else {
-        <section class="card space-y-4 p-6">
-          <div class="grid gap-4 md:grid-cols-[2fr_1fr_1fr_auto] md:items-end">
-            <div>
-              <label class="label" for="nome">Nome do layout *</label>
-              <input id="nome" class="field" maxlength="120" [(ngModel)]="nome" (ngModelChange)="alterou()" data-nome>
+        <!-- ngNoForm: os campos usam ngModel solto; o form só leva o Enter/Salvar do rodapé ao salvar(). -->
+        <form ngNoForm class="space-y-6" (submit)="$event.preventDefault(); salvar()">
+          <section class="card secao-form p-6">
+            <h2 class="secao-titulo">Identificação</h2>
+            <div class="grid gap-4 md:grid-cols-[2fr_1fr_1fr_auto] md:items-end">
+              <div>
+                <label class="label" for="nome">Nome do layout *</label>
+                <input id="nome" class="field" maxlength="120" [(ngModel)]="nome" (ngModelChange)="alterou()" data-nome>
+              </div>
+              <div>
+                <label class="label" for="tipoLayout">Tipo layout *</label>
+                <select id="tipoLayout" class="field" [ngModel]="tipoLayout" (ngModelChange)="trocarTipoLayout($event)" data-tipo-layout>
+                  <option value="" disabled>Selecione</option>
+                  @for (t of tiposLayout; track t.valor) { <option [value]="t.valor">{{ t.rotulo }}</option> }
+                </select>
+              </div>
+              <div>
+                <label class="label" for="tipoEnvio">Tipo de envio *</label>
+                <select id="tipoEnvio" class="field" [value]="tipoEnvio" (change)="trocarEnvio($any($event.target))" data-tipo-envio>
+                  <option value="" disabled>Selecione</option>
+                  @for (t of tiposEnvio; track t.valor) { <option [value]="t.valor">{{ t.rotulo }}</option> }
+                </select>
+              </div>
+              <label class="flex items-center gap-2 pb-3 font-semibold text-slate-700">
+                <input type="checkbox" class="h-4 w-4" [(ngModel)]="ativo" (ngModelChange)="alterou()" data-ativo> Ativo
+              </label>
             </div>
-            <div>
-              <label class="label" for="tipoLayout">Tipo layout *</label>
-              <select id="tipoLayout" class="field" [ngModel]="tipoLayout" (ngModelChange)="trocarTipoLayout($event)" data-tipo-layout>
-                <option value="" disabled>Selecione</option>
-                @for (t of tiposLayout; track t.valor) { <option [value]="t.valor">{{ t.rotulo }}</option> }
-              </select>
-            </div>
-            <div>
-              <label class="label" for="tipoEnvio">Tipo de envio *</label>
-              <select id="tipoEnvio" class="field" [value]="tipoEnvio" (change)="trocarEnvio($any($event.target))" data-tipo-envio>
-                <option value="" disabled>Selecione</option>
-                @for (t of tiposEnvio; track t.valor) { <option [value]="t.valor">{{ t.rotulo }}</option> }
-              </select>
-            </div>
-            <label class="flex items-center gap-2 pb-3 font-semibold text-slate-700">
-              <input type="checkbox" class="h-4 w-4" [(ngModel)]="ativo" (ngModelChange)="alterou()" data-ativo> Ativo
-            </label>
-          </div>
 
-          @if (tipoEnvio === 'EMAIL') {
-            <div>
-              <label class="label" for="assunto">Assunto sugerido</label>
-              <input id="assunto" class="field" maxlength="200" [(ngModel)]="assunto" (ngModelChange)="alterou()" data-assunto>
+            @if (tipoEnvio === 'EMAIL') {
+              <div>
+                <label class="label" for="assunto">Assunto sugerido</label>
+                <input id="assunto" class="field" maxlength="200" [(ngModel)]="assunto" (ngModelChange)="alterou()" data-assunto>
+              </div>
+            }
+
+          </section>
+
+          <section class="card secao-form p-6">
+            <h2 class="secao-titulo">Conteúdo</h2>
+            <div class="grid gap-4 lg:grid-cols-[1fr_18rem]">
+              <div>
+                @switch (tipoEnvio) {
+                  @case ('EMAIL') {
+                    <app-editor-html [(ngModel)]="conteudo" (ngModelChange)="alterou()" />
+                  }
+                  @case ('WHATSAPP') {
+                    <app-editor-whatsapp [(ngModel)]="conteudo" (ngModelChange)="alterou()" />
+                  }
+                  @default {
+                    <p class="rounded-xl border border-dashed border-[var(--field-line)] p-10 text-center text-slate-500" data-sem-envio>
+                      Escolha o tipo de envio para começar a escrever.
+                    </p>
+                  }
+                }
+              </div>
+              <app-painel-tags [tags]="tags" (escolher)="inserirTag($event)" />
             </div>
+          </section>
+
+          @if (error) {
+            <div class="rounded-xl bg-red-50 p-4 text-red-700" data-erro>{{ error }}</div>
           }
 
-          <div class="grid gap-4 lg:grid-cols-[1fr_18rem]">
-            <div>
-              @switch (tipoEnvio) {
-                @case ('EMAIL') {
-                  <app-editor-html [(ngModel)]="conteudo" (ngModelChange)="alterou()" />
-                }
-                @case ('WHATSAPP') {
-                  <app-editor-whatsapp [(ngModel)]="conteudo" (ngModelChange)="alterou()" />
-                }
-                @default {
-                  <p class="rounded-xl border border-dashed border-[var(--field-line)] p-10 text-center text-slate-500" data-sem-envio>
-                    Escolha o tipo de envio para começar a escrever.
-                  </p>
-                }
-              }
-            </div>
-            <app-painel-tags [tags]="tags" (escolher)="inserirTag($event)" />
-          </div>
-        </section>
-
-        @if (error) {
-          <div class="rounded-xl bg-red-50 p-4 text-red-700" data-erro>{{ error }}</div>
-        }
-
-        <div class="flex flex-wrap justify-end gap-2">
-          <button type="button" class="btn-secondary" [disabled]="!tipoEnvio || !tipoLayout" (click)="preVisualizar()" data-pre-visualizar>Pré-visualizar</button>
-          <a routerLink="/layouts" class="btn-secondary">Cancelar</a>
-          <button type="button" class="btn-primary" [disabled]="salvando" (click)="salvar()" data-salvar>Salvar</button>
-        </div>
+          <app-rodape-form voltarUrl="/layouts" [carregando]="salvando">
+            <button type="button" class="btn-secondary" [disabled]="!tipoEnvio || !tipoLayout" (click)="preVisualizar()" data-pre-visualizar>Pré-visualizar</button>
+          </app-rodape-form>
+        </form>
       }
     </div>
 
-    @if (previa) {
-      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" (click)="previa = null">
-        <div class="card max-h-[90vh] w-full max-w-2xl overflow-y-auto p-6" (click)="$event.stopPropagation()">
-          <div class="mb-4 flex items-center justify-between">
-            <h2 class="text-lg font-black">Pré-visualização</h2>
-            <button type="button" class="btn-secondary !px-3 !py-1" (click)="previa = null">Fechar</button>
-          </div>
+    <app-modal [aberto]="!!previa" titulo="Pré-visualização" tamanho="lg" (fechar)="previa = null">
+      @if (previa; as previa) {
           @if (tipoEnvio === 'EMAIL') {
             @if (previa.assunto) { <p class="mb-3 text-sm"><b>Assunto:</b> {{ previa.assunto }}</p> }
             <div class="rounded-lg border bg-white p-4 text-slate-900" [innerHTML]="previa.conteudo"></div>
@@ -123,9 +127,8 @@ export function whatsappParaEmail(texto: string): string {
             </div>
           }
           <p class="mt-3 text-xs text-slate-500">Exemplo com dados fictícios.</p>
-        </div>
-      </div>
-    }
+      }
+    </app-modal>
   `
 })
 export class LayoutFormComponent implements OnInit, HasPendingChanges {

@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Voluntario } from '../../../features/voluntarios/models/voluntario.model';
+import { DialogoService } from '../../services/dialogo.service';
 import { VolunteerPickerComponent } from './volunteer-picker.component';
 
 function voluntario(parcial: Partial<Voluntario> & { id: string; nome_completo: string }): Voluntario {
@@ -68,7 +69,8 @@ describe('VolunteerPickerComponent', () => {
 
   it('não escolhe alguém já usado em outra vaga', () => {
     const emit = spyOn(component.selectedIdChange, 'emit');
-    component.excludeIds = ['1'];
+    fixture.componentRef.setInput('excludeIds', ['1']);
+    fixture.detectChanges();
     component.choose(component.volunteers[0]);
     expect(emit).not.toHaveBeenCalled();
   });
@@ -129,5 +131,52 @@ describe('VolunteerPickerComponent', () => {
     } finally {
       cartao.remove();
     }
+  });
+
+  it('fechado não registra listener global; abrir registra e fechar remove as mesmas funções', () => {
+    const add = spyOn(document, 'addEventListener').and.callThrough();
+    const remove = spyOn(document, 'removeEventListener').and.callThrough();
+    const outros = [TestBed.createComponent(VolunteerPickerComponent), TestBed.createComponent(VolunteerPickerComponent)];
+    outros.forEach(f => f.detectChanges());
+    fixture.detectChanges();
+    const tipos = () => add.calls.allArgs().map(a => a[0]);
+    expect(tipos()).not.toContain('scroll');
+    expect(tipos()).not.toContain('mousedown');
+
+    component.toggleOpen();
+    expect(tipos()).toContain('scroll');
+    expect(tipos()).toContain('mousedown');
+    const handlerRolar = add.calls.allArgs().find(a => a[0] === 'scroll')![1];
+    const handlerClique = add.calls.allArgs().find(a => a[0] === 'mousedown')![1];
+
+    component.toggleOpen();
+    expect(remove.calls.allArgs().some(a => a[0] === 'scroll' && a[1] === handlerRolar)).toBeTrue();
+    expect(remove.calls.allArgs().some(a => a[0] === 'mousedown' && a[1] === handlerClique)).toBeTrue();
+    outros.forEach(f => f.destroy());
+  });
+
+  it('com marcadores, indisponível vai para o fim e pede confirmação ao escolher', async () => {
+    fixture.componentRef.setInput('marcadores', { '1': { indisponivel: true }, '2': { vezesNoMes: 2 } });
+    fixture.detectChanges();
+    expect(component.lista.map(v => v.id)).toEqual(['2', '4', '1']);
+
+    const confirmar = spyOn(TestBed.inject(DialogoService), 'confirmar').and.resolveTo(false);
+    const emit = spyOn(component.selectedIdChange, 'emit');
+    await component.choose(component.volunteers[0]);
+    expect(confirmar.calls.first().args[0].mensagem).toContain('Ana Souza avisou que não pode');
+    expect(emit).not.toHaveBeenCalled();
+
+    confirmar.and.resolveTo(true);
+    await component.choose(component.volunteers[0]);
+    expect(emit).toHaveBeenCalledWith('1');
+  });
+
+  it('vaga preenchida e vazia têm aparência diferente', () => {
+    const botao = () => fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    expect(botao().classList).toContain('picker-vazio');
+    fixture.componentRef.setInput('selectedId', '1');
+    fixture.detectChanges();
+    expect(botao().classList).toContain('picker-preenchido');
+    expect(botao().classList).not.toContain('picker-vazio');
   });
 });

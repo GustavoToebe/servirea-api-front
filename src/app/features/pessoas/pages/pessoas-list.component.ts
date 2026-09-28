@@ -16,23 +16,23 @@ import { Selecao } from '../../../shared/utils/selecao';
 import { VoluntariosApiService } from '../services/voluntarios-api.service';
 
 import { DuplicidadesDialogComponent } from './duplicidades-dialog.component';
+import { ComunicadoDialogComponent } from '../../comunicacao/components/comunicado-dialog.component';
+import { SessaoAtual } from '../../../core/layout/sessao-atual';
+import { CabecalhoPaginaComponent } from '../../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
+import { EstadoListaComponent } from '../../../shared/components/estado-lista/estado-lista.component';
 
 type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
 
 @Component({
     selector: 'app-pessoas-list',
-    imports: [CommonModule, FormsModule, RouterLink, ConfirmDialogComponent, NumeroComponent, ListaAssinaturaDialogComponent, BarraFiltrosComponent, DuplicidadesDialogComponent],
+    imports: [CommonModule, FormsModule, RouterLink, ConfirmDialogComponent, NumeroComponent, ListaAssinaturaDialogComponent, BarraFiltrosComponent, DuplicidadesDialogComponent, ComunicadoDialogComponent, CabecalhoPaginaComponent, EstadoListaComponent],
     template: `
 
     <div class="space-y-6">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-        <h1 class="text-2xl font-black text-slate-900">Pessoas e ministérios</h1>
-        <p class="text-sm text-slate-500">Coroinhas, acólitos e responsáveis. A ficha guarda função, idade e contato.</p>
-        </div>
-        <a routerLink="/pessoas/nova" class="btn-primary">＋ Novo cadastro</a>
-      </div>
-    
+      <app-cabecalho-pagina titulo="Pessoas e ministérios" subtitulo="Coroinhas, acólitos e responsáveis. A ficha guarda função, idade e contato.">
+        <a acoes routerLink="/pessoas/nova" class="btn-primary">＋ Novo cadastro</a>
+      </app-cabecalho-pagina>
+
       <div class="flex flex-wrap gap-2">
         <button type="button" class="rounded-2xl px-4 py-2.5 text-sm font-bold" [class.bg-brand-blue]="aba==='todas'" [class.text-white]="aba==='todas'" [class.bg-white]="aba!=='todas'" [class.border]="aba!=='todas'" (click)="setAba('todas')">Todas {{ counts.pessoas }}</button>
         <button type="button" class="rounded-2xl px-4 py-2.5 text-sm font-bold" [class.bg-brand-blue]="aba==='ativos'" [class.text-white]="aba==='ativos'" [class.bg-white]="aba!=='ativos'" [class.border]="aba!=='ativos'" (click)="setAba('ativos')">Ativos {{ counts.ativos }}</button>
@@ -40,16 +40,22 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
         <button type="button" class="rounded-2xl px-4 py-2.5 text-sm font-bold" [class.bg-brand-blue]="aba==='aguardando'" [class.text-white]="aba==='aguardando'" [class.bg-white]="aba!=='aguardando'" [class.border]="aba!=='aguardando'" (click)="setAba('aguardando')">Aguardando {{ counts.pendentes }}</button>
         <button type="button" class="rounded-2xl px-4 py-2.5 text-sm font-bold" [class.bg-brand-blue]="aba==='historico'" [class.text-white]="aba==='historico'" [class.bg-white]="aba!=='historico'" [class.border]="aba!=='historico'" (click)="setAba('historico')">Histórico</button>
       </div>
-    
+
       @if (message) {
         <div class="rounded-xl bg-emerald-50 p-4 text-emerald-800">{{ message }}</div>
+      }
+      @if (comunicadoCriado) {
+        <div class="rounded-xl bg-emerald-50 p-4 text-emerald-800" data-sucesso-comunicado>
+          <b>Sucesso</b> — As mensagens foram adicionadas à fila de envio!
+          Acompanhe em <a class="font-bold underline" [routerLink]="['/comunicados', comunicadoCriado]">Comunicados</a>.
+        </div>
       }
       @if (error) {
         <div class="rounded-xl bg-red-50 p-4 text-red-700">{{ error }}</div>
       }
-    
+
       @if (aba==='todas' || aba==='ativos' || aba==='inativos') {
-        <app-barra-filtros placeholder="Buscar por nome ou número" [(termo)]="nome" (buscar)="load()"
+        <app-barra-filtros placeholder="Buscar por nome ou número" [termo]="nome" (termoChange)="buscaDigitada($event)" (buscar)="load()"
           [opcoes]="opcoesMenu" (opcao)="lidarComOpcao($event)"
           [filtrosAtivos]="filtrosAtivosLista" (removerFiltro)="removerFiltro($event)" (removerTodos)="removerTodosFiltros()">
           <div class="flex flex-col gap-1">
@@ -69,7 +75,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
           <div class="text-sm text-slate-500 mt-2">{{ quantidadeMarcada }} selecionado(s)</div>
         }
       }
-    
+
       @if (aba==='historico') {
         <app-barra-filtros [semBusca]="true" (buscar)="load()" [filtrosAtivos]="filtrosAtivosHistorico">
           <div class="flex flex-col gap-1">
@@ -83,7 +89,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
       }
 
       @if (aba==='todas') {
-        <div class="overflow-x-auto">
+        <div class="tabela-rolagem">
           <table class="tabela">
             <thead>
               <tr>
@@ -98,15 +104,9 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
               </tr>
             </thead>
             <tbody>
-              @if (loading) {
-                <tr><td colspan="8" class="text-center text-slate-500 p-10">Carregando...</td></tr>
-              }
-              @if (!loading && !pessoasVisiveis.length) {
-                <tr><td colspan="8" class="text-center text-slate-500 p-10">Nenhum cadastro.</td></tr>
-              }
               @for (p of pessoasVisiveis; track p.id) {
-                <tr [class.marcada]="selecao.marcado(p.id)">
-                  <td class="text-center">
+                <tr class="clicavel" tabindex="0" [class.marcada]="selecao.marcado(p.id)" (click)="abrir(p.id)" (keydown.enter)="abrir(p.id)" [attr.data-linha]="p.id">
+                  <td class="text-center" (click)="$event.stopPropagation()">
                     <input type="checkbox" class="tabela-check" [attr.data-marcar]="p.id" [checked]="selecao.marcado(p.id)" (change)="alternar(p.id)" [attr.aria-label]="'Selecionar ' + p.nomeCompleto">
                   </td>
                   <td>
@@ -138,19 +138,20 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
                   <td>{{ ageFromDate(p.dataNascimento) ?? '—' }}</td>
                   <td class="text-right">
                     <div class="flex justify-end gap-2">
-                      <a [routerLink]="['/pessoas', p.id]" class="btn-secondary !px-3 !py-1.5 text-xs">Ver</a>
-                      <a [routerLink]="['/pessoas', p.id, 'editar']" class="btn-secondary !px-3 !py-1.5 text-xs">Editar</a>
+                      <a [routerLink]="['/pessoas', p.id]" class="btn-secondary !px-3 !py-1.5 text-xs" (click)="$event.stopPropagation()">Ver</a>
+                      <a [routerLink]="['/pessoas', p.id, 'editar']" class="btn-secondary !px-3 !py-1.5 text-xs" (click)="$event.stopPropagation()">Editar</a>
                     </div>
                   </td>
                 </tr>
               }
             </tbody>
           </table>
+          <app-estado-lista [carregando]="loading" [vazio]="!loading && !pessoasVisiveis.length" />
         </div>
       }
-    
+
       @if (aba==='ativos' || aba==='inativos') {
-        <div class="overflow-x-auto">
+        <div class="tabela-rolagem">
           <table class="tabela">
             <thead>
               <tr>
@@ -164,15 +165,9 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
               </tr>
             </thead>
             <tbody>
-              @if (loading) {
-                <tr><td colspan="7" class="text-center text-slate-500 p-10">Carregando...</td></tr>
-              }
-              @if (!loading && !rowsVisiveis.length) {
-                <tr><td colspan="7" class="text-center text-slate-500 p-10">Nenhum cadastro.</td></tr>
-              }
               @for (v of rowsVisiveis; track v.id) {
-                <tr [class.marcada]="selecao.marcado(v.id)">
-                  <td class="text-center">
+                <tr class="clicavel" tabindex="0" [class.marcada]="selecao.marcado(v.id)" (click)="abrir(v.id)" (keydown.enter)="abrir(v.id)" [attr.data-linha]="v.id">
+                  <td class="text-center" (click)="$event.stopPropagation()">
                     <input type="checkbox" class="tabela-check" [attr.data-marcar]="v.id" [checked]="selecao.marcado(v.id)" (change)="alternar(v.id)" [attr.aria-label]="'Selecionar ' + v.nomeCompleto">
                   </td>
                   <td>
@@ -195,54 +190,56 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
                   <td><span class="badge" [ngClass]="v.ativo ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'">{{ v.ativo ? 'Ativo' : 'Inativo' }}</span></td>
                   <td class="text-right">
                     <div class="flex justify-end gap-2">
-                      <a [routerLink]="['/pessoas', v.id]" class="btn-secondary !px-3 !py-1.5 text-xs">Ver</a>
-                      <a [routerLink]="['/pessoas', v.id, 'editar']" class="btn-secondary !px-3 !py-1.5 text-xs">Editar</a>
+                      <a [routerLink]="['/pessoas', v.id]" class="btn-secondary !px-3 !py-1.5 text-xs" (click)="$event.stopPropagation()">Ver</a>
+                      <a [routerLink]="['/pessoas', v.id, 'editar']" class="btn-secondary !px-3 !py-1.5 text-xs" (click)="$event.stopPropagation()">Editar</a>
                     </div>
                   </td>
                 </tr>
               }
             </tbody>
           </table>
+          <app-estado-lista [carregando]="loading" [vazio]="!loading && !rowsVisiveis.length" />
         </div>
       }
-    
+
       @if (aba==='aguardando' || aba==='historico') {
-        <div class="grid gap-4">
-          @if (loading) {
-            <div class="card p-10 text-center text-slate-500">Carregando inscrições...</div>
-          }
-          @if (!loading && !inscricoes.length) {
-            <div class="card p-10 text-center text-slate-500">Nenhuma inscrição.</div>
-          }
-          @for (i of inscricoes; track i) {
-            <article class="card p-5">
-              <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <h2 class="text-lg font-black">{{ i.nomeCompleto }}<app-numero [numero]="i.sequencial" /></h2>
-                  <p class="text-sm text-slate-500">{{ tipoLabel[i.tipo] }} · {{ ageFromDate(i.dataNascimento) ?? 'idade não informada' }} anos</p>
-                  <p class="text-sm text-slate-600">Responsável: {{ principalNome(i) }}</p>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                  <a [routerLink]="['/pessoas/inscricoes', i.id]" class="btn-secondary !py-2">Ver</a>
-                  @if (i.status==='PENDENTE') {
-                    <button type="button" class="btn-primary !py-2" (click)="approveTarget=i">Aprovar</button>
-                  }
-                  @if (i.status==='PENDENTE') {
-                    <button type="button" class="btn-danger !py-2" (click)="openReject(i)">Rejeitar</button>
-                  }
-                  @if (i.voluntarioId) {
-                    <a [routerLink]="['/pessoas', i.voluntarioId]" class="btn-secondary !py-2">Abrir cadastro</a>
-                  }
-                </div>
-              </div>
-            </article>
-          }
+        <div class="tabela-rolagem">
+          <table class="tabela">
+            <thead>
+              <tr><th>Nome</th><th>Tipo</th><th>Idade</th><th class="hidden md:table-cell">Responsável</th><th class="hidden md:table-cell">Decisão em</th><th class="text-right">Ações</th></tr>
+            </thead>
+            <tbody>
+              @for (i of inscricoes; track i.id) {
+                <tr class="clicavel" tabindex="0" (click)="abrirInscricao(i.id)" (keydown.enter)="abrirInscricao(i.id)" [attr.data-inscricao]="i.id">
+                  <td class="font-black">{{ i.nomeCompleto }}<app-numero [numero]="i.sequencial" /></td>
+                  <td>{{ tipoLabel[i.tipo] }}</td>
+                  <td>{{ ageFromDate(i.dataNascimento) ?? '—' }}</td>
+                  <td class="hidden md:table-cell">{{ principalNome(i) }}</td>
+                  <td class="hidden md:table-cell">{{ (i.dataAprovacao || i.dataRejeicao) ? ((i.dataAprovacao || i.dataRejeicao) | date:'dd/MM/yyyy') : '—' }}</td>
+                  <td class="text-right" (click)="$event.stopPropagation()">
+                    <div class="flex justify-end gap-2">
+                      @if (i.status==='PENDENTE') {
+                        <button type="button" class="btn-primary !px-3 !py-1.5 text-xs" (click)="approveTarget=i">Aprovar</button>
+                        <button type="button" class="btn-danger !px-3 !py-1.5 text-xs" (click)="openReject(i)">Rejeitar</button>
+                      }
+                      @if (i.voluntarioId) {
+                        <a [routerLink]="['/pessoas', i.voluntarioId]" class="btn-secondary !px-3 !py-1.5 text-xs">Abrir cadastro</a>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <app-estado-lista [carregando]="loading" [vazio]="!loading && !inscricoes.length" mensagemVazio="Nenhuma inscrição." />
         </div>
       }
     </div>
-    
+
     <app-duplicidades-dialog [open]="dialogOpen" [itens]="duplicidades" acao="aprovar" (fechar)="dialogOpen = false" (continuar)="doApprove(approveTargetDialog?.id!)" />
     <app-lista-assinatura-dialog [open]="listaAberta" [itens]="itensLista" (fechar)="listaAberta = false" />
+    <app-comunicado-dialog [open]="comunicadoAberto" [pessoaIds]="idsComunicado" (fechar)="comunicadoAberto = false"
+      (enviado)="comunicadoCriado = $event.id" />
     <app-confirm-dialog [open]="!!approveTarget" title="Aprovar inscrição"
       [message]="'Aprovar ' + (approveTarget?.nomeCompleto || '') + '? O cadastro será criado em /pessoas.'"
       confirmLabel="Aprovar" (cancel)="approveTarget=null" (confirm)="confirmApprove()">
@@ -256,11 +253,11 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
 })
 export class PessoasListComponent implements OnInit {
   CONDICAO_LABEL = CONDICAO_LABEL;
-  
+
   temCuidado(p: { condicoes?: CondicaoEspecial[], cuidados?: string | null }): boolean {
     return (p.condicoes && p.condicoes.length > 0) || !!p.cuidados;
   }
-  
+
   formatarCondicoes(p: { condicoes?: CondicaoEspecial[], cuidados?: string | null }): string {
     const labels = (p.condicoes || []).map(c => CONDICAO_LABEL[c]);
     if (p.cuidados && labels.length === 0) return 'Cuidado e acolhimento';
@@ -291,13 +288,17 @@ export class PessoasListComponent implements OnInit {
   selecao = new Selecao();
   listaAberta = false;
   itensLista: ItemAssinatura[] = [];
+  comunicadoAberto = false;
+  idsComunicado: string[] = [];
+  comunicadoCriado: string | null = null;
 
   constructor(
     private pessoasApi: PessoasService,
     private voluntarios: VoluntariosApiService,
     private inscricoesApi: InscricoesApiService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private sessao: SessaoAtual
   ) {}
 
   ngOnInit() {
@@ -320,7 +321,27 @@ export class PessoasListComponent implements OnInit {
     await this.load();
   }
 
+  /** Clique na linha abre a ficha (checkbox, links e botões da linha param o clique). */
+  abrir(id: string) {
+    void this.router.navigate(['/pessoas', id]);
+  }
+
+  abrirInscricao(id: string) {
+    void this.router.navigate(['/pessoas/inscricoes', id]);
+  }
+
+  private espera: ReturnType<typeof setTimeout> | null = null;
+  private pedido = 0;
+
+  /** Busca que vai à API: espera 300 ms depois da última tecla e descarta respostas antigas. */
+  buscaDigitada(termo: string) {
+    this.nome = termo;
+    if (this.espera) clearTimeout(this.espera);
+    this.espera = setTimeout(() => { this.espera = null; void this.load(); }, 300);
+  }
+
   async load() {
+    const pedido = ++this.pedido;
     this.loading = true;
     this.error = '';
     try {
@@ -330,6 +351,7 @@ export class PessoasListComponent implements OnInit {
         this.voluntarios.contar(false),
         this.inscricoesApi.listar('PENDENTE')
       ]);
+      if (pedido !== this.pedido) return;
       this.counts = { pessoas: todas.length, ativos, inativos, pendentes: pendentes.length };
       this.selecao.limpar();
       this.pessoas = [];
@@ -345,7 +367,7 @@ export class PessoasListComponent implements OnInit {
     } catch (err) {
       this.error = err instanceof Error ? err.message : 'Erro ao carregar.';
     } finally {
-      this.loading = false;
+      if (pedido === this.pedido) this.loading = false;
     }
   }
 
@@ -407,12 +429,33 @@ export class PessoasListComponent implements OnInit {
 
   get opcoesMenu(): OpcaoMenu[] {
     return [
-      { id: 'comunicado', rotulo: 'Criar comunicado', icone: '✉', desabilitada: true, dica: 'Em breve' },
+      {
+        id: 'comunicado', rotulo: 'Criar comunicado', icone: '✉',
+        desabilitada: this.quantidadeMarcada === 0 || !this.podeComunicar,
+        dica: !this.podeComunicar ? 'Sem permissão para enviar comunicados' : this.quantidadeMarcada === 0 ? 'Marque ao menos uma pessoa' : ''
+      },
       { id: 'listagem', rotulo: 'Imprimir listagem', icone: '🖨', desabilitada: this.quantidadeMarcada === 0, dica: 'Marque ao menos uma pessoa' }
     ];
   }
 
+  get podeComunicar(): boolean {
+    return this.sessao.permissoes().includes('COMUNICADO_ENVIAR');
+  }
+
+  /** Nas abas Todas, Ativos e Inativos o id da linha é o da pessoa (o voluntário usa o mesmo id). */
+  abrirComunicado() {
+    const visiveis = this.aba === 'todas' ? this.pessoasVisiveis.map(p => p.id) : this.rowsVisiveis.map(v => v.id);
+    this.idsComunicado = visiveis.filter(id => this.selecao.marcado(id));
+    if (!this.idsComunicado.length) return;
+    this.comunicadoCriado = null;
+    this.comunicadoAberto = true;
+  }
+
   lidarComOpcao(id: string) {
+    if (id === 'comunicado') {
+      this.abrirComunicado();
+      return;
+    }
     if (id === 'listagem') {
       this.abrirLista();
     }

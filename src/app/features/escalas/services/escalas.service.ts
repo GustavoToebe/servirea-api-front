@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { mensagemApi } from '../../../core/api/api-error';
 import { celebracoesDoMes } from '../data/calendario-liturgico';
-import { Escala, EscalaDetalhe, EscalaEvento, EscalaFilters, EscalaVaga, Presenca, StatusEscala, TipoEscala } from '../models/escala.model';
+import { ApoioEscala, Escala, EscalaDetalhe, EscalaEvento, EscalaFilters, EscalaVaga, IndisponibilidadesMes, Presenca, StatusEscala, TipoEscala } from '../models/escala.model';
 import { FuncaoEscala } from '../../voluntarios/models/voluntario.model';
 
 /** Contrato de `/escalas` na API Java (`EscalaResponse` e filhos). */
@@ -24,6 +24,7 @@ interface EscalaApi {
     horario: string;
     celebracao: string;
     vagas: { id: string; funcao: FuncaoEscala; posicao: number; voluntarioId: string | null; voluntarioNome: string | null; presenca: Presenca }[];
+    referencia?: boolean;
   }[];
 }
 
@@ -77,7 +78,8 @@ export class EscalasService {
         data: e.data,
         horario: this.horario(e.horario),
         celebracao: e.celebracao || 'Missa',
-        vagas: e.vagas.map(v => ({ funcao: v.funcao, posicao: v.posicao, voluntarioId: v.voluntario_id || null }))
+        vagas: e.vagas.map(v => ({ funcao: v.funcao, posicao: v.posicao, voluntarioId: v.voluntario_id || null })),
+        referencia: !!e.referencia
       }))
     };
     try {
@@ -111,6 +113,33 @@ export class EscalasService {
     }
   }
 
+  async indisponibilidades(ano: number, mes: number): Promise<IndisponibilidadesMes> {
+    const params = new HttpParams().set('ano', ano).set('mes', mes);
+    try {
+      return await firstValueFrom(this.http.get<IndisponibilidadesMes>(`${this.base}/indisponibilidades`, { params }));
+    } catch (erro) {
+      throw new Error(mensagemApi(erro, 'Não foi possível carregar as indisponibilidades.'));
+    }
+  }
+
+  async salvarIndisponibilidades(ano: number, mes: number, dados: Pick<IndisponibilidadesMes, 'itens' | 'semRestricao'>): Promise<IndisponibilidadesMes> {
+    const params = new HttpParams().set('ano', ano).set('mes', mes);
+    try {
+      return await firstValueFrom(this.http.put<IndisponibilidadesMes>(`${this.base}/indisponibilidades`, dados, { params }));
+    } catch (erro) {
+      throw new Error(mensagemApi(erro, 'Não foi possível salvar as indisponibilidades.'));
+    }
+  }
+
+  /** Situação, datas indisponíveis e irmãos de cada voluntário ativo, no mês da escala. */
+  async apoio(escalaId: string): Promise<ApoioEscala> {
+    try {
+      return await firstValueFrom(this.http.get<ApoioEscala>(`${this.base}/${escalaId}/apoio`));
+    } catch (erro) {
+      throw new Error(mensagemApi(erro, 'Não foi possível carregar o apoio da escala.'));
+    }
+  }
+
   private paraDetalhe(r: EscalaApi): EscalaDetalhe {
     const eventos: EscalaEvento[] = (r.eventos || []).map(e => ({
       id: e.id,
@@ -118,6 +147,7 @@ export class EscalasService {
       data: e.data,
       horario: this.horario(e.horario),
       celebracao: e.celebracao || 'Missa',
+      referencia: !!e.referencia,
       vagas: (e.vagas || []).map(v => ({
         id: v.id,
         evento_id: e.id,
@@ -160,6 +190,55 @@ export class EscalasService {
     }
     this.mergeLiturgicalDays(events, tipo, ano, mes);
     return events.sort((a, b) => `${a.data} ${a.horario}`.localeCompare(`${b.data} ${b.horario}`));
+  }
+
+  /**
+   * Replica uma escala semanal para outro mês (PLANO-006), sem HTTP. Mapeia por dia da semana + ocorrência no mês
+   * (1ª quinta → 1ª quinta). Dia que só existe no destino fica vazio com `ocorrenciaNova`; dia da origem que não existe
+   * no destino vira `referencia` com a data original e os nomes. Resultado: referências primeiro, depois os dias reais.
+   */
+  replicarSemanal(origem: EscalaDetalhe, ano: number, mes: number): EscalaEvento[] {
+    const chave = (iso: string) => {
+      const d = new Date(`${iso}T12:00:00`);
+      return `${d.getDay()}-${Math.floor((d.getDate() - 1) / 7) + 1}`;
+    };
+    const copiarVagas = (vagas: EscalaVaga[]): EscalaVaga[] => vagas.map(v => ({
+      funcao: v.funcao, posicao: v.posicao, voluntario_id: v.voluntario_id ?? null,
+      voluntario: v.voluntario ? { ...v.voluntario } : null
+    }));
+    const porChave = new Map<string, EscalaEvento[]>();
+    for (const e of origem.eventos.filter(x => !x.referencia)) {
+      const lista = porChave.get(chave(e.data)) ?? [];
+      lista.push(e);
+      porChave.set(chave(e.data), lista);
+    }
+    for (const lista of porChave.values()) lista.sort((a, b) => a.horario.localeCompare(b.horario));
+
+    const destino = this.buildDefaultEvents('SEMANAL', ano, mes);
+    const usadas = new Set<string>();
+    const reais: EscalaEvento[] = [];
+    for (const data of [...new Set(destino.map(e => e.data))]) {
+      const padrao = destino.filter(e => e.data === data);
+      const k = chave(data);
+      const daOrigem = porChave.get(k);
+      if (daOrigem?.length) {
+        usadas.add(k);
+        for (const e of daOrigem) {
+          reais.push({ data, horario: e.horario, celebracao: padrao[0].celebracao, vagas: copiarVagas(e.vagas) });
+        }
+      } else {
+        for (const e of padrao) reais.push({ ...e, ocorrenciaNova: true });
+      }
+    }
+    const referencias: EscalaEvento[] = [];
+    for (const [k, lista] of porChave) {
+      if (usadas.has(k)) continue;
+      for (const e of lista) {
+        referencias.push({ data: e.data, horario: e.horario, celebracao: e.celebracao, vagas: copiarVagas(e.vagas), referencia: true });
+      }
+    }
+    const ordem = (a: EscalaEvento, b: EscalaEvento) => `${a.data} ${a.horario}`.localeCompare(`${b.data} ${b.horario}`);
+    return [...referencias.sort(ordem), ...reais.sort(ordem)];
   }
 
   createEvent(tipo: TipoEscala, data: string, horario: string, celebracao: string): EscalaEvento {

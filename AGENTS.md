@@ -49,12 +49,39 @@ Rodar junto com as APIs e a Central no PC: README do `central-api-back`, seção
 - `shared/components/cuidados/` — seletor de cuidado e acolhimento, usado no cadastro e na inscrição.
 - `features/comunicacao/` — layouts de envio (e-mail e WhatsApp) com tags. Quill 2 só no editor de e-mail
   (`components/editor-html.component.ts`, tema `quill.snow.css` em `angular.json`).
+  Comunicados: `components/comunicado-dialog.component.ts` (assistente de 3 passos aberto por Pessoas → Opções →
+  "Criar comunicado"), histórico em `/comunicados` e `/comunicados/:id` e a seção WhatsApp na tela Paróquia.
+- Replicar semanal: `EscalasService.replicarSemanal` (mapeia por dia da semana + ocorrência no mês; dia a mais fica vazio com
+  `ocorrenciaNova`, dia que falta vira `referencia`), diálogo `pages/replicar-dialog.component.ts`. Referência nunca entra em
+  export, relatório, dashboard nem na lista de celebrações.
+- Mensal: tela `escalas/indisponibilidades?ano=&mes=` (grade pessoa × sábados/domingos, "sem restrição", pendente),
+  `volunteer-picker` com `[marcadores]` (⛔ indisponível por último e com confirmação, "N× no mês", irmão na missa) e o painel
+  `components/ainda-nao-escalados.component.ts`. Irmão só é sugerido ("Colocar X também"), nunca colocado sozinho.
+- Rotas com `data: { larguraTotal: true }` (montagem da escala) ocupam a largura toda no `main-layout`.
 - Lista de assinatura (`pessoas-list`): marque as pessoas e abra por Opções → "Imprimir listagem" (título, subtítulo, ordem;
   PDF A4 com 22 linhas numeradas por folha ou imagem; subtítulo com a cidade do cadastro da paróquia), `features/pessoas/services/lista-assinatura.service.ts`.
 - `app-duplicidades-dialog`: todo cadastro novo de pessoa ou aprovação de inscrição passa por ele para checar duplicidades.
 - Campo de senha sempre com o olho: `<div class="relative"><input #s type="password" class="field pr-11"><app-olho-senha [campo]="s" /></div>`.
 
+## Padrão de telas (estrutura do SIN+, cores do Servire)
+Tela nova copia uma tela existente desse padrão antes de inventar controle novo. Componentes em `shared/components/`.
+- **Lista** (ex.: `pessoas-list`, `layouts-list`): `app-cabecalho-pagina` (ação principal em `[acoes]`) + `app-barra-filtros`
+  + `.tabela-rolagem > table.tabela` + `app-estado-lista` embaixo da tabela. Linha com `clicavel`, `tabindex="0"`,
+  `(click)`/`(keydown.enter)` abrindo o registro; checkbox, links e botões da linha com `$event.stopPropagation()`.
+- **Formulário** (ex.: `pessoa-form`, `paroquia`): cabeçalho + seções `.card.secao-form` com `h2.secao-titulo`
+  (título + linha fina) e campos em `.grade-form` (2 colunas a partir de `md`), rótulo `.label` em cima. Cancelar/Salvar
+  só no `app-rodape-form` (Salvar é `type="submit"`: fica dentro do `<form>`; sem `NgForm`, use `<form ngNoForm (submit)>`).
+- **Opção longa** (pessoas, perfis): `app-select-busca` (filtro dentro do campo). Lista curta continua `<select>` nativo.
+- **Modal**: sempre `app-modal` (`[rodape]` com Cancelar à esquerda, ação à direita). Um sobre o outro: o de cima com
+  `[camada]="60"`; o Esc fecha só o de cima.
+- **Desempenho**: OnPush + `markForCheck()` depois de carga assíncrona (ou listas derivadas em campos, nunca função no
+  template), `track` por id, busca na API com debounce de 300 ms, busca em dado carregado filtra local. Listas pequenas
+  e estáveis ficam em cache no serviço por paróquia (`AcessoApiService.perfis`, `LayoutsApiService.ativosPorCanal`),
+  limpo quando a própria tela salva.
+
 ## Regras
+- Tela com muitos seletores: listener global só com o painel aberto (fora da zona), OnPush, nada de função que cria
+  objeto/array no template, `Intl.DateTimeFormat` só no escopo do módulo (`escala-builder/formatos-data.ts`).
 - **Nunca** `confirm()`/`alert()` do navegador: `await dialogo.confirmar({...})` / `dialogo.avisar(...)`
   (o host já está no `AppComponent`). `app-confirm-dialog` segue para o caso com motivo obrigatório.
 - Salvar com campo inválido: `markAllAsTouched()` + `focarPrimeiroInvalido(host)` (`shared/utils/foco.ts`); o CSS pinta

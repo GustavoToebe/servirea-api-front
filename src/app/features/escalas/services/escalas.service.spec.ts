@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { environment } from '../../../../environments/environment';
-import { EscalaDetalhe } from '../models/escala.model';
+import { ApoioEscala, EscalaDetalhe, indisponivelEm, periodoDoHorario } from '../models/escala.model';
 import { EscalasService } from './escalas.service';
 
 const apiEscala = {
@@ -144,5 +144,81 @@ describe('EscalasService', () => {
     const pascoa = mensalAbril.find(e => e.data === '2026-04-05');
     expect(pascoa?.celebracao).toBe('Páscoa');
     expect(mensalAbril.some(e => e.data === '2026-04-03')).toBeFalse();
+  });
+});
+
+describe('EscalasService.replicarSemanal (setembro → outubro/2026)', () => {
+  let service: EscalasService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    service = TestBed.inject(EscalasService);
+  });
+
+  /** Setembro/2026 inteiro, dias úteis, um nome diferente por dia no Missal ("Missal 03" para 03/09). */
+  function setembro(): EscalaDetalhe {
+    const eventos = service.buildDefaultEvents('SEMANAL', 2026, 9).map(e => ({
+      ...e,
+      vagas: e.vagas.map(v => v.funcao === 'MISSAL'
+        ? { ...v, voluntario_id: 'p' + e.data.slice(8), voluntario: { id: 'p' + e.data.slice(8), nome_completo: 'Missal ' + e.data.slice(8) } }
+        : v)
+    }));
+    return { id: 'set', titulo: 'Escala Semanal - Setembro 2026', tipo: 'SEMANAL', ano: 2026, mes: 9, status: 'FINALIZADA', observacao: null, eventos };
+  }
+
+  const missal = (e: { vagas: { funcao: string; voluntario?: { nome_completo: string } | null }[] }) =>
+    e.vagas.find(v => v.funcao === 'MISSAL')?.voluntario?.nome_completo ?? null;
+
+  it('mapeia por dia da semana e ocorrência, deixa a 5ª ocorrência vazia e o que sobra vira referência', () => {
+    const resultado = service.replicarSemanal(setembro(), 2026, 10);
+    const reais = resultado.filter(e => !e.referencia);
+    const referencias = resultado.filter(e => e.referencia);
+
+    expect(reais[0].data).toBe('2026-10-01');
+    expect(new Date('2026-10-01T12:00:00').getDay()).toBe(4);
+    expect(reais.every(e => e.data.startsWith('2026-10'))).toBeTrue();
+
+    const dia = (iso: string) => reais.find(e => e.data === iso)!;
+    expect(missal(dia('2026-10-01'))).toBe('Missal 03');
+    expect(missal(dia('2026-10-22'))).toBe('Missal 24');
+    expect(missal(dia('2026-10-26'))).toBe('Missal 28');
+
+    for (const iso of ['2026-10-29', '2026-10-30']) {
+      expect(dia(iso).ocorrenciaNova).toBeTrue();
+      expect(dia(iso).vagas.every(v => !v.voluntario_id)).toBeTrue();
+    }
+
+    expect(referencias.map(e => e.data)).toEqual(['2026-09-29', '2026-09-30']);
+    expect(referencias.map(missal)).toEqual(['Missal 29', 'Missal 30']);
+    expect(resultado.indexOf(referencias[0])).toBe(0);
+    expect(referencias.some(e => e.data === '2026-09-28')).toBeFalse();
+    expect(reais.every(e => e.vagas.every(v => v.id === undefined && v.presenca === undefined))).toBeTrue();
+  });
+
+  it('não leva referência antiga da origem', () => {
+    const origem = setembro();
+    origem.eventos.unshift({ data: '2026-08-31', horario: '19:00:00', celebracao: 'Missa', vagas: [], referencia: true });
+    expect(service.replicarSemanal(origem, 2026, 10).some(e => e.data === '2026-08-31')).toBeFalse();
+  });
+});
+
+describe('indisponibilidade na vaga (PLANO-007)', () => {
+  it('periodoDoHorario separa manhã, tarde e noite', () => {
+    expect(periodoDoHorario('09:30:00')).toBe('MANHA');
+    expect(periodoDoHorario('12:00')).toBe('TARDE');
+    expect(periodoDoHorario('17:59')).toBe('TARDE');
+    expect(periodoDoHorario('19:00:00')).toBe('NOITE');
+  });
+
+  it('indisponivelEm vale para o dia inteiro ou para o período do horário', () => {
+    const apoio: ApoioEscala = { voluntarios: [
+      { voluntarioId: 'a', situacao: 'COM_RESTRICAO', indisponiveis: [{ data: '2026-10-03', periodo: null }], irmaos: [] },
+      { voluntarioId: 'b', situacao: 'COM_RESTRICAO', indisponiveis: [{ data: '2026-10-04', periodo: 'MANHA' }], irmaos: [] }
+    ] };
+    expect(indisponivelEm(apoio, 'a', '2026-10-03', '19:00:00')).toBeTrue();
+    expect(indisponivelEm(apoio, 'b', '2026-10-04', '09:30:00')).toBeTrue();
+    expect(indisponivelEm(apoio, 'b', '2026-10-04', '19:00:00')).toBeFalse();
+    expect(indisponivelEm(apoio, 'c', '2026-10-03', '19:00:00')).toBeFalse();
+    expect(indisponivelEm(null, 'a', '2026-10-03', '19:00:00')).toBeFalse();
   });
 });

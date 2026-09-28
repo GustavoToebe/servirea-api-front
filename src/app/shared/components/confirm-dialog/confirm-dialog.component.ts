@@ -1,32 +1,27 @@
-
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ModalComponent } from '../modal/modal.component';
 
 @Component({
     selector: 'app-confirm-dialog',
-    imports: [FormsModule],
+    imports: [FormsModule, ModalComponent],
     template: `
-    @if (open) {
-      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" (click)="onBackdrop($event)">
-        <div class="card w-full max-w-md p-6" role="dialog" aria-modal="true">
-          <h3 class="text-lg font-black text-slate-900">{{ title }}</h3>
-          <p class="mt-2 text-sm text-slate-600">{{ message }}</p>
-          @if (requireReason) {
-            <div class="mt-4">
-              <label class="label">{{ reasonLabel }}</label>
-              <textarea class="field min-h-28" [(ngModel)]="reason" [placeholder]="reasonPlaceholder"></textarea>
-              @if (reasonError) {
-                <p class="mt-1 text-xs text-red-600">{{ reasonError }}</p>
-              }
-            </div>
+    <app-modal [aberto]="open" [titulo]="title" tamanho="sm" (fechar)="cancel.emit()">
+      <p class="text-sm text-slate-600">{{ message }}</p>
+      @if (requireReason) {
+        <div class="mt-4">
+          <label class="label">{{ reasonLabel }}</label>
+          <textarea class="field min-h-28" [(ngModel)]="reason" [placeholder]="reasonPlaceholder"></textarea>
+          @if (reasonError) {
+            <p class="mt-1 text-xs text-red-600">{{ reasonError }}</p>
           }
-          <div class="mt-6 flex flex-wrap justify-end gap-2">
-            <button type="button" class="btn-secondary" (click)="cancel.emit()">Cancelar</button>
-            <button type="button" [class]="danger ? 'btn-danger' : 'btn-primary'" (click)="onConfirm()">{{ confirmLabel }}</button>
-          </div>
         </div>
+      }
+      <div rodape class="flex flex-wrap justify-between gap-2">
+        <button type="button" class="btn-secondary" (click)="cancel.emit()">Cancelar</button>
+        <button type="button" [class]="danger ? 'btn-danger' : 'btn-primary'" (click)="onConfirm()">{{ confirmLabel }}</button>
       </div>
-    }
+    </app-modal>
     `
 })
 export class ConfirmDialogComponent {

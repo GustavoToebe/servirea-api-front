@@ -53,6 +53,14 @@ button, input, select, textarea { font: inherit; }
     box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
   }
   .label { @apply mb-1.5 block text-sm font-semibold text-slate-700; }
+  /* Formulário padrão (PLANO-009): seções com título + linha fina, campos em 2 colunas a partir de md. */
+  .secao-form { @apply space-y-4; }
+  .secao-titulo {
+    @apply pb-2 text-base font-black;
+    color: var(--ink);
+    border-bottom: 1px solid var(--line);
+  }
+  .grade-form { @apply grid gap-4 md:grid-cols-2; }
   .badge { @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold; }
   .chip {
     @apply rounded-full border px-3 py-1.5 text-sm font-bold transition;
@@ -69,16 +77,32 @@ button, input, select, textarea { font: inherit; }
     background: var(--card);
     border-color: var(--line);
   }
+  /* Proporção do SIN+ (PLANO-009): cabeçalho de 45 px, linhas de pelo menos 55 px. */
   .tabela thead th {
     @apply text-xs font-bold tracking-wider uppercase text-left;
     background: var(--brand-navy);
     color: white;
-    padding: 0.75rem 1rem;
+    height: 45px;
+    padding: 0 1rem;
   }
   .tabela tbody td {
     @apply text-sm;
-    padding: 0.75rem 1rem;
+    height: 55px;
+    padding: 0.5rem 1rem;
     border-bottom: 1px solid var(--line);
+  }
+  .tabela tr.clicavel { cursor: pointer; }
+  .tabela tr.clicavel:focus-visible td { outline: 2px solid var(--brand); outline-offset: -2px; }
+  /* Tabela com rolagem própria: o cabeçalho fica parado. */
+  .tabela-rolagem {
+    overflow: auto;
+    max-height: calc(100vh - 280px);
+    border-radius: 0.75rem;
+  }
+  .tabela-rolagem .tabela thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
   }
   .tabela tbody tr:nth-child(even) {
     background: color-mix(in srgb, var(--brand) 3%, transparent);
@@ -94,6 +118,17 @@ button, input, select, textarea { font: inherit; }
   }
   .tabela thead .tabela-check {
     accent-color: #fff;
+  }
+  /* Seletor de vaga (PLANO-008): preenchida em destaque, vazia tracejada. */
+  .picker-preenchido {
+    background: color-mix(in srgb, var(--brand) 8%, var(--card));
+    border-color: color-mix(in srgb, var(--brand) 35%, transparent);
+    color: var(--ink);
+  }
+  .picker-vazio {
+    background: var(--card);
+    border-style: dashed;
+    border-color: var(--field-line);
   }
 }
 

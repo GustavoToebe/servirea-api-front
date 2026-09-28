@@ -4,42 +4,45 @@ import { FormsModule } from '@angular/forms';
 import { mensagemApi } from '../../../core/api/api-error';
 import { AcessoApiService } from '../acesso-api.service';
 import { Perfil, SecaoCatalogo } from '../acesso.models';
+import { CabecalhoPaginaComponent } from '../../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
+import { BarraFiltrosComponent } from '../../../shared/components/barra-filtros/barra-filtros.component';
+import { EstadoListaComponent } from '../../../shared/components/estado-lista/estado-lista.component';
+import { RodapeFormComponent } from '../../../shared/components/rodape-form/rodape-form.component';
 
 @Component({
   selector: 'app-perfis',
-  imports: [FormsModule, NumeroComponent],
+  imports: [FormsModule, NumeroComponent, CabecalhoPaginaComponent, BarraFiltrosComponent, EstadoListaComponent, RodapeFormComponent],
   template: `
-    <div class="mx-auto max-w-3xl space-y-6">
-      <div class="flex items-end justify-between gap-4">
-        <div>
-          <div class="text-xs font-extrabold uppercase tracking-wider text-brand-blue">Acesso</div>
-          <h1 class="text-2xl font-black text-slate-900">Perfis</h1>
-          <p class="text-sm text-slate-500">O que cada pessoa pode ver e fazer nesta paróquia.</p>
-        </div>
-        <button type="button" class="btn-primary" (click)="novo()">Novo perfil</button>
-      </div>
+    <div class="space-y-6">
+      <app-cabecalho-pagina titulo="Perfis" subtitulo="O que cada pessoa pode ver e fazer nesta paróquia.">
+        <button acoes type="button" class="btn-primary" (click)="novo()">＋ Novo perfil</button>
+      </app-cabecalho-pagina>
 
       @if (erro) {
         <div class="rounded-xl bg-red-50 p-3 text-sm text-red-700">{{ erro }}</div>
       }
 
-      <div class="space-y-2">
-        @for (perfil of perfis; track perfil.id) {
-          <button type="button" class="card flex w-full items-center justify-between p-4 text-left" (click)="editar(perfil)">
-            <span>
-              <span class="block font-extrabold">{{ perfil.nome }}<app-numero [numero]="perfil.sequencial" /></span>
-              <span class="block text-sm text-slate-500">{{ perfil.usuarios }} {{ perfil.usuarios === 1 ? 'usuário' : 'usuários' }}</span>
-            </span>
-            <span class="text-xs font-bold uppercase tracking-wide text-slate-400">
-              {{ perfil.acessoTotal ? 'Acesso total' : (perfil.ativo ? 'Ativo' : 'Inativo') }}
-            </span>
-          </button>
-        }
+      <app-barra-filtros placeholder="Buscar perfil" [termo]="busca" (termoChange)="filtrar($event)" [temFiltros]="false" (buscar)="filtrar(busca)" />
+
+      <div class="tabela-rolagem">
+        <table class="tabela">
+          <thead><tr><th>Nome</th><th>Usuários</th><th>Situação</th></tr></thead>
+          <tbody>
+            @for (perfil of visiveis; track perfil.id) {
+              <tr class="clicavel" tabindex="0" (click)="editar(perfil)" (keydown.enter)="editar(perfil)" [attr.data-perfil]="perfil.id">
+                <td class="font-extrabold">{{ perfil.nome }}<app-numero [numero]="perfil.sequencial" /></td>
+                <td>{{ perfil.usuarios }} {{ perfil.usuarios === 1 ? 'usuário' : 'usuários' }}</td>
+                <td class="text-xs font-bold uppercase tracking-wide text-slate-500">{{ perfil.acessoTotal ? 'Acesso total' : (perfil.ativo ? 'Ativo' : 'Inativo') }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <app-estado-lista [carregando]="carregando" [vazio]="!carregando && !visiveis.length" />
       </div>
 
       @if (form) {
-        <form class="card space-y-4 p-5" (ngSubmit)="salvar()">
-          <h2 class="text-lg font-black">{{ form.id ? 'Editar perfil' : 'Novo perfil' }}</h2>
+        <form class="card secao-form p-6" (ngSubmit)="salvar()">
+          <h2 class="secao-titulo">{{ form.id ? 'Editar perfil' : 'Novo perfil' }}</h2>
           <label class="block text-sm font-semibold">Nome
             <input class="mt-1 w-full rounded-xl border px-3 py-2" name="nome" [(ngModel)]="form.nome" required>
           </label>
@@ -74,13 +77,11 @@ import { Perfil, SecaoCatalogo } from '../acesso.models';
               </fieldset>
             }
           }
-          <div class="flex flex-wrap gap-2">
-            <button class="btn-primary" type="submit" [disabled]="salvando">Salvar</button>
+          <app-rodape-form [carregando]="salvando" (cancelar)="form = null">
             @if (form.id) {
               <button class="btn-secondary" type="button" (click)="duplicar()">Duplicar</button>
             }
-            <button class="btn-secondary" type="button" (click)="form = null">Cancelar</button>
-          </div>
+          </app-rodape-form>
         </form>
       }
     </div>
@@ -90,6 +91,10 @@ export class PerfisComponent implements OnInit {
   private api = inject(AcessoApiService);
 
   perfis: Perfil[] = [];
+  /** Lista filtrada pela busca local (recalculada só quando a busca ou os dados mudam). */
+  visiveis: Perfil[] = [];
+  busca = '';
+  carregando = true;
   catalogo: SecaoCatalogo[] = [];
   erro = '';
   salvando = false;
@@ -166,10 +171,18 @@ export class PerfisComponent implements OnInit {
     });
   }
 
+  filtrar(termo: string): void {
+    this.busca = termo;
+    const t = termo.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+    this.visiveis = !t ? this.perfis : this.perfis.filter(p =>
+      p.nome.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().includes(t));
+  }
+
   private carregar(): void {
+    this.carregando = true;
     this.api.perfis().subscribe({
-      next: lista => this.perfis = lista,
-      error: erro => this.erro = mensagemApi(erro, 'Não foi possível carregar os perfis.')
+      next: lista => { this.perfis = lista; this.filtrar(this.busca); this.carregando = false; },
+      error: erro => { this.erro = mensagemApi(erro, 'Não foi possível carregar os perfis.'); this.carregando = false; }
     });
   }
 }

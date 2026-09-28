@@ -6,17 +6,18 @@ import { BarraFiltrosComponent, FiltroAtivo } from '../../../shared/components/b
 import { Layout, TIPO_ENVIO_LABEL, TIPO_LAYOUT_LABEL, TipoEnvio, TipoLayout } from '../comunicacao.models';
 import { LayoutsApiService } from '../layouts-api.service';
 import { DialogoService } from '../../../shared/services/dialogo.service';
+import { CabecalhoPaginaComponent } from '../../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
+import { EstadoListaComponent } from '../../../shared/components/estado-lista/estado-lista.component';
 
 @Component({
   selector: 'app-layouts-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, BarraFiltrosComponent],
+  imports: [CommonModule, FormsModule, RouterLink, BarraFiltrosComponent, CabecalhoPaginaComponent, EstadoListaComponent],
   template: `
     <div class="space-y-6">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 class="text-2xl font-black text-slate-900">Layouts</h1>
-        <a routerLink="/layouts/novo" class="btn-primary">＋ Novo layout</a>
-      </div>
+      <app-cabecalho-pagina titulo="Layouts" subtitulo="Modelos de e-mail e WhatsApp com tags trocadas pelos dados de cada pessoa.">
+        <a acoes routerLink="/layouts/novo" class="btn-primary">＋ Novo layout</a>
+      </app-cabecalho-pagina>
 
       @if (error) {
         <div class="rounded-xl bg-red-50 p-4 text-red-700">{{ error }}</div>
@@ -56,7 +57,7 @@ import { DialogoService } from '../../../shared/services/dialogo.service';
         </div>
       </app-barra-filtros>
 
-      <div class="overflow-x-auto">
+      <div class="tabela-rolagem">
         <table class="tabela">
           <thead>
             <tr>
@@ -69,7 +70,7 @@ import { DialogoService } from '../../../shared/services/dialogo.service';
           </thead>
           <tbody>
             @for (layout of layouts; track layout.id) {
-              <tr>
+              <tr class="clicavel" tabindex="0" (click)="abrir(layout.id)" (keydown.enter)="abrir(layout.id)" [attr.data-layout]="layout.id">
                 <td>{{ layout.nome }}</td>
                 <td>{{ tipoLayoutLabel(layout.tipoLayout) }}</td>
                 <td>
@@ -83,20 +84,17 @@ import { DialogoService } from '../../../shared/services/dialogo.service';
                     <span class="badge bg-slate-100 text-slate-600">Inativo</span>
                   }
                 </td>
-                <td>
+                <td (click)="$event.stopPropagation()">
                   <div class="flex gap-2">
                     <a [routerLink]="['/layouts', layout.id]" class="btn-secondary !px-3 !py-1 text-sm">Editar</a>
                     <button type="button" class="btn-danger !px-3 !py-1 text-sm" (click)="excluir(layout)">Excluir</button>
                   </div>
                 </td>
               </tr>
-            } @empty {
-              <tr>
-                <td colspan="5" class="text-center text-slate-500">Nenhum layout encontrado.</td>
-              </tr>
             }
           </tbody>
         </table>
+        <app-estado-lista [carregando]="carregando" [vazio]="!carregando && !layouts.length" />
       </div>
     </div>
   `
@@ -108,6 +106,7 @@ export class LayoutsListComponent implements OnInit {
   tipoEnvio: TipoEnvio | '' = '';
   ativo: boolean | null = true;
   error = '';
+  carregando = true;
 
   tipoLayoutEntries = Object.entries(TIPO_LAYOUT_LABEL).map(([key, label]) => ({ key: key as TipoLayout, label }));
 
@@ -130,12 +129,19 @@ export class LayoutsListComponent implements OnInit {
   }
 
   async load() {
+    this.carregando = true;
     try {
       this.layouts = await this.api.listar(this.tipoLayout || undefined, this.tipoEnvio || undefined, this.ativo ?? undefined, this.nome);
       this.error = '';
     } catch (e: any) {
       this.error = e.message;
+    } finally {
+      this.carregando = false;
     }
+  }
+
+  abrir(id: string) {
+    void this.router.navigate(['/layouts', id]);
   }
 
   async excluir(layout: Layout) {

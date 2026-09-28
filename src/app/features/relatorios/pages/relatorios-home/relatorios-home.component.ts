@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { CabecalhoPaginaComponent } from '../../../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
 import { EscalaDetalhe, EscalaFilters, MESES } from '../../../escalas/models/escala.model';
 import { EscalasService } from '../../../escalas/services/escalas.service';
 import { ExportService } from '../../../escalas/services/export.service';
@@ -18,14 +19,10 @@ interface Ranking {
 
 @Component({
     selector: 'app-relatorios-home',
-    imports: [FormsModule],
+    imports: [FormsModule, CabecalhoPaginaComponent],
     template: `
     <div class="space-y-6">
-      <div>
-        <div class="text-xs font-extrabold uppercase tracking-wider text-brand-blue">Acompanhamento</div>
-        <h1 class="text-2xl font-black">Relatórios e frequência</h1>
-        <p class="text-sm text-slate-500">Presenças já lançadas nas escalas finalizadas, e o PDF ou PNG para a sacristia.</p>
-      </div>
+      <app-cabecalho-pagina titulo="Relatórios e frequência" subtitulo="Presenças já lançadas nas escalas finalizadas, e o PDF ou PNG para a sacristia." />
 
       <section class="card p-5">
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -158,11 +155,11 @@ export class RelatoriosHomeComponent implements OnInit {
   constructor(private service: EscalasService, private exporter: ExportService) {}
 
   get celebracoes(): number {
-    return this.rows.reduce((soma, escala) => soma + (escala.eventos?.length || 0), 0);
+    return this.rows.reduce((soma, escala) => soma + (escala.eventos || []).filter(ev => !ev.referencia).length, 0);
   }
 
   get presencaPct(): number | null {
-    const vagas = this.rows.flatMap(e => e.eventos || []).flatMap(ev => ev.vagas || []);
+    const vagas = this.rows.flatMap(e => (e.eventos || []).filter(ev => !ev.referencia)).flatMap(ev => ev.vagas || []);
     const marcadas = vagas.filter(v => v.presenca === 'PRESENTE' || v.presenca === 'FALTOU');
     if (!marcadas.length) return null;
     return Math.round(100 * marcadas.filter(v => v.presenca === 'PRESENTE').length / marcadas.length);
@@ -170,7 +167,7 @@ export class RelatoriosHomeComponent implements OnInit {
 
   get funcoes(): Barra[] {
     const contagem = new Map<string, number>();
-    for (const vaga of this.rows.flatMap(e => e.eventos || []).flatMap(ev => ev.vagas || [])) {
+    for (const vaga of this.rows.flatMap(e => (e.eventos || []).filter(ev => !ev.referencia)).flatMap(ev => ev.vagas || [])) {
       if (!vaga.voluntario_id) continue;
       contagem.set(vaga.funcao, (contagem.get(vaga.funcao) || 0) + 1);
     }
@@ -186,7 +183,7 @@ export class RelatoriosHomeComponent implements OnInit {
 
   get ranking(): Ranking[] {
     const contagem = new Map<string, number>();
-    for (const vaga of this.rows.flatMap(e => e.eventos || []).flatMap(ev => ev.vagas || [])) {
+    for (const vaga of this.rows.flatMap(e => (e.eventos || []).filter(ev => !ev.referencia)).flatMap(ev => ev.vagas || [])) {
       const nome = vaga.voluntario?.nome_completo;
       if (!nome) continue;
       contagem.set(nome, (contagem.get(nome) || 0) + 1);

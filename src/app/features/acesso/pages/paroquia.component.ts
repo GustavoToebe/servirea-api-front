@@ -5,7 +5,11 @@ import { mensagemApi } from '../../../core/api/api-error';
 import { ParoquiaApiService } from '../paroquia-api.service';
 import { ContatoEmail, ContatoTelefone, Diocese, Endereco, ParoquiaRequest } from '../paroquia.models';
 import { MascaraDirective } from '../../../shared/directives/mascara.directive';
+import { OlhoSenhaComponent } from '../../../shared/components/olho-senha/olho-senha.component';
+import { ComunicadosApiService } from '../../comunicacao/comunicados-api.service';
 import { CepService } from '../../../shared/services/cep.service';
+import { CabecalhoPaginaComponent } from '../../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
+import { RodapeFormComponent } from '../../../shared/components/rodape-form/rodape-form.component';
 import { UFS, cepValido, cnpjValido, emailValido, formatarCep, formatarCnpj, formatarTelefone, telefoneValido } from '../../../shared/utils/formatos';
 
 const ENDERECO_VAZIO: Endereco = { cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' };
@@ -17,14 +21,10 @@ const ENDERECO_VAZIO: Endereco = { cep: '', logradouro: '', numero: '', compleme
  */
 @Component({
   selector: 'app-paroquia',
-  imports: [FormsModule, MascaraDirective],
+  imports: [FormsModule, MascaraDirective, OlhoSenhaComponent, CabecalhoPaginaComponent, RodapeFormComponent],
   template: `
     <div class="mx-auto max-w-3xl space-y-6">
-      <div>
-        <div class="text-xs font-extrabold uppercase tracking-wider text-brand-blue">Cadastro</div>
-        <h1 class="text-2xl font-black text-slate-900">Paróquia</h1>
-        <p class="text-sm text-slate-500">Nome, diocese, endereço e contatos que aparecem para a coordenação.</p>
-      </div>
+      <app-cabecalho-pagina titulo="Paróquia" subtitulo="Nome, diocese, endereço e contatos que aparecem para a coordenação." />
       @if (erro) {
         <div class="rounded-xl bg-red-50 p-3 text-sm text-red-700">{{ erro }}</div>
       }
@@ -33,7 +33,8 @@ const ENDERECO_VAZIO: Endereco = { cep: '', logradouro: '', numero: '', compleme
       }
       @if (carregado) {
         <form class="space-y-6" (ngSubmit)="salvar()">
-          <section class="card space-y-4 p-5">
+          <section class="card secao-form p-6">
+            <h2 class="secao-titulo">Identificação</h2>
             <label class="block">
               <span class="label">Nome da paróquia *</span>
               <input class="field" name="nome" [(ngModel)]="nome" required>
@@ -62,8 +63,8 @@ const ENDERECO_VAZIO: Endereco = { cep: '', logradouro: '', numero: '', compleme
             </label>
           </section>
 
-          <section class="card space-y-4 p-5">
-            <h2 class="text-lg font-black">Endereço</h2>
+          <section class="card secao-form p-6">
+            <h2 class="secao-titulo">Endereço</h2>
             <div class="grid gap-4 md:grid-cols-4">
               <label class="block"><span class="label">CEP</span>
                 <input class="field" name="cep" [(ngModel)]="endereco.cep" appMascara="cep" inputmode="numeric" placeholder="00000-000"
@@ -88,9 +89,9 @@ const ENDERECO_VAZIO: Endereco = { cep: '', logradouro: '', numero: '', compleme
             </div>
           </section>
 
-          <section class="card space-y-3 p-5">
-            <div class="flex items-center justify-between">
-              <h2 class="text-lg font-black">E-mails</h2>
+          <section class="card secao-form p-6">
+            <div class="secao-titulo flex items-center justify-between">
+              <h2>E-mails</h2>
               <button type="button" class="btn-secondary !px-3 !py-1.5 text-sm" (click)="addEmail()">+ E-mail</button>
             </div>
             @for (e of emails; track $index; let i = $index) {
@@ -111,9 +112,9 @@ const ENDERECO_VAZIO: Endereco = { cep: '', logradouro: '', numero: '', compleme
             }
           </section>
 
-          <section class="card space-y-3 p-5">
-            <div class="flex items-center justify-between">
-              <h2 class="text-lg font-black">Telefones</h2>
+          <section class="card secao-form p-6">
+            <div class="secao-titulo flex items-center justify-between">
+              <h2>Telefones</h2>
               <button type="button" class="btn-secondary !px-3 !py-1.5 text-sm" (click)="addTelefone()">+ Telefone</button>
             </div>
             @for (t of telefones; track $index; let i = $index) {
@@ -134,11 +135,39 @@ const ENDERECO_VAZIO: Endereco = { cep: '', logradouro: '', numero: '', compleme
             }
           </section>
 
-          <div class="flex justify-end">
-            <button class="btn-primary" type="submit" [disabled]="salvando || !nome.trim()">Salvar</button>
-          </div>
+          <app-rodape-form voltarUrl="/dashboard" [carregando]="salvando" [desabilitado]="!nome.trim()" />
         </form>
       }
+
+      <section class="card secao-form p-6" data-secao-whatsapp>
+        <div>
+          <h2 class="secao-titulo">WhatsApp (Evolution Go)</h2>
+          <p class="mt-2 text-sm text-slate-500">A instância é criada e conectada (QR Code) no painel do Evolution Go. Aqui você só informa o nome e o token dela.</p>
+        </div>
+        @if (zapErro) { <div class="rounded-xl bg-red-50 p-3 text-sm text-red-700">{{ zapErro }}</div> }
+        @if (zapAviso) { <div class="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{{ zapAviso }}</div> }
+        <div class="grid gap-4 md:grid-cols-2">
+          <div><label class="label" for="zap-instancia">Instância *</label>
+            <input id="zap-instancia" class="field" maxlength="120" [(ngModel)]="zapInstancia" name="zapInstancia"></div>
+          <div><label class="label" for="zap-token">Token</label>
+            <div class="relative"><input #zapTokenCampo id="zap-token" type="password" class="field pr-11" maxlength="300" autocomplete="off"
+              [(ngModel)]="zapToken" name="zapToken" [placeholder]="zapTokenConfigurado ? '•••• configurado' : ''">
+              <app-olho-senha [campo]="zapTokenCampo" /></div>
+            @if (zapTokenConfigurado) { <p class="mt-1 text-xs text-slate-500">Deixe vazio para manter o token atual.</p> }
+          </div>
+        </div>
+        <label class="flex items-center gap-2 font-semibold text-slate-700">
+          <input type="checkbox" class="h-4 w-4" [(ngModel)]="zapAtivo" name="zapAtivo"> Ativo (usar nos comunicados)
+        </label>
+        <div class="flex flex-wrap items-end justify-between gap-3">
+          <div class="flex items-end gap-2">
+            <div><label class="label" for="zap-teste">Telefone para teste</label>
+              <input id="zap-teste" class="field" appMascara="telefone" [(ngModel)]="zapTelefoneTeste" name="zapTelefoneTeste" placeholder="(45) 99999-8888"></div>
+            <button type="button" class="btn-secondary" [disabled]="zapOcupado || !zapTelefoneTeste.trim() || !zapTokenConfigurado" (click)="testarWhatsapp()">Enviar teste</button>
+          </div>
+          <button type="button" class="btn-primary" [disabled]="zapOcupado || !zapInstancia.trim()" (click)="salvarWhatsapp()">Salvar WhatsApp</button>
+        </div>
+      </section>
     </div>
   `
 })
@@ -146,6 +175,16 @@ export class ParoquiaComponent implements OnInit {
   private api = inject(ParoquiaApiService);
   private auth = inject(AuthService);
   private cepService = inject(CepService);
+  private comunicados = inject(ComunicadosApiService);
+
+  zapInstancia = '';
+  zapToken = '';
+  zapAtivo = false;
+  zapTokenConfigurado = false;
+  zapTelefoneTeste = '';
+  zapOcupado = false;
+  zapErro = '';
+  zapAviso = '';
 
   endereco: Endereco = { ...ENDERECO_VAZIO };
   avisoCep = '';
@@ -180,6 +219,48 @@ export class ParoquiaComponent implements OnInit {
       error: erro => this.erro = mensagemApi(erro, 'Não foi possível carregar a paróquia.')
     });
     this.api.dioceses().subscribe({ next: lista => this.dioceses = lista, error: () => this.dioceses = [] });
+    void this.carregarWhatsapp();
+  }
+
+  async carregarWhatsapp(): Promise<void> {
+    try {
+      const c = await this.comunicados.whatsapp();
+      this.zapInstancia = c.instancia;
+      this.zapAtivo = c.ativo;
+      this.zapTokenConfigurado = c.tokenConfigurado;
+    } catch (e: any) {
+      this.zapErro = e.message;
+    }
+  }
+
+  async salvarWhatsapp(): Promise<void> {
+    this.zapOcupado = true;
+    this.zapErro = '';
+    this.zapAviso = '';
+    try {
+      const c = await this.comunicados.salvarWhatsapp(this.zapInstancia.trim(), this.zapToken.trim(), this.zapAtivo);
+      this.zapTokenConfigurado = c.tokenConfigurado;
+      this.zapToken = '';
+      this.zapAviso = 'WhatsApp salvo.';
+    } catch (e: any) {
+      this.zapErro = e.message;
+    } finally {
+      this.zapOcupado = false;
+    }
+  }
+
+  async testarWhatsapp(): Promise<void> {
+    this.zapOcupado = true;
+    this.zapErro = '';
+    this.zapAviso = '';
+    try {
+      await this.comunicados.testarWhatsapp(this.zapTelefoneTeste);
+      this.zapAviso = 'Mensagem de teste enviada. Confira no WhatsApp.';
+    } catch (e: any) {
+      this.zapErro = e.message;
+    } finally {
+      this.zapOcupado = false;
+    }
   }
 
   addEmail(): void {

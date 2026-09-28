@@ -6,6 +6,7 @@ import { Pessoa } from '../models/pessoa.model';
 import { InscricoesApiService } from '../services/inscricoes-api.service';
 import { PessoasService } from '../services/pessoas.service';
 import { VoluntariosApiService } from '../services/voluntarios-api.service';
+import { SessaoAtual } from '../../../core/layout/sessao-atual';
 import { PessoasListComponent } from './pessoas-list.component';
 import { By } from '@angular/platform-browser';
 
@@ -17,7 +18,7 @@ describe('PessoasListComponent (lista de assinatura)', () => {
     } as unknown as Pessoa;
   }
 
-  async function montar() {
+  async function montar(permissoes: string[] = []) {
     const pessoas = jasmine.createSpyObj<PessoasService>('PessoasService', ['listar']);
     pessoas.listar.and.resolveTo([
       pessoa('1', 'Ana', 'COROINHA'),
@@ -38,7 +39,8 @@ describe('PessoasListComponent (lista de assinatura)', () => {
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
         { provide: PessoasService, useValue: pessoas },
         { provide: VoluntariosApiService, useValue: voluntarios },
-        { provide: InscricoesApiService, useValue: inscricoes }
+        { provide: InscricoesApiService, useValue: inscricoes },
+        { provide: SessaoAtual, useValue: { permissoes: () => permissoes } }
       ]
     });
     const fixture = TestBed.createComponent(PessoasListComponent);
@@ -126,5 +128,22 @@ describe('PessoasListComponent (lista de assinatura)', () => {
 
     const tr = checkbox.closest('tr');
     expect(tr?.classList.contains('marcada')).toBeTrue();
+  });
+
+  it('Criar comunicado exige marcados e COMUNICADO_ENVIAR, e abre o assistente com os ids marcados', async () => {
+    const semPermissao = await montar();
+    semPermissao.componentInstance.marcarTodos(true);
+    expect(semPermissao.componentInstance.opcoesMenu.find(o => o.id === 'comunicado')!.desabilitada).toBeTrue();
+    TestBed.resetTestingModule();
+
+    const fixture = await montar(['COMUNICADO_ENVIAR']);
+    const tela = fixture.componentInstance;
+    expect(tela.opcoesMenu.find(o => o.id === 'comunicado')!.desabilitada).toBeTrue();
+    tela.alternar('1');
+    tela.alternar('3');
+    expect(tela.opcoesMenu.find(o => o.id === 'comunicado')!.desabilitada).toBeFalse();
+    tela.lidarComOpcao('comunicado');
+    expect(tela.comunicadoAberto).toBeTrue();
+    expect(tela.idsComunicado).toEqual(['1', '3']);
   });
 });

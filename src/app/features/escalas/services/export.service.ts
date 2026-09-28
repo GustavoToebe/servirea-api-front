@@ -56,7 +56,8 @@ export class ExportService {
     // OPERÁRIO") e toda paróquia nova sairia com o nome da primeira.
     const paroquia = (this.auth.tenantNome() || 'Paróquia').toUpperCase();
     const title = `${paroquia} - ESCALA ${month}`;
-    const blocks = escala.eventos.map(event => this.eventBlock(event)).join('');
+    // Linha de referência (escala replicada) nunca sai no PDF/PNG.
+    const blocks = escala.eventos.filter(event => !event.referencia).map(event => this.eventBlock(event)).join('');
     host.innerHTML = `
       <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
         <colgroup>

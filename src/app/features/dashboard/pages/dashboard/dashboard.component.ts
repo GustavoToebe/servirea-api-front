@@ -183,7 +183,7 @@ export class DashboardComponent implements OnInit {
   }
 
   private missasDe(escala: EscalaDetalhe): MissaVista[] {
-    return (escala.eventos || []).map(evento => this.vista(escala, evento));
+    return (escala.eventos || []).filter(evento => !evento.referencia).map(evento => this.vista(escala, evento));
   }
 
   private vista(escala: EscalaDetalhe, evento: EscalaEvento): MissaVista {
@@ -206,7 +206,7 @@ export class DashboardComponent implements OnInit {
   }
 
   private taxaPresenca(escalas: EscalaDetalhe[]): number | null {
-    const vagas = escalas.flatMap(e => e.eventos || []).flatMap(ev => ev.vagas || []);
+    const vagas = escalas.flatMap(e => (e.eventos || []).filter(ev => !ev.referencia)).flatMap(ev => ev.vagas || []);
     const marcadas = vagas.filter(v => v.presenca === 'PRESENTE' || v.presenca === 'FALTOU');
     if (!marcadas.length) return null;
     return Math.round(100 * marcadas.filter(v => v.presenca === 'PRESENTE').length / marcadas.length);

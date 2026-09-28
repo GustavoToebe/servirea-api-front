@@ -15,6 +15,7 @@ export const BARRA: ItemMenu[] = [
 
 export const CONTA: ItemMenu[] = [
   { label: 'Layouts', url: '/layouts', permissao: 'LAYOUT' },
+  { label: 'Comunicados', url: '/comunicados', permissao: 'COMUNICADO' },
   { label: 'Paróquia', url: '/paroquia', permissao: 'PAROQUIA' },
   { label: 'Perfis', url: '/perfis', permissao: 'PERFIL' },
   { label: 'Usuários', url: '/usuarios', permissao: 'USUARIO' },

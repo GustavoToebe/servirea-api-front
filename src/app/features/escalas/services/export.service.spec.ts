@@ -75,4 +75,27 @@ describe('ExportService', () => {
     expect(titulo).toContain('Ana &lt;Beatriz&gt;');
     expect(titulo).toContain('04/10/2026');
   });
+
+  it('linha de referência não gera bloco no PNG', async () => {
+    let folha = '';
+    const appendOriginal = document.body.appendChild.bind(document.body);
+    spyOn(document.body, 'appendChild').and.callFake(<T extends Node>(no: T): T => {
+      const el = no as unknown as HTMLElement;
+      if (!folha && el.tagName === 'DIV') folha = el.innerHTML;
+      return appendOriginal(no);
+    });
+    spyOn(HTMLAnchorElement.prototype, 'click');
+    const comReferencia: EscalaDetalhe = {
+      ...escala,
+      eventos: [...escala.eventos, {
+        data: '2026-09-29', horario: '19:00:00', celebracao: 'Missa', referencia: true,
+        vagas: [{ funcao: 'MISSAL', posicao: 1, voluntario_id: 'v9', voluntario: { id: 'v9', nome_completo: 'Só Referência' } }]
+      }]
+    };
+
+    await service.exportPng(comReferencia);
+
+    expect(folha).toContain('Ana &lt;Beatriz&gt;');
+    expect(folha).not.toContain('Só Referência');
+  });
 });

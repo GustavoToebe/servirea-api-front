@@ -8,6 +8,8 @@ import { rotuloDia } from '../../data/calendario-liturgico';
 import { EscalaDetalhe, EscalaEvento, MESES, STATUS_LABEL, StatusEscala } from '../../models/escala.model';
 import { EscalasService } from '../../services/escalas.service';
 import { ExportService } from '../../services/export.service';
+import { ReplicarDialogComponent } from '../replicar-dialog.component';
+import { CabecalhoPaginaComponent } from '../../../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
 import { DialogoService } from '../../../../shared/services/dialogo.service';
 import { BarraFiltrosComponent, FiltroAtivo } from '../../../../shared/components/barra-filtros/barra-filtros.component';
 import { FUNCOES_LABEL } from '../../../pessoas/models/pessoa.model';
@@ -19,17 +21,13 @@ interface CelebracaoVista {
 
 @Component({
     selector: 'app-escalas-list',
-    imports: [CommonModule, FormsModule, RouterLink, NumeroComponent, CampoCompetenciaComponent, BarraFiltrosComponent],
+    imports: [CommonModule, FormsModule, RouterLink, NumeroComponent, CampoCompetenciaComponent, BarraFiltrosComponent, ReplicarDialogComponent, CabecalhoPaginaComponent],
     template: `
     <div class="space-y-6">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <div class="text-xs font-extrabold uppercase tracking-wider text-brand-blue">Gestão paroquial</div>
-          <h1 class="text-2xl font-black text-slate-900">Escalas litúrgicas</h1>
-          <p class="text-sm text-slate-500">Cada celebração do mês, com as vagas preenchidas e as que ainda estão livres.</p>
-        </div>
-        <a routerLink="/escalas/nova" class="btn-primary">＋ Nova escala</a>
-      </div>
+      <app-cabecalho-pagina titulo="Escalas litúrgicas" subtitulo="Cada celebração do mês, com as vagas preenchidas e as que ainda estão livres.">
+        <a acoes routerLink="/escalas/indisponibilidades" class="btn-secondary">Indisponibilidades</a>
+        <a acoes routerLink="/escalas/nova" class="btn-primary">＋ Nova escala</a>
+      </app-cabecalho-pagina>
 
       <app-barra-filtros placeholder="Buscar celebração ou escala" [(termo)]="busca" (buscar)="load()"
         [filtrosAtivos]="filtrosAtivos" (removerFiltro)="removerFiltro($event)" (removerTodos)="removerTodosFiltros()">
@@ -59,6 +57,18 @@ interface CelebracaoVista {
       }
       @if (!loading && !celebracoes.length) {
         <div class="card p-10 text-center text-slate-500">Nenhuma celebração neste período.</div>
+      }
+
+      @if (semanaisReplicaveis.length) {
+        <div class="card flex flex-wrap items-center gap-3 p-4 text-sm" data-semanais>
+          <span class="font-bold text-slate-600">Escala semanal:</span>
+          @for (e of semanaisReplicaveis; track e.id) {
+            <span class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1">
+              {{ e.titulo }}
+              <button type="button" class="font-bold text-brand-blue hover:underline" (click)="replicar(e)" [attr.data-replicar]="e.id">Replicar</button>
+            </span>
+          }
+        </div>
       }
 
       <div class="grid gap-4">
@@ -94,6 +104,7 @@ interface CelebracaoVista {
         }
       </div>
     </div>
+    <app-replicar-dialog [open]="!!origemReplica" [origem]="origemReplica" (fechar)="origemReplica = null" />
     `
 })
 export class EscalasListComponent implements OnInit {
@@ -122,7 +133,8 @@ export class EscalasListComponent implements OnInit {
   }
 
   get celebracoes(): CelebracaoVista[] {
-    let list = this.rows.flatMap(escala => (escala.eventos || []).map(evento => ({ escala, evento })));
+    // Linha de referência (escala replicada) não aparece na lista: não é celebração.
+    let list = this.rows.flatMap(escala => (escala.eventos || []).filter(e => !e.referencia).map(evento => ({ escala, evento })));
     if (this.busca) {
       const termo = this.busca.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
       list = list.filter(item => {
@@ -132,6 +144,16 @@ export class EscalasListComponent implements OnInit {
       });
     }
     return list.sort((a, b) => `${a.evento.data} ${a.evento.horario}`.localeCompare(`${b.evento.data} ${b.evento.horario}`));
+  }
+
+  origemReplica: EscalaDetalhe | null = null;
+
+  get semanaisReplicaveis(): EscalaDetalhe[] {
+    return this.rows.filter(e => e.tipo === 'SEMANAL' && e.status !== 'CANCELADA');
+  }
+
+  replicar(e: EscalaDetalhe) {
+    this.origemReplica = e;
   }
 
   ngOnInit() { void this.load(); }
@@ -155,7 +177,7 @@ export class EscalasListComponent implements OnInit {
     void this.load();
   }
 
-  
+
   get filtrosAtivos(): FiltroAtivo[] {
     const f: FiltroAtivo[] = [];
     f.push({ chave: 'mes', rotulo: `Mês: ${String(this.filters.mes).padStart(2, '0')}/${this.filters.ano}` });

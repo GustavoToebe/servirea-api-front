@@ -36,6 +36,10 @@ export interface EscalaEvento {
   horario: string;
   celebracao: string;
   vagas: EscalaVaga[];
+  /** Linha de referência da escala replicada: dia da origem que não existe neste mês. Nunca é publicada. */
+  referencia?: boolean;
+  /** Só na tela, nunca vai para a API: dia que só existe no mês novo (a 5ª quinta), para preencher à mão. */
+  ocorrenciaNova?: boolean;
 }
 
 export interface EscalaDetalhe extends Escala {
@@ -59,3 +63,56 @@ export const STATUS_LABEL: Record<StatusEscala, string> = {
   FINALIZADA: 'Finalizada',
   CANCELADA: 'Cancelada'
 };
+
+// ---- Indisponibilidades do mês e apoio à montagem da mensal (PLANO-007)
+
+export type PeriodoDia = 'MANHA' | 'TARDE' | 'NOITE';
+export type SituacaoResposta = 'COM_RESTRICAO' | 'SEM_RESTRICAO' | 'PENDENTE';
+
+/** `periodo` nulo = o dia inteiro. */
+export interface Indisponibilidade {
+  voluntarioId: string;
+  data: string;
+  periodo: PeriodoDia | null;
+  observacao?: string | null;
+}
+
+export interface IndisponibilidadesMes {
+  ano: number;
+  mes: number;
+  itens: Indisponibilidade[];
+  semRestricao: string[];
+}
+
+export interface ApoioVoluntario {
+  voluntarioId: string;
+  situacao: SituacaoResposta;
+  indisponiveis: { data: string; periodo: PeriodoDia | null }[];
+  irmaos: string[];
+}
+
+export interface ApoioEscala {
+  voluntarios: ApoioVoluntario[];
+}
+
+export const SITUACAO_LABEL: Record<SituacaoResposta, string> = {
+  COM_RESTRICAO: 'Com restrição',
+  SEM_RESTRICAO: 'Sem restrição',
+  PENDENTE: 'Pendente'
+};
+
+export const PERIODO_LABEL: Record<PeriodoDia, string> = { MANHA: 'Só manhã', TARDE: 'Só tarde', NOITE: 'Só noite' };
+
+/** Período do horário da missa: antes das 12h manhã, antes das 18h tarde, senão noite. */
+export function periodoDoHorario(horario: string): PeriodoDia {
+  const h = Number((horario || '00').slice(0, 2));
+  return h < 12 ? 'MANHA' : h < 18 ? 'TARDE' : 'NOITE';
+}
+
+/** A pessoa avisou que não pode nesta data (dia inteiro ou no período do horário)? */
+export function indisponivelEm(apoio: ApoioEscala | null, voluntarioId: string, data: string, horario: string): boolean {
+  const v = apoio?.voluntarios.find(x => x.voluntarioId === voluntarioId);
+  if (!v) return false;
+  const periodo = periodoDoHorario(horario);
+  return v.indisponiveis.some(i => i.data === data && (i.periodo === null || i.periodo === periodo));
+}

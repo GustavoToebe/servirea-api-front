@@ -1,11 +1,19 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { Observable, shareReplay, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { AuthService } from '../../core/auth/auth.service';
 import { MeuPerfil, Perfil, SecaoCatalogo, UsuarioParoquia } from './acesso.models';
 
 @Injectable({ providedIn: 'root' })
 export class AcessoApiService {
   private readonly api = environment.apiUrl;
+  private readonly auth = inject(AuthService);
+  /**
+   * Perfis da paróquia guardados na sessão (telas de usuários e de perfis), por paróquia: trocar de paróquia sem
+   * recarregar não mostra os da anterior. Limpa quando um perfil é salvo ou duplicado.
+   */
+  private perfisCache: { tenant: string | null; perfis: Observable<Perfil[]> } | null = null;
 
   constructor(private http: HttpClient) {}
 
@@ -13,9 +21,16 @@ export class AcessoApiService {
     return this.http.get<SecaoCatalogo[]>(`${this.api}/permissoes/catalogo`);
   }
 
-  perfis() {
-    return this.http.get<Perfil[]>(`${this.api}/perfis`);
+  perfis(): Observable<Perfil[]> {
+    // shareReplay refaz a busca se a anterior falhou (o erro não fica guardado).
+    const tenant = this.auth.tenantId();
+    if (!this.perfisCache || this.perfisCache.tenant !== tenant) {
+      this.perfisCache = { tenant, perfis: this.http.get<Perfil[]>(`${this.api}/perfis`).pipe(shareReplay({ bufferSize: 1, refCount: false })) };
+    }
+    return this.perfisCache.perfis;
   }
+
+  private limparPerfis = () => { this.perfisCache = null; };
 
   salvarPerfil(perfil: Partial<Perfil> & { nome: string; ativo: boolean; acessoTotal: boolean; permissoes: string[] }, id?: string) {
     const corpo = {
@@ -24,13 +39,13 @@ export class AcessoApiService {
       acessoTotal: perfil.acessoTotal,
       permissoes: perfil.permissoes
     };
-    return id
+    return (id
       ? this.http.put<Perfil>(`${this.api}/perfis/${id}`, corpo)
-      : this.http.post<Perfil>(`${this.api}/perfis`, corpo);
+      : this.http.post<Perfil>(`${this.api}/perfis`, corpo)).pipe(tap(this.limparPerfis));
   }
 
   duplicarPerfil(id: string) {
-    return this.http.post<Perfil>(`${this.api}/perfis/${id}/duplicar`, {});
+    return this.http.post<Perfil>(`${this.api}/perfis/${id}/duplicar`, {}).pipe(tap(this.limparPerfis));
   }
 
   usuarios() {

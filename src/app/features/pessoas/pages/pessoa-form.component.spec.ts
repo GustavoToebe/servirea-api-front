@@ -123,4 +123,25 @@ describe('PessoaFormComponent (máscaras, validação e CEP)', () => {
     expect(pessoas.criar).toHaveBeenCalled();
     expect(fixture.componentInstance.dialogOpen).toBeFalse();
   });
+
+  it('salva com o responsável escolhido pelo campo com busca', async () => {
+    const fixture = montar(null);
+    pessoas.listar.and.resolveTo([{ id: 'm1', nomeCompleto: 'Maria Souza', sequencial: 12, papeis: ['RESPONSAVEL'] } as unknown as Pessoa]);
+    pessoas.duplicidades = jasmine.createSpy().and.resolveTo([]);
+    pessoas.criar.and.resolveTo({ id: 'p1' } as Pessoa);
+    await fixture.componentInstance.ngOnInit();
+    fixture.componentInstance.form.patchValue({ nomeCompleto: 'Ana' });
+    fixture.componentInstance.addRelacao('responsaveis');
+    fixture.componentInstance.responsaveis.at(0).patchValue({ parentesco: 'Mãe' });
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('[data-relacao="responsaveis"] [data-select-busca]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    (document.body.querySelector('[data-opcao="m1"]') as HTMLElement).click();
+    fixture.detectChanges();
+
+    await fixture.componentInstance.save();
+    const corpo = pessoas.criar.calls.mostRecent().args[0] as { responsaveis: { pessoaId?: string }[] };
+    expect(corpo.responsaveis[0].pessoaId).toBe('m1');
+  });
 });

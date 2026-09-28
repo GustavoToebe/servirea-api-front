@@ -10,6 +10,9 @@ import { VoluntariosApiService } from '../services/voluntarios-api.service';
 import { readPhotoPreview, validatePhotoFile } from '../../../shared/utils/photo.utils';
 import { MascaraDirective } from '../../../shared/directives/mascara.directive';
 import { CampoDataComponent } from '../../../shared/components/datas/campo-data.component';
+import { CabecalhoPaginaComponent } from '../../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
+import { OpcaoSelectBusca, SelectBuscaComponent } from '../../../shared/components/select-busca/select-busca.component';
+import { RodapeFormComponent } from '../../../shared/components/rodape-form/rodape-form.component';
 import { DuplicidadesDialogComponent } from './duplicidades-dialog.component';
 import { hojeIso } from '../../../shared/components/datas/datas';
 import { CepService } from '../../../shared/services/cep.service';
@@ -19,18 +22,14 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
 
 @Component({
     selector: 'app-pessoa-form',
-    imports: [CuidadosComponent, CommonModule, ReactiveFormsModule, RouterLink, MascaraDirective, CampoDataComponent, DuplicidadesDialogComponent],
+    imports: [CuidadosComponent, CommonModule, ReactiveFormsModule, RouterLink, MascaraDirective, CampoDataComponent, DuplicidadesDialogComponent, CabecalhoPaginaComponent, SelectBuscaComponent, RodapeFormComponent],
     template: `
     <app-duplicidades-dialog [open]="dialogOpen" [itens]="duplicidades" (fechar)="dialogOpen = false" (continuar)="confirmarSave()"></app-duplicidades-dialog>
     <div class="mx-auto max-w-5xl space-y-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-black">{{ id ? 'Editar pessoa' : 'Nova pessoa' }}</h1>
-          <p class="text-sm text-slate-500">Identidade primeiro. Papéis podem coexistir. Responsável é opcional.</p>
-        </div>
-        <a routerLink="/pessoas" class="btn-secondary">Voltar</a>
-      </div>
-    
+      <app-cabecalho-pagina [titulo]="id ? 'Editar pessoa' : 'Nova pessoa'" subtitulo="Identidade primeiro. Papéis podem coexistir. Responsável é opcional.">
+        <a acoes routerLink="/pessoas" class="btn-secondary">Voltar</a>
+      </app-cabecalho-pagina>
+
       @if (loading) {
         <div class="card p-10 text-center text-slate-500">Carregando...</div>
       }
@@ -137,17 +136,9 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
                   <div class="grid gap-3 md:grid-cols-2">
                     <div class="md:col-span-2">
                       <label class="label">{{ lado === 'responsaveis' ? 'Responsável' : 'Dependente' }}</label>
-                      <select class="field" formControlName="pessoaId">
-                        @if (lado === 'responsaveis') {
-                          <option value="">Cadastrar novo responsável nesta ficha</option>
-                        }
-                        @if (lado === 'dependentes') {
-                          <option value="" disabled>Escolha um voluntário</option>
-                        }
-                        @for (p of candidatos(lado); track p) {
-                          <option [value]="p.id">{{ p.nomeCompleto }}</option>
-                        }
-                      </select>
+                      <app-select-busca formControlName="pessoaId" [attr.data-relacao]="lado"
+                        [opcoes]="lado === 'responsaveis' ? opcoesResponsaveis : opcoesDependentes"
+                        [placeholder]="lado === 'responsaveis' ? 'Cadastrar novo responsável nesta ficha' : 'Escolha um voluntário'" />
                     </div>
                     @if (lado === 'responsaveis' && !g.get('pessoaId')?.value) {
                       <div class="md:col-span-2">
@@ -271,10 +262,7 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
               @if (error) {
                 <div class="rounded-xl bg-red-50 p-4 text-red-700">{{ error }}</div>
               }
-              <div class="sticky bottom-4 flex justify-end gap-3 rounded-2xl border bg-white/95 p-4 shadow-lg">
-                <a routerLink="/pessoas" class="btn-secondary">Cancelar</a>
-                <button type="submit" class="btn-primary" [disabled]="saving">{{ saving ? 'Salvando...' : 'Salvar' }}</button>
-              </div>
+              <app-rodape-form voltarUrl="/pessoas" [carregando]="saving" />
             </form>
           }
         </div>
@@ -295,6 +283,9 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
   /** Papéis que a pessoa já tinha — a API não deixa remover. */
   papeisOriginais = new Set<PessoaPapel>();
   pessoasCadastradas: Pessoa[] = [];
+  /** Opções dos campos de responsável e dependente (com o número no detalhe), calculadas quando as pessoas chegam. */
+  opcoesResponsaveis: OpcaoSelectBusca[] = [];
+  opcoesDependentes: OpcaoSelectBusca[] = [];
   parentescos = PARENTESCOS;
   parentescosDependente = PARENTESCOS_DEPENDENTE;
   funcoes = FUNCOES_FORM;
@@ -358,6 +349,9 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
     this.id = this.route.snapshot.paramMap.get('id');
     try {
       this.pessoasCadastradas = (await this.pessoas.listar()).filter(p => p.id !== this.id);
+      const opcao = (p: Pessoa): OpcaoSelectBusca => ({ valor: p.id, rotulo: p.nomeCompleto, detalhe: p.sequencial ? `nº ${p.sequencial}` : undefined });
+      this.opcoesResponsaveis = this.candidatos('responsaveis').map(opcao);
+      this.opcoesDependentes = this.candidatos('dependentes').map(opcao);
       if (this.id) {
         const p = await this.pessoas.buscar(this.id);
         this.patch(p);
@@ -484,7 +478,7 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
     this.error = '';
 
     const req = this.montarRequest();
-    
+
     // Check duplicidades
     const dupReq: DuplicidadeRequest = {
       ignorarId: this.id,
