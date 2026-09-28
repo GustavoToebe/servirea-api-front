@@ -10,7 +10,7 @@ describe('PessoaFormComponent (máscaras, validação e CEP)', () => {
   let pessoas: jasmine.SpyObj<PessoasService>;
 
   function montar(id: string | null) {
-    pessoas = jasmine.createSpyObj<PessoasService>('PessoasService', ['listar', 'buscar', 'criar', 'atualizar']);
+    pessoas = jasmine.createSpyObj<PessoasService>('PessoasService', ['listar', 'buscar', 'criar', 'atualizar', 'duplicidades']);
     pessoas.listar.and.resolveTo([]);
     TestBed.configureTestingModule({
       imports: [PessoaFormComponent],
@@ -91,5 +91,36 @@ describe('PessoaFormComponent (máscaras, validação e CEP)', () => {
     expect(v.cep).toBe('85800-000');
     expect(v.uf).toBe('PR');
     expect(v.telefones[0].numero).toBe('(45) 99999-8888');
+  });
+
+  it('com mock devolvendo um item bloqueia: true, salvar não chama criar', async () => {
+    const fixture = montar(null);
+    pessoas.duplicidades = jasmine.createSpy().and.resolveTo([{
+      id: 'd1', nomeCompleto: 'Ana', motivos: ['CPF'], bloqueia: true
+    }]);
+    await fixture.componentInstance.ngOnInit();
+    fixture.componentInstance.form.patchValue({ nomeCompleto: 'Ana' });
+    await fixture.componentInstance.save();
+    expect(pessoas.duplicidades).toHaveBeenCalled();
+    expect(pessoas.criar).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.dialogOpen).toBeTrue();
+  });
+
+  it('com item não bloqueante, "Salvar mesmo assim" chama criar', async () => {
+    const fixture = montar(null);
+    pessoas.duplicidades = jasmine.createSpy().and.resolveTo([{
+      id: 'd1', nomeCompleto: 'Ana S', motivos: ['NOME'], bloqueia: false
+    }]);
+    pessoas.criar.and.resolveTo({ id: 'p1' } as Pessoa);
+    await fixture.componentInstance.ngOnInit();
+    fixture.componentInstance.form.patchValue({ nomeCompleto: 'Ana' });
+    await fixture.componentInstance.save();
+    expect(pessoas.duplicidades).toHaveBeenCalled();
+    expect(pessoas.criar).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.dialogOpen).toBeTrue();
+
+    await fixture.componentInstance.confirmarSave();
+    expect(pessoas.criar).toHaveBeenCalled();
+    expect(fixture.componentInstance.dialogOpen).toBeFalse();
   });
 });

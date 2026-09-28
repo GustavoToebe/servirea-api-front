@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { mensagemApi } from '../../../core/api/api-error';
 import { Inscricao, InscricaoPublicaRequest, StatusInscricao } from '../models/inscricao.model';
+import { Duplicidade } from '../models/pessoa.model';
 
 @Injectable({ providedIn: 'root' })
 export class InscricoesApiService {
@@ -56,6 +57,14 @@ export class InscricoesApiService {
       ));
     } catch (erro) {
       throw new Error(mensagemApi(erro, 'Não foi possível enviar a inscrição.'));
+    }
+  }
+
+  async duplicidades(id: string): Promise<Duplicidade[]> {
+    try {
+      return await firstValueFrom(this.http.get<Duplicidade[]>(`${environment.apiUrl}/inscricoes/${id}/duplicidades`));
+    } catch (erro) {
+      throw new Error(mensagemApi(erro, 'Não foi possível verificar cadastros parecidos.'));
     }
   }
 }

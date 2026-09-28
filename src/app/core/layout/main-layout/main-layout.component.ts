@@ -1,27 +1,32 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NgClass } from '@angular/common';
 import { AuthService } from '../../auth/auth.service';
 import { BARRA, CONTA, montarMenu } from '../menu';
 import { SessaoAtual } from '../sessao-atual';
 
 @Component({
     selector: 'app-main-layout',
-    imports: [RouterOutlet, RouterLink, RouterLinkActive],
+    imports: [RouterOutlet, RouterLink, RouterLinkActive, NgClass],
     template: `
     <div class="parish min-h-screen bg-app lg:flex">
-      <aside class="fixed inset-y-0 left-0 z-40 hidden w-72 bg-brand-navy text-white lg:block">
-        <div class="flex h-20 items-center gap-3 border-b border-white/10 px-6">
-          <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-blue text-sm font-black">{{ marca() }}</div>
-          <div>
-            <div class="text-sm font-extrabold leading-tight">{{ paroquia() }}</div>
-            <div class="text-xs text-violet-200/80">Coroinhas e acólitos</div>
+      <aside class="fixed inset-y-0 left-0 z-40 hidden bg-brand-navy text-white lg:block transition-[width] duration-200" [ngClass]="recolhido ? 'w-20' : 'w-72'">
+        <div class="flex h-20 items-center gap-3 border-b border-white/10" [ngClass]="recolhido ? 'justify-center px-0' : 'px-6'">
+          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-blue text-sm font-black">{{ marca() }}</div>
+          @if (!recolhido) {
+          <div class="min-w-0">
+            <div class="text-sm font-extrabold leading-tight truncate">{{ paroquia() }}</div>
+            <div class="text-xs text-violet-200/80 truncate">Coroinhas e acólitos</div>
           </div>
+          }
         </div>
 
         <nav class="space-y-1 p-4" data-menu="lateral">
           @for (item of menu().barra; track item.url) {
             <a [routerLink]="item.url" routerLinkActive="!bg-brand-blue !text-white"
-              class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-violet-100/80 hover:bg-white/10 hover:text-white">
+              [title]="recolhido ? item.label : ''"
+              class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-violet-100/80 hover:bg-white/10 hover:text-white"
+              [ngClass]="recolhido ? 'justify-center px-0' : ''">
               <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 @switch (item.url) {
                   @case ('/dashboard') { <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/> }
@@ -31,28 +36,37 @@ import { SessaoAtual } from '../sessao-atual';
                   @case ('/ajustes') { <circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/> }
                 }
               </svg>
-              <span>{{ item.label }}</span>
+              @if (!recolhido) { <span>{{ item.label }}</span> }
             </a>
           }
         </nav>
         <nav class="space-y-1 px-4" data-menu="conta">
           @for (item of menu().conta; track item.url) {
             <a [routerLink]="item.url" routerLinkActive="!bg-brand-blue !text-white"
-              class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-violet-100/80 hover:bg-white/10 hover:text-white">
-              {{ item.label }}
+              [title]="recolhido ? item.label : ''"
+              class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-violet-100/80 hover:bg-white/10 hover:text-white"
+              [ngClass]="recolhido ? 'justify-center px-0' : ''">
+              @if (recolhido) {
+                <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-100/20 text-xs font-bold">{{ item.label[0] }}</div>
+              } @else {
+                <span>{{ item.label }}</span>
+              }
             </a>
           }
         </nav>
 
-        <div class="absolute bottom-0 w-full border-t border-white/10 p-4">
-          <button class="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold text-violet-100/80 hover:bg-white/10 hover:text-white" (click)="logout()">
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/><path d="M13 16l4-4-4-4"/><path d="M17 12H9"/></svg>
-            Sair
+        <div class="absolute bottom-0 w-full border-t border-white/10 p-4" [ngClass]="recolhido ? 'px-2' : 'px-4'">
+          <button type="button" class="mb-1 flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold text-violet-100/80 hover:bg-white/10 hover:text-white" (click)="alternarRecolhido()" data-menu="recolher" [attr.aria-label]="recolhido ? 'Expandir menu' : 'Recolher menu'" [ngClass]="recolhido ? 'justify-center px-0' : ''">
+            <span class="text-xl font-bold">{{ recolhido ? '»' : '«' }}</span>
+          </button>
+          <button type="button" class="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold text-violet-100/80 hover:bg-white/10 hover:text-white" (click)="logout()" [title]="recolhido ? 'Sair' : ''" [ngClass]="recolhido ? 'justify-center px-0' : ''">
+            <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/><path d="M13 16l4-4-4-4"/><path d="M17 12H9"/></svg>
+            @if (!recolhido) { <span>Sair</span> }
           </button>
         </div>
       </aside>
 
-      <main class="min-w-0 flex-1 lg:ml-72">
+      <main class="min-w-0 flex-1 transition-[margin] duration-200" [ngClass]="recolhido ? 'lg:ml-20' : 'lg:ml-72'">
         <header class="parish-header sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[#E7E4F5] bg-white/85 px-4 backdrop-blur md:h-20 md:px-8">
           <div class="flex items-center gap-3">
             <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-blue text-xs font-black text-white lg:hidden">{{ marca() }}</div>
@@ -118,8 +132,20 @@ export class MainLayoutComponent implements OnInit {
 
   maisAberto = false;
 
+  recolhido = false;
+
   ngOnInit(): void {
     this.sessao.carregar();
+    try {
+      this.recolhido = localStorage.getItem('servire.menuRecolhido') === 'true';
+    } catch (e) {}
+  }
+
+  alternarRecolhido() {
+    this.recolhido = !this.recolhido;
+    try {
+      localStorage.setItem('servire.menuRecolhido', String(this.recolhido));
+    } catch (e) {}
   }
 
   menu() {

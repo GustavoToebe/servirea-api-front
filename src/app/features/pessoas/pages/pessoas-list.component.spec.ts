@@ -7,18 +7,24 @@ import { InscricoesApiService } from '../services/inscricoes-api.service';
 import { PessoasService } from '../services/pessoas.service';
 import { VoluntariosApiService } from '../services/voluntarios-api.service';
 import { PessoasListComponent } from './pessoas-list.component';
+import { By } from '@angular/platform-browser';
 
 describe('PessoasListComponent (lista de assinatura)', () => {
-  function pessoa(id: string, nome: string, tipo: 'COROINHA' | 'ACOLITO'): Pessoa {
+  function pessoa(id: string, nome: string, tipo: 'COROINHA' | 'ACOLITO' | null, papeis: string[] = ['VOLUNTARIO']): Pessoa {
     return {
-      id, nomeCompleto: nome, sequencial: Number(id), dataNascimento: null, papeis: ['VOLUNTARIO'], responsaveis: [],
-      voluntario: { tipo, funcoesHabilitadas: [] }
+      id, nomeCompleto: nome, sequencial: Number(id), dataNascimento: null, papeis, responsaveis: [],
+      voluntario: tipo ? { tipo, funcoesHabilitadas: [] } : null
     } as unknown as Pessoa;
   }
 
   async function montar() {
     const pessoas = jasmine.createSpyObj<PessoasService>('PessoasService', ['listar']);
-    pessoas.listar.and.resolveTo([pessoa('1', 'Ana', 'COROINHA'), pessoa('2', 'Bruno', 'ACOLITO'), pessoa('3', 'Carla', 'COROINHA')]);
+    pessoas.listar.and.resolveTo([
+      pessoa('1', 'Ana', 'COROINHA'),
+      pessoa('2', 'Bruno', 'ACOLITO'),
+      pessoa('3', 'Carla', 'COROINHA'),
+      pessoa('4', 'Dirce', null, ['RESPONSAVEL'])
+    ]);
     const voluntarios = jasmine.createSpyObj<VoluntariosApiService>('VoluntariosApiService', ['contar', 'listar']);
     voluntarios.contar.and.resolveTo(0);
     const inscricoes = jasmine.createSpyObj<InscricoesApiService>('InscricoesApiService', ['listar']);
@@ -42,26 +48,44 @@ describe('PessoasListComponent (lista de assinatura)', () => {
     return fixture;
   }
 
-  it('marcar todos, desmarcar um e abrir o modal só com os marcados', async () => {
+  it('marcar todos, desmarcar um e abrir o modal só com os marcados pelo menu', async () => {
     const fixture = await montar();
     const tela = fixture.componentInstance;
     const el = fixture.nativeElement as HTMLElement;
-    const botao = () => Array.from(el.querySelectorAll('button')).find(b => b.textContent?.includes('Gerar lista de assinatura'))!;
-    expect(botao().disabled).toBeTrue();
+
+    // Abrir menu opções e ver se listagem tá desabilitado
+    let opcoesBtn = el.querySelector('[data-opcoes]') as HTMLButtonElement;
+    opcoesBtn.click();
+    fixture.detectChanges();
+
+    let listagemBtn = el.querySelector('[data-opcao="listagem"]') as HTMLButtonElement;
+    expect(listagemBtn.disabled).toBeTrue();
+
+    // Fechar o menu
+    document.dispatchEvent(new MouseEvent('click'));
+    fixture.detectChanges();
 
     const todos = el.querySelector('[data-marcar-todos]') as HTMLInputElement;
     todos.click();
     fixture.detectChanges();
-    expect(tela.quantidadeMarcada).toBe(3);
+    expect(tela.quantidadeMarcada).toBe(4);
 
     (el.querySelector('[data-marcar="2"]') as HTMLInputElement).click();
     fixture.detectChanges();
-    expect(tela.quantidadeMarcada).toBe(2);
+    expect(tela.quantidadeMarcada).toBe(3);
     expect(todos.indeterminate).toBeTrue();
 
-    botao().click();
+    // Abrir menu novamente e clicar listagem
+    opcoesBtn = el.querySelector('[data-opcoes]') as HTMLButtonElement;
+    opcoesBtn.click();
     fixture.detectChanges();
-    expect(tela.itensLista.map(i => i.nome)).toEqual(['Ana', 'Carla']);
+
+    listagemBtn = el.querySelector('[data-opcao="listagem"]') as HTMLButtonElement;
+    expect(listagemBtn.disabled).toBeFalse();
+    listagemBtn.click();
+    fixture.detectChanges();
+
+    expect(tela.itensLista.map(i => i.nome)).toEqual(['Ana', 'Carla', 'Dirce']);
     expect(el.querySelector('[aria-label="Gerar lista de assinatura"]')).not.toBeNull();
   });
 
@@ -73,5 +97,34 @@ describe('PessoasListComponent (lista de assinatura)', () => {
     fixture.detectChanges();
     expect(tela.quantidadeMarcada).toBe(2);
     expect(tela.itensMarcados().map(i => i.nome)).toEqual(['Ana', 'Carla']);
+  });
+
+  it('filtro Responsáveis mostra só quem tem o papel', async () => {
+    const fixture = await montar();
+    const tela = fixture.componentInstance;
+    tela.tipo = 'RESPONSAVEL';
+    fixture.detectChanges();
+    expect(tela.pessoasVisiveis.length).toBe(1);
+    expect(tela.pessoasVisiveis[0].nomeCompleto).toBe('Dirce');
+  });
+
+  it('não há mais filtro Ministros', async () => {
+    const fixture = await montar();
+    const el = fixture.nativeElement as HTMLElement;
+    const itemsComMinistros = Array.from(el.querySelectorAll('*')).filter(el => 
+      el.textContent === 'Ministros' && (el.tagName === 'BUTTON' || el.tagName === 'OPTION')
+    );
+    expect(itemsComMinistros.length).toBe(0);
+  });
+
+  it('linha marcada ganha a classe marcada', async () => {
+    const fixture = await montar();
+    const el = fixture.nativeElement as HTMLElement;
+    const checkbox = el.querySelector('[data-marcar="1"]') as HTMLInputElement;
+    checkbox.click();
+    fixture.detectChanges();
+
+    const tr = checkbox.closest('tr');
+    expect(tr?.classList.contains('marcada')).toBeTrue();
   });
 });

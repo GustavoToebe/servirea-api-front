@@ -1,4 +1,5 @@
 
+import { CuidadosComponent } from '../../../../shared/components/cuidados/cuidados.component';
 import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -20,7 +21,7 @@ type InscricaoView = 'form' | 'enviando' | 'sucesso' | 'erro';
 
 @Component({
     selector: 'app-inscricao-publica',
-    imports: [ReactiveFormsModule, RouterLink, TurnstileComponent, MascaraDirective, CampoDataComponent],
+    imports: [CuidadosComponent, ReactiveFormsModule, RouterLink, TurnstileComponent, MascaraDirective, CampoDataComponent],
     template: `
     <div class="parish min-h-screen bg-app">
       <header class="border-b border-slate-200 bg-white">
@@ -78,6 +79,22 @@ type InscricaoView = 'form' | 'enviando' | 'sucesso' | 'erro';
                   </div>
                 </div>
               </section>
+
+          <app-cuidados formControlName="cuidados" [nome]="primeiroNome" [publico]="true"></app-cuidados>
+          @if (form.get('cuidados')?.value?.condicoes?.length > 0 || form.get('cuidados')?.value?.cuidados) {
+            <div class="card p-6 bg-violet-50/50">
+              <label class="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" formControlName="consentimentoCuidados" class="mt-1">
+                <span class="text-sm text-slate-800">
+                  <b>Autorizo a paróquia a guardar estas informações somente para cuidar melhor de {{primeiroNome}} nas atividades.</b>
+                </span>
+              </label>
+              @if (form.get('consentimentoCuidados')?.invalid && form.get('consentimentoCuidados')?.touched) {
+                <p class="mt-2 ml-7 text-xs text-red-600">Para guardar as informações de cuidado, marque a autorização.</p>
+              }
+            </div>
+          }
+
               <section class="card p-6">
                 <div class="mb-4 flex items-center justify-between"><h2 class="text-lg font-black">E-mails</h2><button type="button" class="btn-secondary" (click)="addEmail()">＋</button></div>
                 <div formArrayName="emails" class="space-y-3">
@@ -285,6 +302,8 @@ export class InscricaoPublicaComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute
   ) {}
 
+  get primeiroNome(): string { const nome = this.form.get('nomeCompleto')?.value || ''; return nome.split(' ')[0]; }
+
   get emails(): FormArray { return this.form.get('emails') as FormArray; }
   get telefones(): FormArray { return this.form.get('telefones') as FormArray; }
   get responsaveis(): FormArray { return this.form.get('responsaveis') as FormArray; }
@@ -378,6 +397,15 @@ export class InscricaoPublicaComponent implements OnInit, OnDestroy {
       focarPrimeiroInvalido(this.host.nativeElement);
       return;
     }
+    const cares = this.form.get('cuidados')?.value;
+    if ((cares?.condicoes?.length > 0 || cares?.cuidados) && !this.form.get('consentimentoCuidados')?.value) {
+      this.form.get('consentimentoCuidados')?.setErrors({ required: true });
+      this.form.get('consentimentoCuidados')?.markAsTouched();
+      this.error = 'Para guardar as informa��es de cuidado, marque a autoriza��o.';
+      focarPrimeiroInvalido(this.host.nativeElement);
+      return;
+    }
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.error = 'Corrija os campos marcados em vermelho.';
@@ -444,7 +472,9 @@ export class InscricaoPublicaComponent implements OnInit, OnDestroy {
       horarioEstudo: [''],
       observacoes: [''],
       autorizaWhatsapp: [false],
-      funcoesHabilitadas: this.fb.control<FuncaoEscala[]>([])
+      funcoesHabilitadas: this.fb.control<FuncaoEscala[]>([]),
+      cuidados: [null],
+      consentimentoCuidados: [false]
     });
   }
 
@@ -501,7 +531,13 @@ export class InscricaoPublicaComponent implements OnInit, OnDestroy {
       horarioEstudo: blank(v.horarioEstudo) as InscricaoPublicaRequest['horarioEstudo'],
       observacoes: blank(v.observacoes),
       autorizaWhatsapp: !!v.autorizaWhatsapp,
-      funcoesHabilitadas: v.funcoesHabilitadas || []
+      funcoesHabilitadas: v.funcoesHabilitadas || [],
+      condicoes: v.cuidados?.condicoes || [],
+      nivelSuporteTea: v.cuidados?.nivelSuporteTea,
+      condicaoOutra: v.cuidados?.condicaoOutra,
+      cuidados: v.cuidados?.cuidados,
+      consentimentoCuidados: !!v.consentimentoCuidados
     };
   }
 }
+

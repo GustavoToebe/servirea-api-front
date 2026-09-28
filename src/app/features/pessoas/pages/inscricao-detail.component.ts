@@ -1,16 +1,19 @@
 
 import { NumeroComponent } from '../../../shared/components/numero/numero.component';
+import { CONDICAO_LABEL } from '../../../shared/components/cuidados/condicoes';
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { Inscricao } from '../models/inscricao.model';
-import { TIPO_LABEL } from '../models/pessoa.model';
+import { Duplicidade, TIPO_LABEL } from '../models/pessoa.model';
 import { InscricoesApiService } from '../services/inscricoes-api.service';
+import { DuplicidadesDialogComponent } from './duplicidades-dialog.component';
 
 @Component({
     selector: 'app-inscricao-detail',
-    imports: [RouterLink, ConfirmDialogComponent, NumeroComponent],
+    imports: [RouterLink, ConfirmDialogComponent, NumeroComponent, DuplicidadesDialogComponent],
     template: `
+    <app-duplicidades-dialog [open]="dialogOpen" [itens]="duplicidades" acao="aprovar" (fechar)="dialogOpen = false" (continuar)="confirmarApprove()" />
     @if (inscricao) {
       <div class="mx-auto max-w-4xl space-y-6">
         <a routerLink="/pessoas" [queryParams]="{ aba: inscricao.status === 'PENDENTE' ? 'aguardando' : 'historico' }" class="text-sm font-semibold text-brand-blue">← Voltar</a>
@@ -76,6 +79,9 @@ export class InscricaoDetailComponent implements OnInit {
     }
   }
 
+  dialogOpen = false;
+  duplicidades: Duplicidade[] = [];
+
   openReject() {
     this.rejectDialog?.resetReason();
     this.reject = true;
@@ -83,6 +89,24 @@ export class InscricaoDetailComponent implements OnInit {
 
   async doApprove() {
     this.approve = false;
+    if (!this.inscricao) return;
+
+    try {
+      const duplicidades = await this.api.duplicidades(this.inscricao.id);
+      if (duplicidades.length > 0) {
+        this.duplicidades = duplicidades;
+        this.dialogOpen = true;
+        return;
+      }
+    } catch (err) {
+      // Proceed to try to approve, catching the error from API
+    }
+
+    await this.confirmarApprove();
+  }
+
+  async confirmarApprove() {
+    this.dialogOpen = false;
     if (!this.inscricao) return;
     try {
       this.inscricao = await this.api.aprovar(this.inscricao.id);

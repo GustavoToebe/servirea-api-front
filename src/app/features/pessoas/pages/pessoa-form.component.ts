@@ -1,14 +1,16 @@
 import { CommonModule } from '@angular/common';
+import { CuidadosComponent } from '../../../shared/components/cuidados/cuidados.component';
 import { Component, ElementRef, OnInit, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HasPendingChanges } from '../../../core/guards/pending-changes.guard';
-import { FUNCOES_FORM, FUNCOES_LABEL, FuncaoEscala, PARENTESCOS, PARENTESCOS_DEPENDENTE, Pessoa, PessoaPapel, PessoaRequest, Relacao, RelacaoRequest, TIPO_LABEL, TIPOS_VOLUNTARIO, TipoVoluntario } from '../models/pessoa.model';
+import { Duplicidade, DuplicidadeRequest, FUNCOES_FORM, FUNCOES_LABEL, FuncaoEscala, PARENTESCOS, PARENTESCOS_DEPENDENTE, Pessoa, PessoaPapel, PessoaRequest, Relacao, RelacaoRequest, TIPO_LABEL, TIPOS_VOLUNTARIO, TipoVoluntario } from '../models/pessoa.model';
 import { PessoasService } from '../services/pessoas.service';
 import { VoluntariosApiService } from '../services/voluntarios-api.service';
 import { readPhotoPreview, validatePhotoFile } from '../../../shared/utils/photo.utils';
 import { MascaraDirective } from '../../../shared/directives/mascara.directive';
 import { CampoDataComponent } from '../../../shared/components/datas/campo-data.component';
+import { DuplicidadesDialogComponent } from './duplicidades-dialog.component';
 import { hojeIso } from '../../../shared/components/datas/datas';
 import { CepService } from '../../../shared/services/cep.service';
 import { SEXOS, UFS, cepValido, formatarCep, formatarCpf, formatarRg, formatarTelefone, normalizarSexo } from '../../../shared/utils/formatos';
@@ -17,8 +19,9 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
 
 @Component({
     selector: 'app-pessoa-form',
-    imports: [CommonModule, ReactiveFormsModule, RouterLink, MascaraDirective, CampoDataComponent],
+    imports: [CuidadosComponent, CommonModule, ReactiveFormsModule, RouterLink, MascaraDirective, CampoDataComponent, DuplicidadesDialogComponent],
     template: `
+    <app-duplicidades-dialog [open]="dialogOpen" [itens]="duplicidades" (fechar)="dialogOpen = false" (continuar)="confirmarSave()"></app-duplicidades-dialog>
     <div class="mx-auto max-w-5xl space-y-6">
       <div class="flex items-center justify-between">
         <div>
@@ -70,6 +73,7 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
               </div>
             </div>
           </section>
+          <app-cuidados formControlName="cuidados" [nome]="primeiroNome"></app-cuidados>
           <section class="card p-6">
             <div class="mb-4 flex items-center justify-between"><h2 class="text-lg font-black">E-mails</h2><button type="button" class="btn-secondary" (click)="addEmail()">＋</button></div>
             <div formArrayName="emails" class="space-y-3">
@@ -283,6 +287,8 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
   saving = false;
   saved = false;
   error = '';
+  dialogOpen = false;
+  duplicidades: Duplicidade[] = [];
   photoFile: File | null = null;
   photoPreview: string | null = null;
   papeis = new Set<PessoaPapel>(['VOLUNTARIO']);
@@ -319,6 +325,7 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
     complemento: [''],
     bairro: [''],
     observacoes: [''],
+    cuidados: [null],
     voluntario: this.fb.group({
       tipo: ['COROINHA'],
       ativo: [true],
@@ -341,6 +348,7 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
     private voluntarios: VoluntariosApiService
   ) {}
 
+  get primeiroNome(): string { return (this.form.get('nomeCompleto')?.value || '').split(' ')[0]; }
   get emails(): FormArray { return this.form.get('emails') as FormArray; }
   get telefones(): FormArray { return this.form.get('telefones') as FormArray; }
   get responsaveis(): FormArray { return this.form.get('responsaveis') as FormArray; }
@@ -471,6 +479,52 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
       this.error = 'Escolha o voluntário de cada dependente (ou remova a linha).';
       return;
     }
+
+    this.saving = true;
+    this.error = '';
+
+    const req = this.montarRequest();
+    
+    // Check duplicidades
+    const dupReq: DuplicidadeRequest = {
+      ignorarId: this.id,
+      nomeCompleto: req.nomeCompleto,
+      cpf: req.cpf,
+      dataNascimento: req.dataNascimento,
+      telefones: req.telefones.map(t => t.numero),
+      nomesResponsaveis: []
+    };
+
+    if (this.papeis.has('VOLUNTARIO')) {
+      for (const g of this.responsaveis.controls) {
+        const pId = g.get('pessoaId')?.value;
+        const pNome = g.get('nomeNovo')?.value;
+        if (pId) {
+          const respEncontrado = this.pessoasCadastradas.find(p => p.id === pId);
+          if (respEncontrado) dupReq.nomesResponsaveis.push(respEncontrado.nomeCompleto);
+        } else if (pNome) {
+          dupReq.nomesResponsaveis.push(pNome);
+        }
+      }
+    }
+
+    try {
+      const duplicidades = await this.pessoas.duplicidades(dupReq);
+      if (duplicidades.length > 0) {
+        this.duplicidades = duplicidades;
+        this.dialogOpen = true;
+        this.saving = false;
+        return;
+      }
+    } catch (e) {
+      // API error fetching duplicidades, continue saving anyway
+    }
+
+    await this.confirmarSave();
+  }
+
+  async confirmarSave() {
+    this.dialogOpen = false;
     this.saving = true;
     this.error = '';
     try {
@@ -635,3 +689,5 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
     };
   }
 }
+
+

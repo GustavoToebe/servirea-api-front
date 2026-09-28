@@ -1,3 +1,4 @@
+import { CondicaoEspecial } from '../../../shared/components/cuidados/condicoes';
 export type PessoaPapel = 'VOLUNTARIO' | 'RESPONSAVEL';
 export type TipoVoluntario = 'COROINHA' | 'ACOLITO' | 'AMBOS' | 'MESC';
 export type FuncaoEscala = 'MISSAL' | 'CRUZ' | 'CREDENCIA' | 'VELA' | 'COLETA' | 'SINO' | 'OUTRO';
@@ -72,6 +73,10 @@ export interface Pessoa {
   bairro: string | null;
   observacoes: string | null;
   voluntario: VoluntarioPerfil | null;
+  condicoes?: CondicaoEspecial[];
+  nivelSuporteTea?: number | null;
+  condicaoOutra?: string | null;
+  cuidados?: string | null;
 }
 
 export interface PessoaRequest {
@@ -128,6 +133,8 @@ export interface VoluntarioLista {
   mandatoInicio?: string | null;
   mandatoFim?: string | null;
   dataNascimento?: string | null;
+  condicoes?: CondicaoEspecial[];
+  cuidados?: string | null;
 }
 
 export const FUNCOES_LABEL: Record<FuncaoEscala, string> = {
@@ -218,3 +225,36 @@ export function contatoPrincipalEmail(pessoa: Pessoa): string {
 export function contatoPrincipalTelefone(pessoa: Pessoa): string {
   return pessoa.telefones.find(t => t.principal)?.numero || pessoa.telefones[0]?.numero || '';
 }
+
+export type MotivoDuplicidade = 'CPF' | 'NOME' | 'NASCIMENTO' | 'TELEFONE' | 'RESPONSAVEL';
+
+export interface DuplicidadeRequest {
+  ignorarId?: string | null;
+  nomeCompleto: string;
+  cpf?: string | null;
+  dataNascimento?: string | null;
+  condicoes?: CondicaoEspecial[];
+  cuidados?: string | null;
+  telefones: string[];
+  nomesResponsaveis: string[];
+}
+
+export interface Duplicidade {
+  id: string;
+  sequencial?: number;
+  nomeCompleto: string;
+  dataNascimento?: string | null;
+  condicoes?: CondicaoEspecial[];
+  cuidados?: string | null;
+  motivos: MotivoDuplicidade[];
+  bloqueia: boolean;
+}
+
+export const MOTIVO_LABEL: Record<MotivoDuplicidade, string> = {
+  CPF: 'Mesmo CPF',
+  NOME: 'Nome parecido',
+  NASCIMENTO: 'Mesmo nascimento',
+  TELEFONE: 'Mesmo telefone',
+  RESPONSAVEL: 'Mesmo responsável'
+};
+

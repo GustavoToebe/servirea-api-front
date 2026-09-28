@@ -9,6 +9,7 @@ import { EscalaDetalhe, EscalaEvento, MESES, STATUS_LABEL, StatusEscala } from '
 import { EscalasService } from '../../services/escalas.service';
 import { ExportService } from '../../services/export.service';
 import { DialogoService } from '../../../../shared/services/dialogo.service';
+import { BarraFiltrosComponent, FiltroAtivo } from '../../../../shared/components/barra-filtros/barra-filtros.component';
 import { FUNCOES_LABEL } from '../../../pessoas/models/pessoa.model';
 
 interface CelebracaoVista {
@@ -18,7 +19,7 @@ interface CelebracaoVista {
 
 @Component({
     selector: 'app-escalas-list',
-    imports: [CommonModule, FormsModule, RouterLink, NumeroComponent, CampoCompetenciaComponent],
+    imports: [CommonModule, FormsModule, RouterLink, NumeroComponent, CampoCompetenciaComponent, BarraFiltrosComponent],
     template: `
     <div class="space-y-6">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -30,17 +31,25 @@ interface CelebracaoVista {
         <a routerLink="/escalas/nova" class="btn-primary">＋ Nova escala</a>
       </div>
 
-      <div class="flex flex-wrap gap-2">
-        <button type="button" class="chip" [class.chip-on]="mesmoMes(hojeAno, hojeMes)" (click)="irPara(hojeAno, hojeMes)">Este mês</button>
-        <button type="button" class="chip" [class.chip-on]="mesmoMes(proximo.ano, proximo.mes)" (click)="irPara(proximo.ano, proximo.mes)">Próximo mês</button>
-        <app-campo-competencia class="block w-44" [ngModel]="competencia()" (ngModelChange)="escolherCompetencia($event)" [limpavel]="false" />
-      </div>
-
-      <div class="flex flex-wrap gap-2">
-        @for (opcao of statusOpcoes; track opcao.id) {
-          <button type="button" class="chip" [class.chip-on]="filters.status === opcao.id" (click)="setStatus(opcao.id)">{{ opcao.label }}</button>
-        }
-      </div>
+      <app-barra-filtros placeholder="Buscar celebração ou escala" [(termo)]="busca" (buscar)="load()"
+        [filtrosAtivos]="filtrosAtivos" (removerFiltro)="removerFiltro($event)" (removerTodos)="removerTodosFiltros()">
+        <div class="flex flex-col gap-1">
+          <label class="label">Mês</label>
+          <div class="flex items-center gap-2">
+            <app-campo-competencia class="block flex-1" [ngModel]="competencia()" (ngModelChange)="escolherCompetencia($event)" [limpavel]="false" />
+            <button type="button" class="btn-secondary !px-2 !py-1 text-xs" (click)="irPara(hojeAno, hojeMes)">Este mês</button>
+            <button type="button" class="btn-secondary !px-2 !py-1 text-xs" (click)="irPara(proximo.ano, proximo.mes)">Próximo mês</button>
+          </div>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="label">Situação</label>
+          <select class="field" [(ngModel)]="filters.status">
+            @for (opcao of statusOpcoes; track opcao.id) {
+              <option [value]="opcao.id">{{ opcao.label }}</option>
+            }
+          </select>
+        </div>
+      </app-barra-filtros>
 
       @if (error) {
         <div class="rounded-xl bg-red-50 p-4 text-red-700">{{ error }}</div>
@@ -88,6 +97,7 @@ interface CelebracaoVista {
     `
 })
 export class EscalasListComponent implements OnInit {
+  busca = "";
   months = MESES;
   rows: EscalaDetalhe[] = [];
   loading = true;
@@ -112,8 +122,16 @@ export class EscalasListComponent implements OnInit {
   }
 
   get celebracoes(): CelebracaoVista[] {
-    return this.rows.flatMap(escala => (escala.eventos || []).map(evento => ({ escala, evento })))
-      .sort((a, b) => `${a.evento.data} ${a.evento.horario}`.localeCompare(`${b.evento.data} ${b.evento.horario}`));
+    let list = this.rows.flatMap(escala => (escala.eventos || []).map(evento => ({ escala, evento })));
+    if (this.busca) {
+      const termo = this.busca.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      list = list.filter(item => {
+        const celebracao = (item.evento.celebracao || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        const titulo = (item.escala.titulo || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        return celebracao.includes(termo) || titulo.includes(termo);
+      });
+    }
+    return list.sort((a, b) => `${a.evento.data} ${a.evento.horario}`.localeCompare(`${b.evento.data} ${b.evento.horario}`));
   }
 
   ngOnInit() { void this.load(); }
@@ -135,6 +153,32 @@ export class EscalasListComponent implements OnInit {
     this.filters.ano = ano;
     this.filters.mes = mes;
     void this.load();
+  }
+
+  
+  get filtrosAtivos(): FiltroAtivo[] {
+    const f: FiltroAtivo[] = [];
+    f.push({ chave: 'mes', rotulo: `Mês: ${String(this.filters.mes).padStart(2, '0')}/${this.filters.ano}` });
+    if (this.filters.status) {
+      const op = this.statusOpcoes.find(o => o.id === this.filters.status);
+      if (op) f.push({ chave: 'status', rotulo: 'Situação: ' + op.label });
+    }
+    if (this.busca) {
+      f.push({ chave: 'busca', rotulo: 'Busca: ' + this.busca });
+    }
+    return f;
+  }
+
+  removerFiltro(chave: string) {
+    if (chave === 'mes') { this.irPara(this.hojeAno, this.hojeMes); }
+    if (chave === 'status') { this.filters.status = ''; this.load(); }
+    if (chave === 'busca') { this.busca = ''; this.load(); }
+  }
+
+  removerTodosFiltros() {
+    this.filters.status = '';
+    this.busca = '';
+    this.irPara(this.hojeAno, this.hojeMes);
   }
 
   setStatus(status: StatusEscala | '') {

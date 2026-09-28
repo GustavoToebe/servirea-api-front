@@ -1,6 +1,7 @@
 
 import { CommonModule } from '@angular/common';
 import { NumeroComponent } from '../../../shared/components/numero/numero.component';
+import { CONDICAO_LABEL } from '../../../shared/components/cuidados/condicoes';
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';

@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { mensagemApi } from '../../../core/api/api-error';
-import { Pessoa, PessoaPapel, PessoaRequest } from '../models/pessoa.model';
+import { Pessoa, PessoaPapel, PessoaRequest, DuplicidadeRequest, Duplicidade } from '../models/pessoa.model';
 
 @Injectable({ providedIn: 'root' })
 export class PessoasService {
@@ -44,6 +44,14 @@ export class PessoasService {
       return await firstValueFrom(this.http.put<Pessoa>(`${this.base}/${id}`, corpo(request, foto)));
     } catch (erro) {
       throw new Error(mensagemApi(erro, 'Não foi possível atualizar o cadastro.'));
+    }
+  }
+
+  async duplicidades(request: DuplicidadeRequest): Promise<Duplicidade[]> {
+    try {
+      return await firstValueFrom(this.http.post<Duplicidade[]>(`${this.base}/duplicidades`, request));
+    } catch (erro) {
+      throw new Error(mensagemApi(erro, 'Não foi possível verificar cadastros parecidos.'));
     }
   }
 }

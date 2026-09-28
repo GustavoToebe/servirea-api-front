@@ -1,3 +1,4 @@
+import { CondicaoEspecial } from '../../../shared/components/cuidados/condicoes';
 import { ContatoEmail, ContatoTelefone, FuncaoEscala, HorarioEstudo, TipoVoluntario } from './pessoa.model';
 
 export type StatusInscricao = 'PENDENTE' | 'APROVADA' | 'REJEITADA';
@@ -40,6 +41,11 @@ export interface Inscricao {
   observacoes: string | null;
   autorizaWhatsapp: boolean;
   funcoesHabilitadas: FuncaoEscala[];
+  condicoes?: CondicaoEspecial[];
+  nivelSuporteTea?: number | null;
+  condicaoOutra?: string | null;
+  cuidados?: string | null;
+  consentimentoCuidadosEm?: string | null;
   status: StatusInscricao;
   dataAprovacao: string | null;
   voluntarioId: string | null;
@@ -72,7 +78,14 @@ export interface InscricaoPublicaRequest {
   observacoes: string | null;
   autorizaWhatsapp: boolean;
   funcoesHabilitadas: FuncaoEscala[];
+  condicoes?: CondicaoEspecial[];
+  nivelSuporteTea?: number | null;
+  condicaoOutra?: string | null;
+  cuidados?: string | null;
+  consentimentoCuidados?: boolean;
 }
+
+export interface InscricaoAtualizarRequest extends Omit<InscricaoPublicaRequest, 'turnstileToken'> {}
 
 export interface InscricaoResponsavelRequest {
   parentesco: string;

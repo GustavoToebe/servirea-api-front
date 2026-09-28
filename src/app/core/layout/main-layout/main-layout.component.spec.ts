@@ -32,6 +32,11 @@ describe('montarMenu', () => {
     expect(menu.conta.map(item => item.label)).toEqual(['Paróquia', 'Perfis', 'Usuários', 'Meu perfil']);
   });
 
+  it('mostra Layouts para quem tem LAYOUT', () => {
+    const menu = montarMenu(['LAYOUT', 'PAROQUIA']);
+    expect(menu.conta.map(item => item.label)).toEqual(['Layouts', 'Paróquia', 'Meu perfil']);
+  });
+
   it('sem permissão some tudo que o catálogo trava', () => {
     const menu = montarMenu([]);
     expect(menu.barra.map(item => item.label)).toEqual(['Início', 'Ajustes']);
@@ -100,6 +105,24 @@ describe('MainLayoutComponent', () => {
     expect(texto('[data-menu="folha"]')).toContain('Perfis');
     expect(texto('[data-menu="folha"]')).toContain('Usuários');
     expect(texto('[data-menu="barra"]')).toContain('Relatórios');
+  });
+
+  it('clicar em [data-menu="recolher"] alterna recolhido, aside ganha w-20 e grava no localStorage', () => {
+    acesso.eu.and.returnValue(of(eu(['PESSOA', 'PAROQUIA'])));
+    criar();
+    
+    const btn = fixture.nativeElement.querySelector('[data-menu="recolher"]');
+    btn.click();
+    fixture.detectChanges();
+    
+    expect(fixture.componentInstance.recolhido).toBeTrue();
+    const aside = fixture.nativeElement.querySelector('aside');
+    expect(aside.classList.contains('w-20')).toBeTrue();
+    expect(localStorage.getItem('servire.menuRecolhido')).toBe('true');
+  });
+
+  afterEach(() => {
+    localStorage.removeItem('servire.menuRecolhido');
   });
 
   it('se o GET /me falha, esconde o que depende de permissão', () => {

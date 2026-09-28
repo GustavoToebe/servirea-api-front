@@ -42,8 +42,16 @@ Rodar junto com as APIs e a Central no PC: README do `central-api-back`, seção
   (ver `volunteer-picker` e `shared/components/datas/painel-flutuante.ts`).
 - Datas: nunca `type="date"`/`type="month"` nativo. `app-campo-data` (form control ISO, tela `DD/MM/AAAA`,
   `[max]="hoje"` em nascimento) e `app-campo-competencia` (`AAAA-MM`, tela `MM/AAAA`), em `shared/components/datas/`.
-- Lista de assinatura (`pessoas-list`): marcar todos/alguns e "Gerar lista de assinatura" (título, subtítulo, ordem;
+- `shared/components/barra-filtros/` — barra padrão das listas: busca + Opções (ações sobre os marcados) + Buscar com
+  painel de filtros recolhível (`<ng-content>`) e "Filtrado por". Toda lista nova usa esta barra; nada de chips de filtro soltos.
+- `shared/utils/selecao.ts` + classes `.tabela` (`styles.scss`) — lista em tabela com cabeçalho em contraste, marcar todos e
+  linha `marcada`.
+- `shared/components/cuidados/` — seletor de cuidado e acolhimento, usado no cadastro e na inscrição.
+- `features/comunicacao/` — layouts de envio (e-mail e WhatsApp) com tags. Quill 2 só no editor de e-mail
+  (`components/editor-html.component.ts`, tema `quill.snow.css` em `angular.json`).
+- Lista de assinatura (`pessoas-list`): marque as pessoas e abra por Opções → "Imprimir listagem" (título, subtítulo, ordem;
   PDF A4 com 22 linhas numeradas por folha ou imagem; subtítulo com a cidade do cadastro da paróquia), `features/pessoas/services/lista-assinatura.service.ts`.
+- `app-duplicidades-dialog`: todo cadastro novo de pessoa ou aprovação de inscrição passa por ele para checar duplicidades.
 - Campo de senha sempre com o olho: `<div class="relative"><input #s type="password" class="field pr-11"><app-olho-senha [campo]="s" /></div>`.
 
 ## Regras
