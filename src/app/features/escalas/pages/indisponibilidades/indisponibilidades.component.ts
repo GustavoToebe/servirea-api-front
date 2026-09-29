@@ -56,16 +56,16 @@ export function fimDeSemanaDoMes(ano: number, mes: number): Coluna[] {
       <div class="overflow-x-auto">
         <!-- Colunas de largura fixa e marcação do mesmo tamanho da célula vazia: marcar uma data não alarga a
              coluna nem empurra "Situação" para fora da tela (29/09/2026). -->
-        <table class="tabela table-fixed" [style.min-width.rem]="14 + colunas.length * 4.5 + 7 + 8.5">
+        <table class="tabela table-fixed" [style.min-width.rem]="14 + colunas.length * 4.5 + 8 + 8.5">
           <colgroup>
             <col class="w-56">
             @for (c of colunas; track c.data) { <col class="w-[4.5rem]"> }
-            <col class="w-28"><col class="w-[8.5rem]">
+            <col class="w-32"><col class="w-[8.5rem]">
           </colgroup>
           <thead><tr>
             <th class="sticky left-0 z-10">Nome</th>
             @for (c of colunas; track c.data) { <th class="!px-1 text-center">{{ c.rotulo }}</th> }
-            <th class="text-center">Sem restrição</th><th>Situação</th>
+            <th class="!text-center">Sem restrição</th><th>Situação</th>
           </tr></thead>
           <tbody>
             @for (v of visiveis; track v.id) {
@@ -74,9 +74,9 @@ export function fimDeSemanaDoMes(ano: number, mes: number): Coluna[] {
                 @for (c of colunas; track c.data) {
                   <td class="!px-1 text-center">
                     @if (marca(v.id, c.data); as m) {
-                      <div class="relative mx-auto flex h-8 w-14 items-center justify-center gap-0.5 rounded-lg bg-red-50 text-[11px] font-bold text-red-700 ring-1 ring-red-200"
-                           [attr.data-marcada]="v.id + '|' + c.data" [title]="m.periodo ? rotuloPeriodo[m.periodo] : 'Dia inteiro'">
-                        <span aria-hidden="true">⛔</span>{{ m.periodo ? rotuloCurto[m.periodo] : 'Dia' }}
+                      <div class="relative mx-auto flex h-10 w-16 items-center justify-center rounded-lg bg-red-50 px-1 text-[11px] font-bold leading-tight text-red-700 ring-1 ring-red-200"
+                           [attr.data-marcada]="v.id + '|' + c.data">
+                        {{ m.periodo ? rotuloPeriodo[m.periodo] : 'Dia inteiro' }}
                         <!-- O seletor fica por cima, invisível: o clique no quadrinho abre as opções. -->
                         <select class="absolute inset-0 h-full w-full cursor-pointer opacity-0" [ngModel]="m.periodo ?? ''" (ngModelChange)="trocarPeriodo(v.id, c.data, $event)" aria-label="Período">
                           <option value="">Dia inteiro</option>
@@ -85,8 +85,15 @@ export function fimDeSemanaDoMes(ano: number, mes: number): Coluna[] {
                         </select>
                       </div>
                     } @else {
-                      <button type="button" class="mx-auto block h-8 w-14 rounded-lg border border-dashed border-[var(--field-line)] hover:bg-red-50"
-                              [attr.data-celula]="v.id + '|' + c.data" [attr.aria-label]="'Não pode em ' + c.rotulo" (click)="marcar(v.id, c.data)"></button>
+                      <!-- Clicar abre as opções; a data só é marcada quando uma delas é escolhida. -->
+                      <div class="relative mx-auto h-10 w-16 rounded-lg border border-dashed border-[var(--field-line)] hover:bg-red-50">
+                        <select class="absolute inset-0 h-full w-full cursor-pointer opacity-0" [attr.data-celula]="v.id + '|' + c.data"
+                                [attr.aria-label]="'Não pode em ' + c.rotulo" (change)="escolher(v.id, c.data, $any($event.target).value)">
+                          <option value="" disabled selected hidden></option>
+                          <option value="DIA">Dia inteiro</option>
+                          @for (p of periodos; track p) { <option [value]="p">{{ rotuloPeriodo[p] }}</option> }
+                        </select>
+                      </div>
                     }
                   </td>
                 }
@@ -119,7 +126,6 @@ export class IndisponibilidadesComponent implements OnInit, HasPendingChanges {
   readonly meses = MESES;
   readonly periodos: PeriodoDia[] = ['MANHA', 'TARDE', 'NOITE'];
   readonly rotuloPeriodo = PERIODO_LABEL;
-  readonly rotuloCurto: Record<PeriodoDia, string> = { MANHA: 'Manhã', TARDE: 'Tarde', NOITE: 'Noite' };
   readonly rotuloSituacao = SITUACAO_LABEL;
   readonly tom: Record<SituacaoResposta, string> = {
     COM_RESTRICAO: 'bg-amber-50 text-amber-800', SEM_RESTRICAO: 'bg-emerald-50 text-emerald-700', PENDENTE: 'bg-slate-100 text-slate-600'
@@ -217,6 +223,13 @@ export class IndisponibilidadesComponent implements OnInit, HasPendingChanges {
     this.definir(voluntarioId, data, null);
     this.semRestricao.delete(voluntarioId);
     this.alterado = true;
+  }
+
+  /** Opção escolhida numa data vazia: "DIA" marca o dia inteiro, o resto é o período. */
+  escolher(voluntarioId: string, data: string, valor: string) {
+    if (!valor) return;
+    this.marcar(voluntarioId, data);
+    if (valor !== 'DIA') this.trocarPeriodo(voluntarioId, data, valor);
   }
 
   trocarPeriodo(voluntarioId: string, data: string, valor: string) {

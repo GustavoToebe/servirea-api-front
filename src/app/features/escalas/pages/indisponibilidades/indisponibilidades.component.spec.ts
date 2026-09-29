@@ -38,14 +38,26 @@ describe('IndisponibilidadesComponent', () => {
     expect(cols.length).toBe(9);
   });
 
-  it('clicar numa célula marca ⛔ e muda a situação da linha', async () => {
+  it('a data só é marcada quando uma opção é escolhida, e mostra o texto completo', async () => {
     const fixture = await montar();
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelector('[data-situacao="a"]')!.textContent).toContain('Pendente');
-    (el.querySelector('[data-celula="a|2026-10-03"]') as HTMLButtonElement).click();
+    const celula = el.querySelector('[data-celula="a|2026-10-03"]') as HTMLSelectElement;
+    celula.click();
     fixture.detectChanges();
-    expect(el.querySelector('[data-marcada="a|2026-10-03"]')).toBeTruthy();
+    expect(el.querySelector('[data-marcada="a|2026-10-03"]')).toBeNull();
+
+    celula.value = 'TARDE';
+    celula.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(el.querySelector('[data-marcada="a|2026-10-03"]')!.textContent).toContain('Só tarde');
     expect(el.querySelector('[data-situacao="a"]')!.textContent).toContain('Com restrição');
+
+    const outra = el.querySelector('[data-celula="a|2026-10-04"]') as HTMLSelectElement;
+    outra.value = 'DIA';
+    outra.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(el.querySelector('[data-marcada="a|2026-10-04"]')!.textContent).toContain('Dia inteiro');
   });
 
   it('marcar todas as datas não muda a largura das colunas', async () => {
