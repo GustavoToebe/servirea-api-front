@@ -12,7 +12,7 @@ import { SessaoAtual } from '../sessao-atual';
     imports: [RouterOutlet, RouterLink, RouterLinkActive, NgClass],
     template: `
     <div class="parish min-h-screen bg-app lg:flex">
-      <aside class="fixed inset-y-0 left-0 z-40 hidden bg-brand-navy text-white lg:block transition-[width] duration-200" [ngClass]="recolhido ? 'w-20' : 'w-72'">
+      <aside class="fixed inset-y-0 left-0 z-40 hidden flex-col bg-brand-navy text-white lg:flex transition-[width] duration-200" [ngClass]="recolhido ? 'w-20' : 'w-72'">
         <div class="flex h-20 items-center gap-3 border-b border-white/10" [ngClass]="recolhido ? 'justify-center px-0' : 'px-6'">
           <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-blue text-sm font-black">{{ marca() }}</div>
           @if (!recolhido) {
@@ -23,7 +23,7 @@ import { SessaoAtual } from '../sessao-atual';
           }
         </div>
 
-        <nav class="space-y-1 p-4" data-menu="lateral">
+        <nav class="min-h-0 flex-1 space-y-1 overflow-y-auto p-4" data-menu="lateral">
           @for (item of menu().barra; track item.url) {
             <a [routerLink]="item.url" routerLinkActive="!bg-brand-blue !text-white"
               [title]="recolhido ? item.label : ''"
@@ -42,7 +42,7 @@ import { SessaoAtual } from '../sessao-atual';
             </a>
           }
         </nav>
-        <nav class="space-y-1 px-4" data-menu="conta">
+        <nav class="space-y-3 px-4 pb-3" data-menu="conta">
           @for (item of menu().conta; track item.url) {
             <a [routerLink]="item.url" routerLinkActive="!bg-brand-blue !text-white"
               [title]="recolhido ? item.label : ''"
@@ -57,7 +57,7 @@ import { SessaoAtual } from '../sessao-atual';
           }
         </nav>
 
-        <div class="absolute bottom-0 w-full border-t border-white/10 p-4" [ngClass]="recolhido ? 'px-2' : 'px-4'">
+        <div class="mt-3 w-full border-t border-white/10 p-4" [ngClass]="recolhido ? 'px-2' : 'px-4'">
           <button type="button" class="mb-1 flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold text-violet-100/80 hover:bg-white/10 hover:text-white" (click)="alternarRecolhido()" data-menu="recolher" [attr.aria-label]="recolhido ? 'Expandir menu' : 'Recolher menu'" [ngClass]="recolhido ? 'justify-center px-0' : ''">
             <span class="text-xl font-bold">{{ recolhido ? '»' : '«' }}</span>
           </button>

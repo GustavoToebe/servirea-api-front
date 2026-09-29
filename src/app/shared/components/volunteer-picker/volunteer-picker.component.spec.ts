@@ -51,6 +51,22 @@ describe('VolunteerPickerComponent', () => {
     expect(component.filtered().map(v => v.id)).toEqual(['4']);
   });
 
+  it('os filtros de tipo são coroinha, acólito e ambos', () => {
+    expect(component.tipos.map(t => t.label)).toEqual(['Coroinha', 'Acólito', 'Acólito / Coroinha']);
+  });
+
+  it('digitar no filtro mantém o mesmo campo focado', () => {
+    component.toggleOpen();
+    fixture.detectChanges();
+    const campo = document.body.querySelector('input[placeholder="Filtrar"]') as HTMLInputElement;
+    campo.focus();
+    component.buscar('an');
+    expect(document.body.querySelector('input[placeholder="Filtrar"]')).toBe(campo);
+    expect(document.activeElement).toBe(campo);
+    expect(component.lista.map(v => v.id)).toEqual(['1']);
+    fixture.destroy();
+  });
+
   it('filtra por tipo e o segundo clique limpa o filtro', () => {
     component.setTipo('ACOLITO');
     expect(component.filtered().map(v => v.id)).toEqual(['2']);

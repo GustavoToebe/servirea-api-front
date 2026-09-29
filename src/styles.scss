@@ -108,7 +108,17 @@ button, input, select, textarea { font: inherit; }
     background: color-mix(in srgb, var(--brand) 3%, transparent);
   }
   .tabela tr.marcada td {
-    background: color-mix(in srgb, var(--brand) 10%, transparent) !important;
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: inset 3px 0 0 var(--brand);
+  }
+  .menu-solido, .menu-solido button {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .menu-solido button:hover:not(:disabled) {
+    background: #f3f4f6 !important;
+    color: #000 !important;
   }
   .tabela tbody tr:hover td {
     background: color-mix(in srgb, var(--brand) 6%, transparent);
@@ -188,7 +198,8 @@ html.dark .parish .tabela tbody tr:hover td {
   background: rgba(255, 255, 255, 0.06);
 }
 html.dark .parish .tabela tr.marcada td {
-  background: rgba(167, 139, 250, 0.18) !important;
+  background: #fff !important;
+  color: #000 !important;
 }
 html.dark .parish .tabela tbody td {
   border-bottom-color: var(--line);

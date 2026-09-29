@@ -36,9 +36,9 @@ export interface FiltroAtivo {
             <button type="button" class="btn-secondary h-full" (click)="menuAberto = !menuAberto" data-opcoes>
               Opções ⋮
             </button>
-            <div *ngIf="menuAberto" class="absolute z-[100] mt-1 bg-[var(--card)] border border-[var(--line)] rounded shadow-lg min-w-48 right-0 md:left-0 md:right-auto py-1">
+            <div *ngIf="menuAberto" class="menu-solido absolute z-[100] mt-1 rounded border border-slate-200 shadow-lg min-w-48 right-0 md:left-0 md:right-auto py-1">
               <button *ngFor="let op of opcoes" type="button"
-                      class="w-full text-left px-4 py-2 text-sm hover:bg-[var(--line)] disabled:opacity-50 disabled:cursor-not-allowed"
+                      class="w-full text-left px-4 py-2 text-sm hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
                       [disabled]="op.desabilitada"
                       [title]="op.dica || ''"
                       (click)="selecionarOpcao(op)"

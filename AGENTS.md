@@ -8,8 +8,8 @@ do código e dos commits: **português**.
 ## Manter este arquivo atualizado
 Arquivo de instruções compartilhado entre ferramentas de IA (Cursor, Codex, Copilot etc.); o
 `CLAUDE.md` só importa este (`@AGENTS.md`). Edite **só aqui**, curto. Mudança que invalida
-algo daqui atualiza este arquivo junto. `DOCUMENTACAO-COMPLETA-PARA-IA.md` descreve a época
-do Supabase direto e está em grande parte superada; na dúvida, vale o código e este arquivo.
+algo daqui atualiza este arquivo junto. O dump da época do Supabase direto foi
+removido; na dúvida, vale o código e este arquivo. O índice dos documentos está em `docs/README.md`.
 
 ## Stack e comandos
 Angular 21 (standalone, control flow `@if/@for`), Tailwind 3, Karma + Jasmine, jsPDF 4 +

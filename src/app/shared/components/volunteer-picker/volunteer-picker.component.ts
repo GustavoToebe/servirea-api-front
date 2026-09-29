@@ -1,6 +1,6 @@
 import {
-  ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output,
-  SimpleChanges, ViewChild, inject
+  ApplicationRef, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EmbeddedViewRef, EventEmitter, Input,
+  NgZone, OnChanges, OnDestroy, Output, SimpleChanges, TemplateRef, ViewChild, inject
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TipoVoluntario, Voluntario } from '../../../features/voluntarios/models/voluntario.model';
@@ -48,8 +48,8 @@ const SEM_EXCLUIDOS: ReadonlySet<string> = new Set();
         <span class="text-slate-400">▾</span>
       </button>
 
-      @if (open && !disabled) {
-        <div #painelEl class="fixed z-50 min-w-[240px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"
+      <ng-template #painelTpl>
+        <div class="fixed z-50 min-w-[240px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"
           [style.left.px]="painel.left" [style.width.px]="painel.width"
           [style.top.px]="painel.top" [style.bottom.px]="painel.bottom">
           <div class="space-y-2 border-b border-slate-100 p-2">
@@ -102,7 +102,7 @@ const SEM_EXCLUIDOS: ReadonlySet<string> = new Set();
             }
           </div>
         </div>
-      }
+      </ng-template>
     </div>
     `
 })
@@ -123,8 +123,7 @@ export class VolunteerPickerComponent implements OnChanges, OnDestroy {
   tipos: { value: TipoVoluntario; label: string }[] = [
     { value: 'COROINHA', label: 'Coroinha' },
     { value: 'ACOLITO', label: 'Acólito' },
-    { value: 'AMBOS', label: 'Acólito / Coroinha' },
-    { value: 'MESC', label: 'Ministro (MESC)' }
+    { value: 'AMBOS', label: 'Acólito / Coroinha' }
   ];
   /** Lista mostrada no painel, recalculada só quando algo que a afeta muda. */
   lista: Voluntario[] = [];
@@ -134,6 +133,10 @@ export class VolunteerPickerComponent implements OnChanges, OnDestroy {
   private readonly zone = inject(NgZone);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly dialogo = inject(DialogoService);
+  private readonly appRef = inject(ApplicationRef);
+  private viewPainel: EmbeddedViewRef<void> | null = null;
+
+  @ViewChild('painelTpl') painelTpl?: TemplateRef<void>;
   private escutando = false;
 
   constructor(private host: ElementRef<HTMLElement>) {}
@@ -166,21 +169,41 @@ export class VolunteerPickerComponent implements OnChanges, OnDestroy {
     this.search = '';
     this.atualizarLista();
     this.posicionar();
+    this.montarPainel();
     this.escutar();
     this.cdr.markForCheck();
   }
 
   /**
-   * O painel vai para o `body` assim que aparece: dentro do cartão do dia ele
-   * era cortado (`overflow-hidden`, #38) e, com o `backdrop-filter` do `.card`,
-   * o `fixed` era medido pelo cartão e abria no canto da tela (#39, 27/09/2026).
-   * No `body`, `fixed` é sempre a janela.
+   * O painel é uma view anexada ao `body`, fora do cartão do dia: ali o
+   * `overflow-hidden` cortava a lista e o `backdrop-filter` do `.card` fazia
+   * o `fixed` abrir no canto da tela. A view não volta para o componente a
+   * cada tecla, senão o campo de filtro perde o foco.
    */
-  @ViewChild('painelEl')
-  set painelEl(ref: ElementRef<HTMLElement> | undefined) {
-    this.painelNoBody = ref?.nativeElement ?? null;
-    if (this.painelNoBody) document.body.appendChild(this.painelNoBody);
+  private montarPainel() {
+    if (this.viewPainel || !this.painelTpl) return;
+    const view = this.painelTpl.createEmbeddedView(undefined as void);
+    this.viewPainel = view;
+    this.appRef.attachView(view);
+    view.detectChanges();
+    this.painelNoBody = view.rootNodes[0] as HTMLElement;
+    document.body.appendChild(this.painelNoBody);
   }
+
+  private desmontarPainel() {
+    const view = this.viewPainel;
+    this.viewPainel = null;
+    const raiz = this.painelNoBody;
+    this.painelNoBody = null;
+    if (!view) {
+      raiz?.remove();
+      return;
+    }
+    this.appRef.detachView(view);
+    view.destroy();
+    raiz?.remove();
+  }
+
   private painelNoBody: HTMLElement | null = null;
 
   /** Posição calculada pelo botão; sem espaço embaixo, abre para cima. */
@@ -233,6 +256,7 @@ export class VolunteerPickerComponent implements OnChanges, OnDestroy {
     this.open = false;
     this.search = '';
     this.pararDeEscutar();
+    this.desmontarPainel();
     this.cdr.markForCheck();
   }
 
@@ -243,17 +267,19 @@ export class VolunteerPickerComponent implements OnChanges, OnDestroy {
 
   ngOnDestroy() {
     this.pararDeEscutar();
-    this.painelNoBody?.remove();
+    this.desmontarPainel();
   }
 
   buscar(texto: string) {
     this.search = texto;
     this.atualizarLista();
+    this.viewPainel?.detectChanges();
   }
 
   setTipo(tipo: TipoVoluntario) {
     this.tipoFiltro = this.tipoFiltro === tipo ? '' : tipo;
     this.atualizarLista();
+    this.viewPainel?.detectChanges();
   }
 
   clear(event: Event) {
