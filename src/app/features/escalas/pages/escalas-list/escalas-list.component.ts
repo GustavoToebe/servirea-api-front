@@ -45,13 +45,18 @@ import { BarraFiltrosComponent, FiltroAtivo } from '../../../../shared/component
       @if (error) {
         <div class="rounded-xl bg-red-50 p-4 text-red-700">{{ error }}</div>
       }
-      @if (loading) {
-        <div class="card p-10 text-center text-slate-500">Carregando escalas...</div>
+      @if (loading && !escalas.length) {
+        <div class="grid gap-4" aria-label="Carregando" aria-live="polite">
+          @for (i of [1, 2, 3]; track i) {
+            <div class="card h-40 bg-slate-100 motion-safe:animate-pulse" data-esqueleto></div>
+          }
+        </div>
       }
       @if (!loading && !escalas.length) {
         <div class="card p-10 text-center text-slate-500">Nenhuma escala neste período.</div>
       }
 
+      @if (escalas.length) {
       <div class="grid gap-4">
         @for (e of escalas; track e.id) {
           <article class="card p-5" [attr.data-escala]="e.id">
@@ -85,6 +90,7 @@ import { BarraFiltrosComponent, FiltroAtivo } from '../../../../shared/component
           </article>
         }
       </div>
+      }
     </div>
     <app-replicar-dialog [open]="!!origemReplica" [origem]="origemReplica" (fechar)="origemReplica = null" />
     `
@@ -181,7 +187,13 @@ export class EscalasListComponent implements OnInit {
   }
 
   async load() {
-    this.loading = true;
+    const cache = this.service.emCache(this.filters);
+    if (cache) {
+      this.rows = cache;
+      this.loading = false;
+    } else {
+      this.loading = true;
+    }
     this.error = '';
     try {
       this.rows = await this.service.list(this.filters);

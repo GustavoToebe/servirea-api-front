@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { mensagemApi } from '../api/api-error';
+import { CacheDeListas } from '../api/cache-de-listas.service';
 import { AccessTokenResponse, LoginResponse, TenantResumo } from './auth.models';
 
 const TOKEN_KEY = 'sv_access';
@@ -12,7 +13,7 @@ const EMAIL_KEY = 'sv_email';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private cache: CacheDeListas) {}
 
   token(): string | null {
     return sessionStorage.getItem(TOKEN_KEY);
@@ -83,6 +84,7 @@ export class AuthService {
       sessionStorage.removeItem(TENANT_KEY);
       sessionStorage.removeItem(TENANT_NOME_KEY);
       sessionStorage.removeItem(EMAIL_KEY);
+      this.cache.limpar();
     }
   }
 
@@ -92,6 +94,7 @@ export class AuthService {
   }
 
   private guardarSessao(accessToken: string, tenant: TenantResumo): void {
+    this.cache.limpar();
     sessionStorage.setItem(TOKEN_KEY, accessToken);
     sessionStorage.setItem(TENANT_KEY, tenant.id);
     if (tenant.nome) sessionStorage.setItem(TENANT_NOME_KEY, tenant.nome);

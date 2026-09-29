@@ -3,6 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { mensagemApi } from '../../../core/api/api-error';
+import { CacheDeListas } from '../../../core/api/cache-de-listas.service';
+import { AuthService } from '../../../core/auth/auth.service';
 import { celebracoesDoMes } from '../data/calendario-liturgico';
 import { ApoioEscala, Escala, EscalaDetalhe, EscalaEvento, EscalaFilters, EscalaVaga, IndisponibilidadesMes, Presenca, StatusEscala, TipoEscala } from '../models/escala.model';
 import { FuncaoEscala } from '../../voluntarios/models/voluntario.model';
@@ -38,7 +40,11 @@ interface EscalaApi {
 export class EscalasService {
   private readonly base = `${environment.apiUrl}/escalas`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private cache: CacheDeListas, private auth: AuthService) {}
+
+  emCache(filters: EscalaFilters = {}): EscalaDetalhe[] | null {
+    return this.cache.ler<EscalaDetalhe[]>(this.chave(filters), this.auth.tenantId());
+  }
 
   async list(filters: EscalaFilters = {}): Promise<EscalaDetalhe[]> {
     let params = new HttpParams();
@@ -48,10 +54,20 @@ export class EscalasService {
     if (filters.status) params = params.set('status', filters.status);
     try {
       const rows = await firstValueFrom(this.http.get<EscalaApi[]>(this.base, { params }));
-      return rows.map(r => this.paraDetalhe(r));
+      const lista = rows.map(r => this.paraDetalhe(r));
+      this.cache.gravar(this.chave(filters), this.auth.tenantId(), lista);
+      return lista;
     } catch (erro) {
       throw new Error(mensagemApi(erro, 'Não foi possível listar as escalas.'));
     }
+  }
+
+  private chave(filters: EscalaFilters): string {
+    return `escalas:${filters.ano ?? ''}:${filters.mes ?? ''}:${filters.tipo ?? ''}:${filters.status ?? ''}`;
+  }
+
+  private invalidarLista(): void {
+    this.cache.invalidarPrefixo('escalas:');
   }
 
   async getById(id: string): Promise<EscalaDetalhe> {
@@ -89,6 +105,7 @@ export class EscalasService {
       if (payload.status === 'FINALIZADA' && salva.status !== 'FINALIZADA') {
         salva = await firstValueFrom(this.http.post<EscalaApi>(`${this.base}/${salva.id}/finalizar`, {}));
       }
+      this.invalidarLista();
       return this.paraDetalhe(salva);
     } catch (erro) {
       throw new Error(mensagemApi(erro, 'Não foi possível salvar a escala.'));
@@ -98,7 +115,9 @@ export class EscalasService {
   async setStatus(id: string, status: StatusEscala): Promise<EscalaDetalhe> {
     const acao = status === 'CANCELADA' ? 'cancelar' : status === 'FINALIZADA' ? 'finalizar' : 'reabrir';
     try {
-      return this.paraDetalhe(await firstValueFrom(this.http.post<EscalaApi>(`${this.base}/${id}/${acao}`, {})));
+      const detalhe = this.paraDetalhe(await firstValueFrom(this.http.post<EscalaApi>(`${this.base}/${id}/${acao}`, {})));
+      this.invalidarLista();
+      return detalhe;
     } catch (erro) {
       throw new Error(mensagemApi(erro, 'Não foi possível mudar o status da escala.'));
     }
@@ -108,6 +127,7 @@ export class EscalasService {
   async deleteCancelled(id: string): Promise<void> {
     try {
       await firstValueFrom(this.http.delete<void>(`${this.base}/${id}`));
+      this.invalidarLista();
     } catch (erro) {
       throw new Error(mensagemApi(erro, 'A escala precisa estar Cancelada antes de ser excluída.'));
     }

@@ -19,15 +19,17 @@ describe('PessoasListComponent (lista de assinatura)', () => {
   }
 
   async function montar(permissoes: string[] = []) {
-    const pessoas = jasmine.createSpyObj<PessoasService>('PessoasService', ['listar']);
+    const pessoas = jasmine.createSpyObj<PessoasService>('PessoasService', ['listar', 'emCache']);
+    pessoas.emCache.and.returnValue(null);
     pessoas.listar.and.resolveTo([
       pessoa('1', 'Ana', 'COROINHA'),
       pessoa('2', 'Bruno', 'ACOLITO'),
       pessoa('3', 'Carla', 'COROINHA'),
       pessoa('4', 'Dirce', null, ['RESPONSAVEL'])
     ]);
-    const voluntarios = jasmine.createSpyObj<VoluntariosApiService>('VoluntariosApiService', ['contar', 'listar', 'setAtivo']);
-    voluntarios.contar.and.resolveTo(0);
+    const voluntarios = jasmine.createSpyObj<VoluntariosApiService>('VoluntariosApiService', ['contagens', 'listar', 'setAtivo', 'emCache']);
+    voluntarios.contagens.and.resolveTo({ ativos: 0, inativos: 0 });
+    voluntarios.emCache.and.returnValue(null);
     voluntarios.listar.and.resolveTo([]);
     voluntarios.setAtivo.and.resolveTo();
     const inscricoes = jasmine.createSpyObj<InscricoesApiService>('InscricoesApiService', ['listar']);

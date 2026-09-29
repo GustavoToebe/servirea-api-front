@@ -26,7 +26,7 @@ describe('EscalasListComponent', () => {
     TestBed.configureTestingModule({
       imports: [EscalasListComponent],
       providers: [provideHttpClient(), provideRouter([]),
-        { provide: EscalasService, useValue: { list: () => Promise.resolve([semanal, mensal]) } }]
+        { provide: EscalasService, useValue: { list: () => Promise.resolve([semanal, mensal]), emCache: () => null } }]
     });
     const fixture = TestBed.createComponent(EscalasListComponent);
     fixture.detectChanges();

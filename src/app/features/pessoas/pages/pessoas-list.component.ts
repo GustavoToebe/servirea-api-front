@@ -344,17 +344,28 @@ export class PessoasListComponent implements OnInit {
 
   async load() {
     const pedido = ++this.pedido;
-    this.loading = true;
+    const mostrouCache = this.mostrarCache();
+    if (!mostrouCache) this.loading = true;
     this.error = '';
     try {
-      const [todas, ativos, inativos, pendentes] = await Promise.all([
+      const daAba = this.aba === 'ativos' || this.aba === 'inativos'
+        ? this.voluntarios.listar({ ativo: this.aba === 'ativos', nome: this.nome })
+        : this.aba === 'aguardando' || this.aba === 'historico'
+          ? this.inscricoesApi.listar(this.aba === 'aguardando' ? 'PENDENTE' : this.historico)
+          : Promise.resolve(null);
+      const [todas, contagens, pendentes, extra] = await Promise.all([
         this.pessoasApi.listar(undefined, this.aba === 'todas' ? this.nome : undefined),
-        this.voluntarios.contar(true),
-        this.voluntarios.contar(false),
-        this.inscricoesApi.listar('PENDENTE')
+        this.voluntarios.contagens(),
+        this.inscricoesApi.listar('PENDENTE'),
+        daAba
       ]);
       if (pedido !== this.pedido) return;
-      this.counts = { pessoas: todas.length, ativos, inativos, pendentes: pendentes.length };
+      this.counts = {
+        pessoas: todas.length,
+        ativos: contagens.ativos,
+        inativos: contagens.inativos,
+        pendentes: pendentes.length
+      };
       this.selecao.limpar();
       this.pessoas = [];
       this.rows = [];
@@ -362,15 +373,33 @@ export class PessoasListComponent implements OnInit {
       if (this.aba === 'todas') {
         this.pessoas = todas;
       } else if (this.aba === 'ativos' || this.aba === 'inativos') {
-        this.rows = await this.voluntarios.listar({ ativo: this.aba === 'ativos', nome: this.nome });
+        this.rows = extra as VoluntarioLista[];
       } else {
-        this.inscricoes = await this.inscricoesApi.listar(this.aba === 'aguardando' ? 'PENDENTE' : this.historico);
+        this.inscricoes = extra as Inscricao[];
       }
     } catch (err) {
       this.error = err instanceof Error ? err.message : 'Erro ao carregar.';
     } finally {
       if (pedido === this.pedido) this.loading = false;
     }
+  }
+
+  /** Mostra a última lista desta paróquia na hora; a busca de verdade substitui em seguida. */
+  private mostrarCache(): boolean {
+    if (this.nome.trim()) return false;
+    if (this.aba === 'todas') {
+      const cache = this.pessoasApi.emCache();
+      if (!cache) return false;
+      this.pessoas = cache;
+    } else if (this.aba === 'ativos' || this.aba === 'inativos') {
+      const cache = this.voluntarios.emCache(this.aba === 'ativos');
+      if (!cache) return false;
+      this.rows = cache;
+    } else {
+      return false;
+    }
+    this.loading = false;
+    return true;
   }
 
   principalNome(i: Inscricao): string {

@@ -3,6 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { mensagemApi } from '../../../core/api/api-error';
+import { CacheDeListas } from '../../../core/api/cache-de-listas.service';
+import { AuthService } from '../../../core/auth/auth.service';
 import { TipoVoluntario, VoluntarioLista } from '../models/pessoa.model';
 
 interface VoluntarioResponse {
@@ -25,7 +27,11 @@ interface VoluntarioResponse {
 export class VoluntariosApiService {
   private readonly base = `${environment.apiUrl}/voluntarios`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private cache: CacheDeListas, private auth: AuthService) {}
+
+  emCache(ativo: boolean): VoluntarioLista[] | null {
+    return this.cache.ler<VoluntarioLista[]>(`voluntarios:${ativo}`, this.auth.tenantId());
+  }
 
   async listar(filtro: { ativo?: boolean; tipo?: TipoVoluntario | ''; nome?: string } = {}): Promise<VoluntarioLista[]> {
     let params = new HttpParams();
@@ -34,9 +40,21 @@ export class VoluntariosApiService {
     if (filtro.nome?.trim()) params = params.set('nome', filtro.nome.trim());
     try {
       const rows = await firstValueFrom(this.http.get<VoluntarioResponse[]>(this.base, { params }));
-      return rows.map(this.paraLista);
+      const lista = rows.map(this.paraLista);
+      if (filtro.ativo != null && !filtro.tipo && !filtro.nome?.trim()) {
+        this.cache.gravar(`voluntarios:${filtro.ativo}`, this.auth.tenantId(), lista);
+      }
+      return lista;
     } catch (erro) {
       throw new Error(mensagemApi(erro, 'Não foi possível listar os voluntários.'));
+    }
+  }
+
+  async contagens(): Promise<{ ativos: number; inativos: number }> {
+    try {
+      return await firstValueFrom(this.http.get<{ ativos: number; inativos: number }>(`${this.base}/contagens`));
+    } catch (erro) {
+      throw new Error(mensagemApi(erro, 'Não foi possível contar os cadastros.'));
     }
   }
 
@@ -51,6 +69,8 @@ export class VoluntariosApiService {
   async setAtivo(id: string, ativo: boolean): Promise<void> {
     try {
       await firstValueFrom(this.http.patch(`${this.base}/${id}/ativo`, null, { params: { ativo } }));
+      this.cache.invalidarPrefixo('voluntarios');
+      this.cache.invalidarPrefixo('pessoas');
     } catch (erro) {
       throw new Error(mensagemApi(erro, 'Não foi possível alterar o status.'));
     }

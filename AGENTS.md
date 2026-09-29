@@ -13,7 +13,7 @@ removido; na dúvida, vale o código e este arquivo. O índice dos documentos es
 
 ## Stack e comandos
 Angular 21 (standalone, control flow `@if/@for`), Tailwind 3, Karma + Jasmine, jsPDF 4 +
-html2canvas (exportação da escala). API em `environment.apiUrl` (dev: `http://localhost:8080`).
+html2canvas (exportação da escala). API em `environment.apiUrl` (dev: `http://localhost:8080`; produção: `https://app.servirea.com.br/api`, mesma origem). Listas de pessoas e escalas guardam a última resposta da paróquia e mostram na hora ao voltar; o logout limpa.
 
 ```powershell
 npm ci                 # depois de pull que mexeu no package.json

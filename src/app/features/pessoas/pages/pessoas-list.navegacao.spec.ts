@@ -14,13 +14,15 @@ describe('PessoasListComponent (linha clicável e busca)', () => {
   let pessoas: jasmine.SpyObj<PessoasService>;
 
   function configurar() {
-    pessoas = jasmine.createSpyObj<PessoasService>('PessoasService', ['listar']);
+    pessoas = jasmine.createSpyObj<PessoasService>('PessoasService', ['listar', 'emCache']);
+    pessoas.emCache.and.returnValue(null);
     pessoas.listar.and.resolveTo([
       { id: 'p1', nomeCompleto: 'Ana', papeis: ['VOLUNTARIO'], responsaveis: [], dependentes: [], emails: [], telefones: [],
         voluntario: { tipo: 'COROINHA' } } as unknown as Pessoa
     ]);
-    const voluntarios = jasmine.createSpyObj<VoluntariosApiService>('VoluntariosApiService', ['contar', 'listar']);
-    voluntarios.contar.and.resolveTo(0);
+    const voluntarios = jasmine.createSpyObj<VoluntariosApiService>('VoluntariosApiService', ['contagens', 'listar', 'emCache']);
+    voluntarios.contagens.and.resolveTo({ ativos: 0, inativos: 0 });
+    voluntarios.emCache.and.returnValue(null);
     const inscricoes = jasmine.createSpyObj<InscricoesApiService>('InscricoesApiService', ['listar']);
     inscricoes.listar.and.resolveTo([]);
     TestBed.configureTestingModule({
