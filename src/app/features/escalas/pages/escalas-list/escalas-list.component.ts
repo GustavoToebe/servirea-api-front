@@ -4,7 +4,6 @@ import { CampoCompetenciaComponent } from '../../../../shared/components/datas/c
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { rotuloDia } from '../../data/calendario-liturgico';
 import { EscalaDetalhe, EscalaEvento, MESES, STATUS_LABEL, StatusEscala } from '../../models/escala.model';
 import { EscalasService } from '../../services/escalas.service';
 import { ExportService } from '../../services/export.service';
@@ -12,24 +11,18 @@ import { ReplicarDialogComponent } from '../replicar-dialog.component';
 import { CabecalhoPaginaComponent } from '../../../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
 import { DialogoService } from '../../../../shared/services/dialogo.service';
 import { BarraFiltrosComponent, FiltroAtivo } from '../../../../shared/components/barra-filtros/barra-filtros.component';
-import { FUNCOES_LABEL } from '../../../pessoas/models/pessoa.model';
-
-interface CelebracaoVista {
-  escala: EscalaDetalhe;
-  evento: EscalaEvento;
-}
 
 @Component({
     selector: 'app-escalas-list',
     imports: [CommonModule, FormsModule, RouterLink, NumeroComponent, CampoCompetenciaComponent, BarraFiltrosComponent, ReplicarDialogComponent, CabecalhoPaginaComponent],
     template: `
     <div class="space-y-6">
-      <app-cabecalho-pagina titulo="Escalas litúrgicas" subtitulo="Cada celebração do mês, com as vagas preenchidas e as que ainda estão livres.">
+      <app-cabecalho-pagina titulo="Escalas litúrgicas" subtitulo="As escalas do mês, com as vagas preenchidas e as que ainda estão livres.">
         <a acoes routerLink="/escalas/indisponibilidades" class="btn-secondary">Indisponibilidades</a>
         <a acoes routerLink="/escalas/nova" class="btn-primary">＋ Nova escala</a>
       </app-cabecalho-pagina>
 
-      <app-barra-filtros placeholder="Buscar celebração ou escala" [(termo)]="busca" (buscar)="load()"
+      <app-barra-filtros placeholder="Buscar escala ou celebração" [(termo)]="busca" (buscar)="load()"
         [filtrosAtivos]="filtrosAtivos" (removerFiltro)="removerFiltro($event)" (removerTodos)="removerTodosFiltros()">
         <div class="flex flex-col gap-1">
           <label class="label">Mês</label>
@@ -55,49 +48,38 @@ interface CelebracaoVista {
       @if (loading) {
         <div class="card p-10 text-center text-slate-500">Carregando escalas...</div>
       }
-      @if (!loading && !celebracoes.length) {
-        <div class="card p-10 text-center text-slate-500">Nenhuma celebração neste período.</div>
-      }
-
-      @if (semanaisReplicaveis.length) {
-        <div class="card flex flex-wrap items-center gap-3 p-4 text-sm" data-semanais>
-          <span class="font-bold text-slate-600">Escala semanal:</span>
-          @for (e of semanaisReplicaveis; track e.id) {
-            <span class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1">
-              {{ e.titulo }}
-              <button type="button" class="font-bold text-brand-blue hover:underline" (click)="replicar(e)" [attr.data-replicar]="e.id">Replicar</button>
-            </span>
-          }
-        </div>
+      @if (!loading && !escalas.length) {
+        <div class="card p-10 text-center text-slate-500">Nenhuma escala neste período.</div>
       }
 
       <div class="grid gap-4">
-        @for (item of celebracoes; track item.escala.id + item.evento.data + item.evento.horario) {
-          <article class="card p-5">
+        @for (e of escalas; track e.id) {
+          <article class="card p-5" [attr.data-escala]="e.id">
             <div class="flex items-start justify-between gap-3">
               <div>
-                <div class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ rotuloDia(item.evento.data) }} · {{ hora(item.evento.horario) }}</div>
-                <h2 class="mt-1 text-lg font-black">{{ item.evento.celebracao || 'Missa' }}</h2>
-                <div class="text-sm text-slate-500">{{ item.escala.titulo }}<app-numero [numero]="item.escala.sequencial" /> · {{ months[item.escala.mes - 1] }}</div>
+                <div class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ e.tipo === 'SEMANAL' ? 'Semanal · dias úteis' : 'Mensal · sábados e domingos' }}</div>
+                <h2 class="mt-1 text-lg font-black">{{ e.titulo }}<app-numero [numero]="e.sequencial" /></h2>
+                <div class="text-sm text-slate-500">{{ months[e.mes - 1] }} de {{ e.ano }} · {{ missas(e) }} {{ missas(e) === 1 ? 'celebração' : 'celebrações' }}</div>
               </div>
-              <span class="badge" [ngClass]="statusClass(item.escala.status)">{{ status(item.escala.status) }}</span>
+              <span class="badge" [ngClass]="statusClass(e.status)">{{ status(e.status) }}</span>
             </div>
-            <div class="mt-3 text-sm font-semibold text-slate-600">{{ preenchidas(item.evento) }} de {{ item.evento.vagas.length }} vagas</div>
-            <div class="mt-3 flex flex-wrap gap-2">
-              @for (vaga of item.evento.vagas; track vaga.funcao + vaga.posicao) {
-                <span class="rounded-full px-3 py-1 text-xs font-bold" [class.border]="!vaga.voluntario_id" [class.border-dashed]="!vaga.voluntario_id" [class.border-violet-300]="!vaga.voluntario_id" [class.bg-violet-50]="!vaga.voluntario_id" [class.text-violet-700]="!vaga.voluntario_id" [class.bg-slate-100]="!!vaga.voluntario_id">
-                  {{ vaga.voluntario_id ? (vaga.voluntario?.nome_completo || 'Servidor') + ' · ' + funcao(vaga.funcao) : 'Vaga · ' + funcao(vaga.funcao) }}
-                </span>
-              }
+            <div class="mt-3 max-w-md">
+              <div class="text-sm font-semibold text-slate-600">{{ preenchidas(e) }} de {{ vagas(e) }} vagas</div>
+              <div class="mt-1 h-2 overflow-hidden rounded-full bg-slate-100" role="progressbar" [attr.aria-valuenow]="progresso(e)" aria-valuemin="0" aria-valuemax="100">
+                <div class="h-full" [class.bg-emerald-500]="progresso(e) === 100" [class.bg-violet-600]="progresso(e) < 100" [style.width.%]="progresso(e)"></div>
+              </div>
             </div>
             <div class="mt-4 flex flex-wrap gap-2">
-              <a [routerLink]="['/escalas', item.escala.id]" class="btn-primary !py-2">{{ item.escala.status === 'RASCUNHO' ? 'Completar' : 'Abrir' }}</a>
-              @if (item.escala.status === 'FINALIZADA') {
-                <button class="btn-secondary !py-2" (click)="exportPdf(item.escala)">PDF</button>
-                <button class="btn-secondary !py-2" (click)="exportPng(item.escala)">PNG</button>
+              <a [routerLink]="['/escalas', e.id]" class="btn-primary !py-2">{{ e.status === 'RASCUNHO' ? 'Completar' : 'Abrir' }}</a>
+              @if (e.status === 'FINALIZADA') {
+                <button class="btn-secondary !py-2" (click)="exportPdf(e)">PDF</button>
+                <button class="btn-secondary !py-2" (click)="exportPng(e)">PNG</button>
               }
-              @if (item.escala.status === 'CANCELADA') {
-                <button class="btn-danger !py-2" (click)="remove(item.escala)">Excluir</button>
+              @if (e.tipo === 'SEMANAL' && e.status !== 'CANCELADA') {
+                <button type="button" class="btn-secondary !py-2" (click)="replicar(e)" [attr.data-replicar]="e.id">Replicar</button>
+              }
+              @if (e.status === 'CANCELADA') {
+                <button class="btn-danger !py-2" (click)="remove(e)">Excluir</button>
               }
             </div>
           </article>
@@ -113,7 +95,6 @@ export class EscalasListComponent implements OnInit {
   rows: EscalaDetalhe[] = [];
   loading = true;
   error = '';
-  rotuloDia = rotuloDia;
   hojeAno = new Date().getFullYear();
   hojeMes = new Date().getMonth() + 1;
   filters = { ano: this.hojeAno, mes: this.hojeMes, tipo: '' as const, status: '' as StatusEscala | '' };
@@ -132,25 +113,16 @@ export class EscalasListComponent implements OnInit {
     return this.hojeMes === 12 ? { ano: this.hojeAno + 1, mes: 1 } : { ano: this.hojeAno, mes: this.hojeMes + 1 };
   }
 
-  get celebracoes(): CelebracaoVista[] {
-    // Linha de referência (escala replicada) não aparece na lista: não é celebração.
-    let list = this.rows.flatMap(escala => (escala.eventos || []).filter(e => !e.referencia).map(evento => ({ escala, evento })));
-    if (this.busca) {
-      const termo = this.busca.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-      list = list.filter(item => {
-        const celebracao = (item.evento.celebracao || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-        const titulo = (item.escala.titulo || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-        return celebracao.includes(termo) || titulo.includes(termo);
-      });
-    }
-    return list.sort((a, b) => `${a.evento.data} ${a.evento.horario}`.localeCompare(`${b.evento.data} ${b.evento.horario}`));
+  /** Um cartão por escala (29/09/2026: um por missa repetia a mesma escala dezenas de vezes). A busca olha o título e as celebrações. */
+  get escalas(): EscalaDetalhe[] {
+    if (!this.busca) return this.rows;
+    const normalizar = (v: string) => (v || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+    const termo = normalizar(this.busca);
+    return this.rows.filter(e => normalizar(e.titulo).includes(termo)
+      || this.celebracoesReais(e).some(ev => normalizar(ev.celebracao).includes(termo)));
   }
 
   origemReplica: EscalaDetalhe | null = null;
-
-  get semanaisReplicaveis(): EscalaDetalhe[] {
-    return this.rows.filter(e => e.tipo === 'SEMANAL' && e.status !== 'CANCELADA');
-  }
 
   replicar(e: EscalaDetalhe) {
     this.origemReplica = e;
@@ -224,9 +196,12 @@ export class EscalasListComponent implements OnInit {
   statusClass(s: StatusEscala) {
     return s === 'FINALIZADA' ? 'bg-emerald-50 text-emerald-700' : s === 'CANCELADA' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700';
   }
-  hora(valor: string) { return (valor || '').slice(0, 5); }
-  funcao(codigo: string) { return FUNCOES_LABEL[codigo as keyof typeof FUNCOES_LABEL] || codigo; }
-  preenchidas(evento: EscalaEvento) { return evento.vagas.filter(v => v.voluntario_id).length; }
+  /** Linha de referência (escala replicada) não conta: não é celebração. */
+  private celebracoesReais(e: EscalaDetalhe): EscalaEvento[] { return (e.eventos || []).filter(ev => !ev.referencia); }
+  missas(e: EscalaDetalhe) { return this.celebracoesReais(e).length; }
+  vagas(e: EscalaDetalhe) { return this.celebracoesReais(e).reduce((n, ev) => n + ev.vagas.length, 0); }
+  preenchidas(e: EscalaDetalhe) { return this.celebracoesReais(e).reduce((n, ev) => n + ev.vagas.filter(v => v.voluntario_id).length, 0); }
+  progresso(e: EscalaDetalhe) { const total = this.vagas(e); return total ? Math.round(this.preenchidas(e) / total * 100) : 0; }
 
   async remove(e: EscalaDetalhe) {
     if (!await this.dialogo.confirmar({ titulo: 'Excluir escala?', mensagem: `Excluir definitivamente a escala "${e.titulo}"? Esta ação não pode ser desfeita.`, confirmar: 'Excluir', perigo: true })) return;
