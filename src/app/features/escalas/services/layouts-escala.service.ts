@@ -6,7 +6,7 @@ import { LayoutEscala } from '../models/escala.model';
 
 @Injectable({ providedIn: 'root' })
 export class LayoutsEscalaService {
-  private url = environment.apiUrl + '/escalas/layouts';
+  private url = environment.apiUrl + '/api/escalas/layouts';
 
   constructor(private http: HttpClient) {}
 
