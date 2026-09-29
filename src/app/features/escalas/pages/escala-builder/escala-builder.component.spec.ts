@@ -1,9 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { VoluntariosService } from '../../../voluntarios/services/voluntarios.service';
-import { EscalaEvento } from '../../models/escala.model';
+import { EscalaEvento, COLUNAS_PADRAO_SEMANAL } from '../../models/escala.model';
 import { EscalasService } from '../../services/escalas.service';
 import { ExportService } from '../../services/export.service';
+import { LayoutsEscalaService } from '../../services/layouts-escala.service';
 import { DialogoService } from '../../../../shared/services/dialogo.service';
 import { EscalaBuilderComponent } from './escala-builder.component';
 
@@ -44,6 +45,7 @@ describe('EscalaBuilderComponent', () => {
         { provide: EscalasService, useValue: escalas },
         { provide: VoluntariosService, useValue: { active: () => Promise.resolve([]) } },
         { provide: ExportService, useValue: { exportPdf: () => Promise.resolve(), exportPng: () => Promise.resolve() } },
+        { provide: LayoutsEscalaService, useValue: { listar: () => Promise.resolve([]) } },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => null } } } }
       ]
     }).compileComponents();
@@ -154,6 +156,7 @@ describe('EscalaBuilderComponent', () => {
 
   it('semanal cheia (22 dias úteis de outubro): o template não chama usedIds nem slotFor a cada detecção', () => {
     component.form.setValue({ titulo: 'Semanal', tipo: 'SEMANAL', ano: 2026, mes: 10, observacao: '', layoutId: null });
+    component.colunas = [...COLUNAS_PADRAO_SEMANAL];
     component.events = semanaCheia();
     fixture.detectChanges();
     const usados = spyOn(component, 'usedIds').and.callThrough();

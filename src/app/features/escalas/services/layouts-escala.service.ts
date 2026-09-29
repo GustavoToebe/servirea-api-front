@@ -2,30 +2,47 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { mensagemApi } from '../../../core/api/api-error';
 import { LayoutEscala } from '../models/escala.model';
 
 @Injectable({ providedIn: 'root' })
 export class LayoutsEscalaService {
-  private url = environment.apiUrl + '/api/escalas/layouts';
+  private readonly url = `${environment.apiUrl}/escalas/layouts`;
 
   constructor(private http: HttpClient) {}
 
   async listar(): Promise<LayoutEscala[]> {
-    return firstValueFrom(this.http.get<LayoutEscala[]>(this.url));
+    try {
+      return await firstValueFrom(this.http.get<LayoutEscala[]>(this.url));
+    } catch (erro) {
+      throw new Error(mensagemApi(erro, 'Não foi possível listar os layouts.'));
+    }
   }
 
   async carregar(id: string): Promise<LayoutEscala> {
-    return firstValueFrom(this.http.get<LayoutEscala>(`${this.url}/${id}`));
+    try {
+      return await firstValueFrom(this.http.get<LayoutEscala>(`${this.url}/${id}`));
+    } catch (erro) {
+      throw new Error(mensagemApi(erro, 'Não foi possível carregar o layout.'));
+    }
   }
 
   async salvar(layout: Partial<LayoutEscala>): Promise<LayoutEscala> {
-    if (layout.id) {
-      return firstValueFrom(this.http.put<LayoutEscala>(`${this.url}/${layout.id}`, layout));
+    try {
+      if (layout.id) {
+        return await firstValueFrom(this.http.put<LayoutEscala>(`${this.url}/${layout.id}`, layout));
+      }
+      return await firstValueFrom(this.http.post<LayoutEscala>(this.url, layout));
+    } catch (erro) {
+      throw new Error(mensagemApi(erro, 'Não foi possível salvar o layout.'));
     }
-    return firstValueFrom(this.http.post<LayoutEscala>(this.url, layout));
   }
 
   async excluir(id: string): Promise<void> {
-    return firstValueFrom(this.http.delete<void>(`${this.url}/${id}`));
+    try {
+      await firstValueFrom(this.http.delete<void>(`${this.url}/${id}`));
+    } catch (erro) {
+      throw new Error(mensagemApi(erro, 'Não foi possível excluir o layout.'));
+    }
   }
 }

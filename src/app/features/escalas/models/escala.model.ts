@@ -126,6 +126,27 @@ export interface ColunaEscala {
   ordem?: number;
 }
 
+/** Colunas de fábrica quando a API de layouts ainda não respondeu. */
+export const COLUNAS_PADRAO_SEMANAL: ColunaEscala[] = [
+  { ordem: 1, funcao: 'MISSAL', posicao: 1, rotulo: 'Acólito Missal' },
+  { ordem: 2, funcao: 'CRUZ', posicao: 1, rotulo: 'Cruz' },
+  { ordem: 3, funcao: 'CREDENCIA', posicao: 1, rotulo: 'Credência' },
+  { ordem: 4, funcao: 'VELA', posicao: 1, rotulo: 'Vela 1' },
+  { ordem: 5, funcao: 'VELA', posicao: 2, rotulo: 'Vela 2' },
+  { ordem: 6, funcao: 'SINO', posicao: 1, rotulo: 'Sino 1' },
+  { ordem: 7, funcao: 'SINO', posicao: 2, rotulo: 'Sino 2' }
+];
+
+export const COLUNAS_PADRAO_MENSAL: ColunaEscala[] = [
+  ...COLUNAS_PADRAO_SEMANAL.slice(0, 5),
+  { ordem: 6, funcao: 'COLETA', posicao: 1, rotulo: 'Coleta' },
+  { ordem: 7, funcao: 'COLETA', posicao: 2, rotulo: 'Coleta' },
+  { ordem: 8, funcao: 'COLETA', posicao: 3, rotulo: 'Coleta' },
+  { ordem: 9, funcao: 'COLETA', posicao: 4, rotulo: 'Coleta' },
+  { ordem: 10, funcao: 'SINO', posicao: 1, rotulo: 'Sino 1' },
+  { ordem: 11, funcao: 'SINO', posicao: 2, rotulo: 'Sino 2' }
+];
+
 export interface LayoutEscala {
   id: string;
   nome: string;

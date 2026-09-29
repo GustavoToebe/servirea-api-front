@@ -9,13 +9,13 @@ import { Marcadores, VolunteerPickerComponent } from '../../../../shared/compone
 import { FUNCOES_LABEL, FuncaoEscala, Voluntario } from '../../../voluntarios/models/voluntario.model';
 import { VoluntariosService } from '../../../voluntarios/services/voluntarios.service';
 import {
-  ApoioEscala, EscalaDetalhe, EscalaEvento, EscalaVaga, MESES, STATUS_LABEL, StatusEscala, TipoEscala, indisponivelEm
+  ApoioEscala, ColunaEscala, COLUNAS_PADRAO_MENSAL, COLUNAS_PADRAO_SEMANAL, EscalaDetalhe, EscalaEvento,
+  EscalaVaga, LayoutEscala, MESES, STATUS_LABEL, StatusEscala, TipoEscala, indisponivelEm
 } from '../../models/escala.model';
 import { TITULOS_CELEBRACAO } from '../../data/calendario-liturgico';
 import { EscalasService } from '../../services/escalas.service';
 import { ExportService } from '../../services/export.service';
 import { LayoutsEscalaService } from '../../services/layouts-escala.service';
-import { LayoutEscala, ColunaEscala } from '../../models/escala.model';
 import { DialogoService } from '../../../../shared/services/dialogo.service';
 import { ReplicarDialogComponent } from '../replicar-dialog.component';
 import { AindaNaoEscaladosComponent } from '../../components/ainda-nao-escalados.component';
@@ -72,7 +72,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
         </div>
       } @else {
         <section class="card p-4">
-          <form [formGroup]="form" class="grid gap-3 md:grid-cols-[2fr_1fr_110px_1fr]">
+          <form [formGroup]="form" class="grid gap-3 md:grid-cols-[2fr_minmax(10rem,1fr)_minmax(14rem,1.4fr)_6.5rem_minmax(9rem,1fr)]">
             <div><label class="label">Título *</label><input class="field" formControlName="titulo" [readonly]="readOnly"></div>
             <div><label class="label">Layout</label><select class="field" formControlName="layoutId" [attr.disabled]="metaTravada ? true : null" (change)="metaChanged()"><option [ngValue]="null">Padrão</option>@for(l of layoutsFiltrados; track l.id){<option [ngValue]="l.id">{{ l.nome }}</option>}</select></div>
             <div><label class="label">Modelo *</label><select class="field" formControlName="tipo" [attr.disabled]="metaTravada ? true : null" (change)="metaChanged()"><option value="SEMANAL">Semanal (dias úteis)</option><option value="MENSAL">Mensal (sábados e domingos)</option></select></div>
@@ -322,7 +322,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
   observacaoAberta = false;
   layouts: LayoutEscala[] = [];
   readonly esqueleto = [1, 2, 3, 4, 5, 6];
-  colunas: ColunaEscala[] = [];
+  colunas: ColunaEscala[] = [...COLUNAS_PADRAO_SEMANAL];
 
   // ---- Modelo de tela pré-calculado (PLANO-008)
   linhas: Linha[] = [];
@@ -534,7 +534,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
       if (l) { this.colunas = l.colunas; return; }
     }
     const padrao = this.layouts.find(x => x.tipo === tipo && x.sistema && x.ativo);
-    this.colunas = padrao ? padrao.colunas : [];
+    this.colunas = padrao ? padrao.colunas : (tipo === 'MENSAL' ? COLUNAS_PADRAO_MENSAL : COLUNAS_PADRAO_SEMANAL);
   }
 
 
