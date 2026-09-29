@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { AuthService } from '../../../core/auth/auth.service';
-import { EscalaDetalhe, EscalaEvento, MESES } from '../models/escala.model';
+import { ColunaEscala, EscalaDetalhe, EscalaEvento, MESES } from '../models/escala.model';
 import { FuncaoEscala } from '../../voluntarios/models/voluntario.model';
 
 const BLUE = '#1e4fa3';
@@ -76,7 +76,7 @@ export class ExportService {
     const month = MESES[escala.mes - 1].toUpperCase();
     const paroquia = (this.auth.tenantNome() || 'Paróquia').toUpperCase();
     const title = `${paroquia} - ESCALA ${month}`;
-    const colunas = escala.colunas || [];
+    const colunas = this.colunasDa(escala);
     
     let blocks = '';
     let semanaAnterior = '';
@@ -96,6 +96,7 @@ export class ExportService {
     const colHeaders = colunas.map(c => `<th style="${cab}">${txt(this.esc(c.rotulo))}</th>`).join('');
     
     host.innerHTML = `
+      <div style="margin:0 0 10px;font-size:22px;font-weight:800;text-align:center;">${this.esc(title)}</div>
       <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
         <tr>
           <td style="${cab}">${txt(`ESCALA ${escala.tipo}`)}</td>
@@ -109,6 +110,19 @@ export class ExportService {
       </table>
     `;
     return host;
+  }
+
+  /** Sem o layout copiado na escala, as colunas saem das vagas. Senão o PNG fica só com a data. */
+  private colunasDa(escala: EscalaDetalhe): ColunaEscala[] {
+    if (escala.colunas?.length) return escala.colunas;
+    const vistas = new Map<string, ColunaEscala>();
+    for (const evento of escala.eventos) {
+      for (const vaga of evento.vagas) {
+        const chave = `${vaga.funcao}:${vaga.posicao}`;
+        if (!vistas.has(chave)) vistas.set(chave, { funcao: vaga.funcao, posicao: vaga.posicao, rotulo: vaga.funcao });
+      }
+    }
+    return [...vistas.values()];
   }
 
   private linhaSemanalEspaco(numCols: number): string {

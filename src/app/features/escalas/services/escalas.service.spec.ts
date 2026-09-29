@@ -14,6 +14,7 @@ const apiEscala = {
   status: 'RASCUNHO' as const,
   observacao: null,
   version: 3,
+  colunas: [{ funcao: 'MISSAL', posicao: 1, rotulo: 'Missal', ordem: 1 }],
   eventos: [{
     id: 'ev-1',
     data: '2026-09-06',
@@ -54,6 +55,7 @@ describe('EscalasService', () => {
     expect(escala.eventos[0].vagas.map(v => v.funcao)).toEqual(['MISSAL', 'CRUZ']);
     expect(escala.eventos[0].vagas[0].voluntario_id).toBe('p-1');
     expect(escala.eventos[0].vagas[0].voluntario?.nome_completo).toBe('Ana');
+    expect(escala.colunas).toEqual([{ funcao: 'MISSAL', posicao: 1, rotulo: 'Missal', ordem: 1 }]);
   });
 
   it('grava rascunho novo com POST e não chama finalizar', async () => {

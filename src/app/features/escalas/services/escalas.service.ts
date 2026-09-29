@@ -6,7 +6,7 @@ import { mensagemApi } from '../../../core/api/api-error';
 import { CacheDeListas } from '../../../core/api/cache-de-listas.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { celebracoesDoMes } from '../data/calendario-liturgico';
-import { ApoioEscala, Escala, EscalaDetalhe, EscalaEvento, EscalaFilters, EscalaVaga, IndisponibilidadesMes, Presenca, StatusEscala, TipoEscala } from '../models/escala.model';
+import { ApoioEscala, ColunaEscala, Escala, EscalaDetalhe, EscalaEvento, EscalaFilters, EscalaVaga, IndisponibilidadesMes, Presenca, StatusEscala, TipoEscala } from '../models/escala.model';
 import { FuncaoEscala } from '../../voluntarios/models/voluntario.model';
 
 /** Contrato de `/escalas` na API Java (`EscalaResponse` e filhos). */
@@ -20,6 +20,8 @@ interface EscalaApi {
   status: StatusEscala;
   observacao: string | null;
   version: number | null;
+  layoutId?: string | null;
+  colunas?: ColunaEscala[] | null;
   eventos: {
     id: string;
     data: string;
@@ -180,7 +182,8 @@ export class EscalasService {
     })).sort((a, b) => `${a.data} ${a.horario}`.localeCompare(`${b.data} ${b.horario}`));
     const escala: Escala = {
       id: r.id, sequencial: r.sequencial, titulo: r.titulo, tipo: r.tipo, ano: r.ano, mes: r.mes,
-      status: r.status, observacao: r.observacao, version: r.version
+      status: r.status, observacao: r.observacao, version: r.version,
+      layoutId: r.layoutId ?? null, colunas: r.colunas || []
     };
     return { ...escala, eventos };
   }
