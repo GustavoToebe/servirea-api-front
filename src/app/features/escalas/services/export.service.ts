@@ -37,6 +37,11 @@ export class ExportService {
 
   private async renderCanvas(escala: EscalaDetalhe): Promise<HTMLCanvasElement> {
     const host = this.buildSheet(escala);
+    // O preflight do Tailwind põe `img { display: block }`, e o html2canvas mede a linha de base do texto com uma
+    // imagem em linha: com a regra, todo texto saía mais baixo e o cabeçalho ficava cortado (PDF de 29/09/2026).
+    const baseDoTexto = document.createElement('style');
+    baseDoTexto.textContent = 'img { display: inline !important; vertical-align: baseline !important; }';
+    document.head.appendChild(baseDoTexto);
     document.body.appendChild(host);
     try {
       return await html2canvas(host, {
@@ -46,6 +51,7 @@ export class ExportService {
       });
     } finally {
       host.remove();
+      baseDoTexto.remove();
     }
   }
 
@@ -138,7 +144,8 @@ export class ExportService {
       semanaAnterior = semana;
       linhas.push(this.linhaSemanal(event));
     }
-    const cab = `background:${SEMANAL_VERMELHO};color:#fff;font-weight:700;font-size:21px;border:1px solid #000;padding:2px 6px;`;
+    const cab = `background:${SEMANAL_VERMELHO};color:#fff;font-weight:700;font-size:21px;border:1px solid #000;padding:0;`;
+    const txt = (t: string, alinhar = 'center') => `<div style="padding:4px 6px;line-height:28px;text-align:${alinhar};">${t}</div>`;
     host.innerHTML = `
       <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
         <colgroup>
@@ -146,23 +153,23 @@ export class ExportService {
           <col style="width:12.4%"><col style="width:12.4%"><col style="width:12.4%"><col style="width:12.3%">
         </colgroup>
         <tr>
-          <td style="${cab}text-align:center;">ESCALA SEMANAL</td>
-          <td style="${cab}text-align:center;">${this.esc(MESES[escala.mes - 1].toUpperCase())}</td>
-          <td colspan="2" style="${cab}text-align:center;">${escala.ano}</td>
+          <td style="${cab}">${txt('ESCALA SEMANAL')}</td>
+          <td style="${cab}">${txt(this.esc(MESES[escala.mes - 1].toUpperCase()))}</td>
+          <td colspan="2" style="${cab}">${txt(String(escala.ano))}</td>
           <td style="${cab}"></td><td style="${cab}"></td><td style="${cab}"></td><td style="${cab}"></td>
         </tr>
         <tr>
-          <td rowspan="2" style="${cab}text-align:center;">Dia/Semana</td>
-          <td rowspan="2" style="${cab}text-align:center;">Acólito Missal</td>
-          <td colspan="2" style="${cab}border-bottom:none;text-align:center;line-height:1.1;">Coroinhas Cruz / Credencia</td>
-          <td rowspan="2" style="${cab}vertical-align:bottom;">Coroinha Vela</td>
-          <td rowspan="2" style="${cab}vertical-align:bottom;">Coroinha vela</td>
-          <td rowspan="2" style="${cab}vertical-align:bottom;">Coroinha sino</td>
-          <td rowspan="2" style="${cab}vertical-align:bottom;">Coroinha sino</td>
+          <td rowspan="2" style="${cab}">${txt('Dia/Semana')}</td>
+          <td rowspan="2" style="${cab}">${txt('Acólito Missal')}</td>
+          <td colspan="2" style="${cab}border-bottom:none;">${txt('Coroinhas Cruz / Credencia')}</td>
+          <td rowspan="2" style="${cab}vertical-align:bottom;">${txt('Coroinha Vela', 'left')}</td>
+          <td rowspan="2" style="${cab}vertical-align:bottom;">${txt('Coroinha vela', 'left')}</td>
+          <td rowspan="2" style="${cab}vertical-align:bottom;">${txt('Coroinha sino', 'left')}</td>
+          <td rowspan="2" style="${cab}vertical-align:bottom;">${txt('Coroinha sino', 'left')}</td>
         </tr>
         <tr>
-          <td style="${cab}border-top:none;text-align:center;line-height:1.1;">Acolito</td>
-          <td style="${cab}border-top:none;text-align:center;line-height:1.1;">Acolito</td>
+          <td style="${cab}border-top:none;">${txt('Acolito')}</td>
+          <td style="${cab}border-top:none;">${txt('Acolito')}</td>
         </tr>
         ${linhas.join('')}
       </table>
