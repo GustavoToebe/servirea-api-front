@@ -76,7 +76,7 @@ describe('ExportService', () => {
     expect(titulo).toContain('04/10/2026');
   });
 
-  it('semanal sai no layout da planilha: uma coluna por vaga, dia anterior ao mês e linha entre semanas', async () => {
+  it('semanal sai no layout da planilha: uma coluna por vaga e linha entre semanas', async () => {
     let folha = '';
     const appendOriginal = document.body.appendChild.bind(document.body);
     spyOn(document.body, 'appendChild').and.callFake(<T extends Node>(no: T): T => {
@@ -105,11 +105,11 @@ describe('ExportService', () => {
     expect(folha).toContain('SETEMBRO');
     expect(folha).toContain('Coroinhas Cruz / Credencia');
     expect(folha).not.toContain('OFERTÓRIO');
+    expect(folha).not.toContain('underline');
     const linhas = folha.split('<tr>').map(texto);
-    const primeira = linhas.findIndex(l => l.includes('1-set.'));
-    expect(linhas[primeira - 1]).toContain('segunda-feira');
-    expect(linhas[primeira]).toMatch(/1-set\..*terça-feira.*Henrique.*Alice.*Daniel.*Isabelly.*Vinicius.*Giancarlo/);
-    const segunda = linhas.findIndex(l => l.includes('7-set.'));
+    const primeira = linhas.findIndex(l => l.includes('01/09/2026'));
+    expect(linhas[primeira]).toMatch(/01\/09\/2026.*01\/Terça-feira.*19:00hs.*Henrique.*Alice.*Daniel.*Isabelly.*Vinicius.*Giancarlo/);
+    const segunda = linhas.findIndex(l => l.includes('07/09/2026'));
     expect(segunda).toBe(primeira + 2);
     expect(linhas[primeira + 1].replace(/[| ]/g, '')).toBe('');
   });
