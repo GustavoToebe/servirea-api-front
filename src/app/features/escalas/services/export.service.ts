@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { AuthService } from '../../../core/auth/auth.service';
-import { ColunaEscala, EscalaDetalhe, EscalaEvento, MESES } from '../models/escala.model';
+import { ColunaEscala, EscalaDetalhe, EscalaEvento, MESES, resolverTags, textosDoLayout, vagasDoLayout } from '../models/escala.model';
 import { FuncaoEscala } from '../../voluntarios/models/voluntario.model';
 
 const BLUE = '#1e4fa3';
@@ -75,7 +75,9 @@ export class ExportService {
     host.style.cssText = 'position:fixed;left:-12000px;top:0;width:1500px;background:#fff;padding:18px;font-family:Calibri,Arial,sans-serif;color:#000;';
     const month = MESES[escala.mes - 1].toUpperCase();
     const paroquia = (this.auth.tenantNome() || 'Paróquia').toUpperCase();
-    const title = `${paroquia} - ESCALA ${month}`;
+    const ctx = { titulo: escala.titulo, mesAno: `${MESES[escala.mes - 1]} ${escala.ano}`, paroquia };
+    const cabecalho = this.cabecalhoDoLayout(escala, ctx);
+    const textosCel = textosDoLayout(escala.colunas, 'CELEBRACAO').filter(t => t.tipo === 'TEXTO_LIVRE');
     const colunas = this.colunasDa(escala);
     
     let blocks = '';
@@ -87,7 +89,7 @@ export class ExportService {
         if (semanaAnterior && semana !== semanaAnterior) blocks += this.linhaSemanalEspaco(colunas.length);
         semanaAnterior = semana;
       }
-      blocks += this.eventBlock(event, colunas as any);
+      blocks += this.eventBlock(event, colunas as any, textosCel, ctx);
     }
     
     const cab = `background:${SEMANAL_VERMELHO};color:#fff;font-weight:700;font-size:21px;border:1px solid #000;padding:0;`;
@@ -96,7 +98,7 @@ export class ExportService {
     const colHeaders = colunas.map(c => `<th style="${cab}">${txt(this.esc(c.rotulo || ''))}</th>`).join('');
     
     host.innerHTML = `
-      <div style="margin:0 0 10px;font-size:22px;font-weight:800;text-align:center;">${this.esc(title)}</div>
+      <div style="margin:0 0 10px;">${cabecalho}</div>
       <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
         <tr>
           <td style="${cab}">${txt(`ESCALA ${escala.tipo}`)}</td>
@@ -112,9 +114,25 @@ export class ExportService {
     return host;
   }
 
+  /** Cabeçalho pelos blocos de texto do layout (Título, Subtítulo, Texto Livre). Sem blocos, usa o título padrão. */
+  private cabecalhoDoLayout(escala: EscalaDetalhe, ctx: { titulo: string; mesAno: string; paroquia: string }): string {
+    const textos = textosDoLayout(escala.colunas, 'DOCUMENTO').filter(t => t.tipo !== 'DATA');
+    if (!textos.length) {
+      return `<div style="font-size:22px;font-weight:800;text-align:center;">${this.esc(ctx.paroquia)} - ESCALA ${MESES[escala.mes - 1].toUpperCase()} ${escala.ano}</div>`;
+    }
+    return textos.map(t => {
+      const conteudo = this.esc(resolverTags(t.conteudo, ctx));
+      const align = t.alinhamento === 'left' ? 'left' : t.alinhamento === 'right' ? 'right' : 'center';
+      if (t.tipo === 'TITULO') return `<div style="font-size:28px;font-weight:800;text-align:${align};line-height:1.2;">${conteudo || this.esc(ctx.titulo)}</div>`;
+      if (t.tipo === 'SUBTITULO') return `<div style="margin-bottom:4px;font-size:18px;font-weight:700;color:#444;text-align:${align};">${conteudo}</div>`;
+      return `<div style="margin-bottom:6px;font-size:15px;text-align:${align};white-space:pre-wrap;">${conteudo}</div>`;
+    }).join('');
+  }
+
   /** Sem o layout copiado na escala, as colunas saem das vagas. Senão o PNG fica só com a data. */
   private colunasDa(escala: EscalaDetalhe): ColunaEscala[] {
-    if (escala.colunas?.length) return escala.colunas;
+    const vagas = vagasDoLayout(escala.colunas);
+    if (vagas.length) return vagas;
     const vistas = new Map<string, ColunaEscala>();
     for (const evento of escala.eventos) {
       for (const vaga of evento.vagas) {
@@ -130,8 +148,9 @@ export class ExportService {
     return `<tr><td style="${celula}"></td>${Array(numCols).fill(`<td style="${celula}"></td>`).join('')}</tr>`;
   }
 
-  private eventBlock(event: EscalaEvento, colunas: { funcao: string, posicao: number }[]): string {
+  private eventBlock(event: EscalaEvento, colunas: { funcao: string, posicao: number }[], textosCel: ColunaEscala[] = [], ctx: { titulo?: string; mesAno?: string; paroquia?: string } = {}): string {
     const celula = 'border:1px solid #000;padding:3px 6px;font-size:21px;font-weight:700;height:30px;';
+    const extras = textosCel.map(t => `<div style="margin-top:2px;font-size:14px;font-weight:600;">${this.esc(resolverTags(t.conteudo, ctx))}</div>`).join('');
     const nomes = colunas.map(c => {
       const nome = event.vagas.find(v => v.funcao === c.funcao && v.posicao === c.posicao)?.voluntario?.nome_completo || '';
       return nomeCurto(nome);
@@ -147,6 +166,7 @@ export class ExportService {
           <div style="margin-top:2px;font-size:20px;font-weight:800;line-height:1.2;">${this.esc(this.dayLabel(event.data))}</div>
           <div style="margin-top:4px;font-size:17px;font-weight:700;">${this.esc(event.horario.slice(0, 5))}hs</div>
           ${feast}
+          ${extras}
         </td>`;
         
     return `

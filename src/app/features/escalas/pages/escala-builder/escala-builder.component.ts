@@ -10,7 +10,7 @@ import { FUNCOES_LABEL, FuncaoEscala, Voluntario } from '../../../voluntarios/mo
 import { VoluntariosService } from '../../../voluntarios/services/voluntarios.service';
 import {
   ApoioEscala, ColunaEscala, COLUNAS_PADRAO_MENSAL, COLUNAS_PADRAO_SEMANAL, EscalaDetalhe, EscalaEvento,
-  EscalaVaga, LayoutEscala, MESES, STATUS_LABEL, StatusEscala, TipoEscala, indisponivelEm
+  EscalaVaga, LayoutEscala, MESES, STATUS_LABEL, StatusEscala, TipoEscala, vagasDoLayout, indisponivelEm
 } from '../../models/escala.model';
 import { TITULOS_CELEBRACAO } from '../../data/calendario-liturgico';
 import { EscalasService } from '../../services/escalas.service';
@@ -126,17 +126,17 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
                 <thead class="sticky top-0 z-20">
                   <tr class="bg-red-700 text-white">
                     <th class="sticky left-0 z-30 bg-red-700 px-3 py-2">ESCALA SEMANAL</th>
-                    <th class="px-3 py-2 text-center" [attr.colspan]="colunas.length">{{ months[form.controls.mes.value-1] | uppercase }} {{ form.controls.ano.value }}</th>
+                    <th class="px-3 py-2 text-center" [attr.colspan]="colunasVaga.length">{{ months[form.controls.mes.value-1] | uppercase }} {{ form.controls.ano.value }}</th>
                   </tr>
                   <tr class="bg-red-600 text-white">
                     <th class="sticky left-0 z-30 w-40 bg-red-600 px-3 py-2">Dia</th>
-                    @for (col of colunas; track col.funcao+'-'+col.posicao) { <th class="min-w-40 px-2 py-2 text-center">{{ col.rotulo }}</th> }
+                    @for (col of colunasVaga; track col.funcao+'-'+col.posicao) { <th class="min-w-40 px-2 py-2 text-center">{{ col.rotulo }}</th> }
                   </tr>
                 </thead>
                 <tbody>
                   @for (l of linhasSemanal; track l.chave) {
                     @if (l.novaSemana) {
-                      <tr class="bg-slate-50" data-separador-semana><td class="sticky left-0 bg-slate-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-400" [attr.colspan]="colunas.length + 1">Semana {{ l.semana }}</td></tr>
+                      <tr class="bg-slate-50" data-separador-semana><td class="sticky left-0 bg-slate-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-400" [attr.colspan]="colunasVaga.length + 1">Semana {{ l.semana }}</td></tr>
                     }
                     <tr class="align-top" [class.hover:bg-violet-50/40]="!l.evento.referencia" [class.bg-slate-100]="l.evento.referencia" [class.text-slate-500]="l.evento.referencia"
                         [attr.data-referencia]="l.evento.referencia ? l.evento.data : null">
@@ -160,7 +160,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
                           <div class="mt-1 text-[11px] font-bold text-amber-700">Dia a mais — preencher à mão</div>
                         }
                       </td>
-                      @for (col of colunas; track col.funcao+'-'+col.posicao) {
+                      @for (col of colunasVaga; track col.funcao+'-'+col.posicao) {
                         <td class="border-b border-slate-200 px-1.5 py-1.5">
                           @if (l.vagasPorColuna[col.funcao+'-'+col.posicao]; as slot) {
                             @if (readOnly) {
@@ -323,6 +323,8 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
   layouts: LayoutEscala[] = [];
   readonly esqueleto = [1, 2, 3, 4, 5, 6];
   colunas: ColunaEscala[] = [...COLUNAS_PADRAO_SEMANAL];
+  /** Só as vagas do layout — Título, Subtítulo e Textos não viram coluna da grade. */
+  get colunasVaga() { return vagasDoLayout(this.colunas); }
 
   // ---- Modelo de tela pré-calculado (PLANO-008)
   linhas: Linha[] = [];
@@ -397,7 +399,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
         const type = this.form.controls.tipo.value; const year=this.form.controls.ano.value; const month=this.form.controls.mes.value;
         this.form.controls.titulo.setValue(`Escala ${type==='SEMANAL'?'Semanal':'Mensal'} - ${MESES[month-1]} ${year}`);
         this.atualizarColunasNovo();
-        this.events = this.service.buildDefaultEvents(type, year, month, (this.colunas as any));
+        this.events = this.service.buildDefaultEvents(type, year, month, (vagasDoLayout(this.colunas) as any));
       }
 
       this.form.markAsPristine(); this.eventsDirty=false;
@@ -512,7 +514,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
     const {tipo,ano,mes}=this.form.getRawValue();
     if (!this.id && !this.eventsDirty) {
       this.atualizarColunasNovo();
-      this.events=this.service.buildDefaultEvents(tipo,ano,mes, (this.colunas as any));
+      this.events=this.service.buildDefaultEvents(tipo,ano,mes, (vagasDoLayout(this.colunas) as any));
       this.form.controls.titulo.setValue(`Escala ${tipo==='SEMANAL'?'Semanal':'Mensal'} - ${MESES[mes-1]} ${ano}`);
     } else if (!this.id) {
       const filled=this.filledCount();
@@ -520,7 +522,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
         return;
       }
       this.atualizarColunasNovo();
-      this.events=this.service.buildDefaultEvents(tipo,ano,mes, (this.colunas as any));
+      this.events=this.service.buildDefaultEvents(tipo,ano,mes, (vagasDoLayout(this.colunas) as any));
     } else {
       this.recalcular();
     }
@@ -531,7 +533,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
     const { tipo, layoutId } = this.form.getRawValue();
     if (layoutId) {
       const l = this.layouts.find(x => x.id === layoutId);
-      if (l) { this.colunas = l.colunas; return; }
+      if (l && vagasDoLayout(l.colunas).length) { this.colunas = l.colunas || []; return; }
     }
     const padrao = this.layouts.find(x => x.tipo === tipo && x.sistema && x.ativo);
     this.colunas = padrao ? padrao.colunas : (tipo === 'MENSAL' ? COLUNAS_PADRAO_MENSAL : COLUNAS_PADRAO_SEMANAL);
@@ -543,7 +545,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
     if (this.readOnly) return;
     const filled=this.filledCount();
     if (filled && !await this.dialogo.confirmar({ titulo: 'Recriar a grade?', mensagem: `A grade possui ${filled} vaga(s) preenchida(s). Recriar a grade apagará essas seleções.`, confirmar: 'Recriar', perigo: true })) return;
-    const {tipo,ano,mes}=this.form.getRawValue(); this.atualizarColunasNovo(); this.events=this.service.buildDefaultEvents(tipo,ano,mes, (this.colunas as any)); this.eventsDirty=true;
+    const {tipo,ano,mes}=this.form.getRawValue(); this.atualizarColunasNovo(); this.events=this.service.buildDefaultEvents(tipo,ano,mes, (vagasDoLayout(this.colunas) as any)); this.eventsDirty=true;
   }
 
 
@@ -598,7 +600,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
       return;
     }
     const { tipo } = this.form.getRawValue();
-    this.events = [...this.events, this.service.createEvent(tipo, this.addDate, time, this.addCelebration || 'Missa', (this.colunas as any))]
+    this.events = [...this.events, this.service.createEvent(tipo, this.addDate, time, this.addCelebration || 'Missa', (vagasDoLayout(this.colunas) as any))]
       .sort((a, b) => `${a.data} ${a.horario}`.localeCompare(`${b.data} ${b.horario}`));
     this.eventsDirty = true;
   }

@@ -170,3 +170,25 @@ export interface LayoutEscala {
   ativo: boolean;
   sistema: boolean;
 }
+
+// ---- Helpers do layout visual (vagas x blocos de texto)
+
+/** Só as vagas do layout (blocos VAGA ou colunas legado) — o que vira coluna da grade. */
+export function vagasDoLayout(colunas: ColunaEscala[] | null | undefined): ColunaEscala[] {
+  return (colunas || []).filter(c => c.tipo === 'VAGA' || (!c.tipo && !!c.funcao));
+}
+
+/** Blocos de texto do layout por escopo (Título, Subtítulo, Texto, Data), na ordem do quadro. */
+export function textosDoLayout(colunas: ColunaEscala[] | null | undefined, escopo: EscopoLayout): ColunaEscala[] {
+  return (colunas || [])
+    .filter(c => !!c.tipo && c.tipo !== 'VAGA' && (c.escopo || 'CELEBRACAO') === escopo)
+    .sort((a, b) => (a.linha || 0) - (b.linha || 0) || (a.coluna || 0) - (b.coluna || 0));
+}
+
+/** Troca as tags #...# de um texto fixo do layout pelos dados reais da escala. */
+export function resolverTags(texto: string | undefined, ctx: { titulo?: string; mesAno?: string; paroquia?: string }): string {
+  return (texto || '')
+    .replaceAll('#TITULO_ESCALA#', ctx.titulo || '')
+    .replaceAll('#MES_ANO#', ctx.mesAno || '')
+    .replaceAll('#PAROQUIA#', ctx.paroquia || '');
+}

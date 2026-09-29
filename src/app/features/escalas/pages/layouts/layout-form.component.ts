@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { LayoutsEscalaService } from '../../services/layouts-escala.service';
-import { FUNCOES_ESCALA, FuncaoEscala } from '../../../voluntarios/models/voluntario.model';
+import { FUNCOES_ESCALA, FUNCOES_LABEL, FuncaoEscala } from '../../../voluntarios/models/voluntario.model';
 import { ColunaEscala, EscopoLayout, TipoElementoLayout, LayoutEscala } from '../../models/escala.model';
 
 interface LinhaGrade {
@@ -11,6 +11,10 @@ interface LinhaGrade {
   elementos: ColunaEscala[];
 }
 
+/**
+ * Editor de layout 100% por clique (sem arrastar): os botões "＋" adicionam
+ * blocos, as setas reordenam e o painel da direita edita o bloco selecionado.
+ */
 @Component({
   selector: 'app-layout-form',
   standalone: true,
@@ -22,19 +26,26 @@ export class LayoutFormComponent implements OnInit {
   form!: FormGroup;
   salvando = false;
   funcoesOpcoes = FUNCOES_ESCALA;
+  funcoesLabel = FUNCOES_LABEL;
 
   elementos = signal<ColunaEscala[]>([]);
-  activeTab = signal<'elementos'|'propriedades'>('elementos');
   selectedId = signal<string | null>(null);
 
   selectedElement = computed(() => this.elementos().find(e => e.idLocal === this.selectedId()) || null);
 
-  linhasDocumento = computed(() => {
-    return this.agruparLinhas(this.elementos().filter(e => e.escopo === 'DOCUMENTO'));
-  });
+  linhasDocumento = computed(() => this.agruparLinhas(this.elementos().filter(e => e.escopo === 'DOCUMENTO')));
+  linhasCelebracao = computed(() => this.agruparLinhas(this.elementos().filter(e => e.escopo === 'CELEBRACAO')));
 
-  linhasCelebracao = computed(() => {
-    return this.agruparLinhas(this.elementos().filter(e => e.escopo === 'CELEBRACAO'));
+  /** Função + Posição não podem se repetir: é a chave da vaga na API. */
+  vagasDuplicadas = computed(() => {
+    const set = new Set<string>();
+    for (const v of this.elementos()) {
+      if (v.tipo !== 'VAGA' || !v.funcao) continue;
+      const key = v.funcao + '-' + (v.posicao || 1);
+      if (set.has(key)) return true;
+      set.add(key);
+    }
+    return false;
   });
 
   constructor(
@@ -55,13 +66,13 @@ export class LayoutFormComponent implements OnInit {
       try {
         const dto = await this.service.carregar(this.id);
         this.form.patchValue({ nome: dto.nome, tipo: dto.tipo });
-        
+
         const blocos = (dto.colunas || []).map((c, i) => {
            if (!c.idLocal) {
               return {
                  ...c,
                  idLocal: 'legado-' + i,
-                 tipo: 'VAGA' as TipoElementoLayout,
+                 tipo: (c.funcao ? 'VAGA' : 'TEXTO_LIVRE') as TipoElementoLayout,
                  escopo: 'CELEBRACAO' as EscopoLayout,
                  linha: 0,
                  coluna: i,
@@ -80,6 +91,8 @@ export class LayoutFormComponent implements OnInit {
       this.elementos.set([]);
     }
   }
+
+  // ---- Grade
 
   private agruparLinhas(lista: ColunaEscala[]): LinhaGrade[] {
     const maxLinha = lista.reduce((max, e) => Math.max(max, e.linha || 0), -1);
@@ -121,32 +134,27 @@ export class LayoutFormComponent implements OnInit {
     }
   }
 
-  onDragStart(event: DragEvent, tipo: string) {
-    event.dataTransfer?.setData('text/plain', tipo);
+  rotuloVaga(el: ColunaEscala): string {
+    return el.rotulo || (el.funcao ? this.funcoesLabel[el.funcao] : 'Vaga');
   }
 
-  allowDrop(event: DragEvent) {
-    event.preventDefault();
-  }
+  // ---- Adicionar por clique
 
-  onDrop(event: DragEvent, escopo: EscopoLayout, linhaDestino: number) {
-    event.preventDefault();
-    const tipo = event.dataTransfer?.getData('text/plain') as TipoElementoLayout;
-    if (!tipo) return;
-
-    const idLocal = 'el-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-    
-    let novaLinha = linhaDestino;
-    if (linhaDestino === -1) {
-       const escopoEls = this.elementos().filter(e => e.escopo === escopo);
-       novaLinha = escopoEls.length > 0 ? Math.max(...escopoEls.map(e => e.linha || 0)) + 1 : 0;
+  /** Adiciona um bloco numa linha nova (fim da seção) ou dentro de uma linha existente. */
+  addElemento(tipo: TipoElementoLayout, escopo: EscopoLayout, linhaDestino?: number) {
+    const escopoEls = this.elementos().filter(e => e.escopo === escopo);
+    let novaLinha: number;
+    if (linhaDestino === undefined || linhaDestino < 0) {
+      novaLinha = escopoEls.length > 0 ? Math.max(...escopoEls.map(e => e.linha || 0)) + 1 : 0;
+    } else {
+      novaLinha = linhaDestino;
     }
 
-    const linhaEls = this.elementos().filter(e => e.escopo === escopo && e.linha === novaLinha);
+    const linhaEls = escopoEls.filter(e => e.linha === novaLinha);
     const novaColuna = linhaEls.length;
 
     const novoElemento: ColunaEscala = {
-      idLocal,
+      idLocal: 'el-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
       tipo,
       escopo,
       linha: novaLinha,
@@ -156,71 +164,90 @@ export class LayoutFormComponent implements OnInit {
     };
 
     if (tipo === 'TITULO') novoElemento.conteudo = '#TITULO_ESCALA#';
+    if (tipo === 'SUBTITULO') novoElemento.conteudo = '#MES_ANO#';
     if (tipo === 'DATA') novoElemento.conteudo = '#DATA_HORA#';
     if (tipo === 'VAGA') {
-       novoElemento.funcao = 'OUTRO';
-       novoElemento.posicao = 1;
-       novoElemento.rotulo = 'Nova Vaga';
+       const usadas = new Set(escopoEls.filter(e => e.tipo === 'VAGA').map(e => e.funcao));
+       const livre = (FUNCOES_ESCALA as FuncaoEscala[]).find(f => !usadas.has(f)) || 'MISSAL';
+       const posicao = escopoEls.filter(e => e.tipo === 'VAGA' && e.funcao === livre).length + 1;
+       novoElemento.funcao = livre;
+       novoElemento.posicao = posicao;
+       novoElemento.rotulo = this.funcoesLabel[livre];
     }
 
     this.elementos.update(els => [...els, novoElemento]);
-    this.selectedId.set(idLocal);
-    this.activeTab.set('propriedades');
+    this.selectedId.set(novoElemento.idLocal ?? null);
   }
 
-  addLinha(escopo: EscopoLayout) {
-     const escopoEls = this.elementos().filter(e => e.escopo === escopo);
-     const novaLinha = escopoEls.length > 0 ? Math.max(...escopoEls.map(e => e.linha || 0)) + 1 : 0;
-     const idLocal = 'el-' + Date.now();
-     this.elementos.update(els => [...els, {
-        idLocal, tipo: 'TEXTO_LIVRE', escopo, linha: novaLinha, coluna: 0, largura: 1, alinhamento: 'left', conteudo: ''
-     }]);
-     this.selectedId.set(idLocal);
-     this.activeTab.set('propriedades');
+  addLinha(escopo: EscopoLayout, aposDaLinha?: number) {
+    if (aposDaLinha !== undefined) {
+      // abre espaço e desce as linhas de baixo
+      this.elementos.update(els => els.map(e =>
+        e.escopo === escopo && (e.linha || 0) > aposDaLinha ? { ...e, linha: (e.linha || 0) + 1 } : e
+      ));
+    }
+    this.addElemento('TEXTO_LIVRE', escopo, aposDaLinha !== undefined ? aposDaLinha + 1 : undefined);
+    this.selectedId.set(null);
+  }
+
+  // ---- Reordenar por clique
+
+  /** Move o bloco ←/→ dentro da linha dele. */
+  moverElemento(el: ColunaEscala, delta: -1 | 1) {
+    this.elementos.update(els => {
+      const vizinho = els
+        .filter(e => e.escopo === el.escopo && (e.linha || 0) === (el.linha || 0))
+        .sort((a, b) => (a.coluna || 0) - (b.coluna || 0));
+      const i = vizinho.findIndex(e => e.idLocal === el.idLocal);
+      const j = i + delta;
+      if (j < 0 || j >= vizinho.length) return els;
+      const trocas = new Map([[vizinho[i].idLocal, vizinho[j].coluna || 0], [vizinho[j].idLocal, vizinho[i].coluna || 0]]);
+      return els.map(e => trocas.has(e.idLocal || '') ? { ...e, coluna: trocas.get(e.idLocal || '')! } : e);
+    });
+  }
+
+  /** Sobe/desce a linha inteira, trocando de lugar com a vizinha. */
+  moverLinha(escopo: EscopoLayout, linha: number, delta: -1 | 1) {
+    const destino = linha + delta;
+    if (destino < 0) return;
+    const linhasExistentes = new Set(this.elementos().filter(e => e.escopo === escopo).map(e => e.linha || 0));
+    if (!linhasExistentes.has(destino)) return;
+    this.elementos.update(els => els.map(e => {
+      if (e.escopo !== escopo) return e;
+      if ((e.linha || 0) === linha) return { ...e, linha: destino };
+      if ((e.linha || 0) === destino) return { ...e, linha };
+      return e;
+    }));
   }
 
   selectElement(el: ColunaEscala) {
     this.selectedId.set(el.idLocal || null);
-    this.activeTab.set('propriedades');
   }
 
-  removeElement(el: ColunaEscala) {
+  removerElemento(el: ColunaEscala) {
     this.elementos.update(els => els.filter(x => x.idLocal !== el.idLocal));
-    if (this.selectedId() === el.idLocal) {
-       this.selectedId.set(null);
-       this.activeTab.set('elementos');
-    }
+    if (this.selectedId() === el.idLocal) this.selectedId.set(null);
+  }
+
+  removerLinha(escopo: EscopoLayout, linha: number) {
+    this.elementos.update(els => els.filter(x => !(x.escopo === escopo && (x.linha || 0) === linha)));
+    this.selectedId.set(null);
   }
 
   updateProp(prop: keyof ColunaEscala, valor: any) {
     const id = this.selectedId();
     if (!id) return;
     this.elementos.update(els => els.map(e => e.idLocal === id ? { ...e, [prop]: valor } : e));
-    this.form.updateValueAndValidity(); // forçar revalidação geral caso afete colunas duplicadas
   }
 
-  private hasDuplicatedVagas(): boolean {
-    const vagas = this.elementos().filter(e => e.tipo === 'VAGA' || (!e.tipo && e.funcao));
-    const set = new Set<string>();
-    for (const v of vagas) {
-       if (!v.funcao) continue;
-       const key = v.funcao + '-' + (v.posicao || 1);
-       if (set.has(key)) return true;
-       set.add(key);
-    }
-    return false;
-  }
+  // ---- Salvar
 
   async salvar() {
-    if (this.form.invalid) return;
-    if (this.hasDuplicatedVagas()) {
-       this.form.setErrors({ colunaDuplicada: true });
-       return;
-    }
+    if (this.form.invalid || this.vagasDuplicadas()) return;
 
     this.salvando = true;
     const value = this.form.value;
-    
+
     const finalCols = this.elementos().map((e, index) => {
        return {
           ...e,

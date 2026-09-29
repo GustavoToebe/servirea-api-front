@@ -6,7 +6,7 @@ import { mensagemApi } from '../../../core/api/api-error';
 import { CacheDeListas } from '../../../core/api/cache-de-listas.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { celebracoesDoMes } from '../data/calendario-liturgico';
-import { ApoioEscala, ColunaEscala, Escala, EscalaDetalhe, EscalaEvento, EscalaFilters, EscalaVaga, IndisponibilidadesMes, Presenca, StatusEscala, TipoEscala } from '../models/escala.model';
+import { ApoioEscala, ColunaEscala, Escala, EscalaDetalhe, EscalaEvento, EscalaFilters, EscalaVaga, IndisponibilidadesMes, Presenca, StatusEscala, TipoEscala, vagasDoLayout } from '../models/escala.model';
 import { FuncaoEscala } from '../../voluntarios/models/voluntario.model';
 
 /** Contrato de `/escalas` na API Java (`EscalaResponse` e filhos). */
@@ -237,7 +237,7 @@ export class EscalasService {
     }
     for (const lista of porChave.values()) lista.sort((a, b) => a.horario.localeCompare(b.horario));
 
-    const destino = this.buildDefaultEvents('SEMANAL', ano, mes, (origem.colunas || []) as any);
+    const destino = this.buildDefaultEvents('SEMANAL', ano, mes, (vagasDoLayout(origem.colunas || []) as any));
     const usadas = new Set<string>();
     const reais: EscalaEvento[] = [];
     for (const data of [...new Set(destino.map(e => e.data))]) {
