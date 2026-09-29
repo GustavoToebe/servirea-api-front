@@ -153,7 +153,7 @@ export class LayoutFormComponent implements OnInit {
           this.colunas.removeAt(0);
         }
 
-        const colsOrdenadas = [...layout.colunas].sort((a, b) => a.ordem - b.ordem);
+        const colsOrdenadas = [...layout.colunas].sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
         colsOrdenadas.forEach(c => this.adicionarColuna(c));
 
         this.form.patchValue(layout);
