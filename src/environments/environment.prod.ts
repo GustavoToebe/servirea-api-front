@@ -3,6 +3,6 @@ export const environment = {
   supabaseUrl: 'https://qcybebkhwhrudbwoweip.supabase.co',
   supabaseAnonKey: 'sb_publishable_AHHQ4S_VM0hDJ5lFJgcrgQ_q-dwLgW0',
   turnstileSiteKey: '0x4AAAAAAE5LAuNTiGgIUjVG',
-  apiUrl: 'https://api.servirea.com.br',
+  apiUrl: 'https://app.servirea.com.br/api',
   publicTenantSlug: 'placeholder'
 };
