@@ -1,7 +1,23 @@
 import { provideHttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { EscalaDetalhe } from '../models/escala.model';
-import { ExportService } from './export.service';
+import { ExportService, nomeCurto } from './export.service';
+
+describe('nomeCurto', () => {
+  it('fica com o primeiro nome e o último sobrenome', () => {
+    expect(nomeCurto('Valentina Linzmeyer Zonitta Silvati')).toBe('Valentina Silvati');
+    expect(nomeCurto('Henrique Neiverth Luciano')).toBe('Henrique Luciano');
+    expect(nomeCurto('Laura Almeida')).toBe('Laura Almeida');
+    expect(nomeCurto('Iara')).toBe('Iara');
+    expect(nomeCurto('')).toBe('');
+  });
+
+  it('Neto, Filho e Júnior levam o sobrenome de antes', () => {
+    expect(nomeCurto('João dos Santos de Oliveira Neto')).toBe('João Oliveira Neto');
+    expect(nomeCurto('Carlos Filho')).toBe('Carlos Filho');
+    expect(nomeCurto('Pedro Souza Júnior')).toBe('Pedro Souza Júnior');
+  });
+});
 
 /**
  * Exportação real no Chrome (html2canvas + jsPDF 4): o componente usa um

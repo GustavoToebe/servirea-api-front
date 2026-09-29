@@ -9,6 +9,20 @@ const BLUE = '#1e4fa3';
 const RED = '#c62828';
 const HEADER = '#b71c1c';
 const SEMANAL_VERMELHO = '#c00000';
+const SEMANAL_AZUL = '#0070c0';
+const AGNOMES = new Set(['neto', 'filho', 'junior', 'júnior', 'sobrinho']);
+
+/**
+ * Primeiro nome e último sobrenome, como na planilha da paróquia ("Valentina Linzmeyer Zonitta Silvati" →
+ * "Valentina Silvati"). Neto, Filho e Júnior levam o sobrenome de antes ("João Oliveira Neto").
+ */
+export function nomeCurto(completo: string): string {
+  const partes = (completo || '').trim().split(/\s+/).filter(Boolean);
+  if (partes.length <= 2) return partes.join(' ');
+  const ultimo = partes[partes.length - 1];
+  if (AGNOMES.has(ultimo.toLowerCase())) return `${partes[0]} ${partes[partes.length - 2]} ${ultimo}`;
+  return `${partes[0]} ${ultimo}`;
+}
 
 @Injectable({ providedIn: 'root' })
 export class ExportService {
@@ -179,19 +193,22 @@ export class ExportService {
 
   /** Uma linha da semanal; sem evento, é o espaço entre semanas. */
   private linhaSemanal(event: EscalaEvento | null): string {
-    const celula = 'border:1px solid #000;padding:3px 6px;font-size:18px;font-weight:700;height:30px;';
+    // A linha entre as semanas é uma faixa azul fina, na cor do texto do dia.
+    const celula = event
+      ? 'border:1px solid #000;padding:3px 6px;font-size:21px;font-weight:700;height:30px;'
+      : `border:1px solid #000;padding:0;height:10px;line-height:0;font-size:0;background:${SEMANAL_AZUL};`;
     const nomes = event ? [
       this.person(event, 'MISSAL', 1), this.person(event, 'CRUZ', 1), this.person(event, 'CREDENCIA', 1),
       this.person(event, 'VELA', 1), this.person(event, 'VELA', 2), this.person(event, 'SINO', 1), this.person(event, 'SINO', 2)
-    ] : Array(7).fill('');
+    ].map(nomeCurto) : Array(7).fill('');
     const feast = event?.celebracao && event.celebracao !== 'Missa'
       ? `<div style="margin-top:4px;font-size:14px;font-weight:800;color:${HEADER};">${this.esc(event.celebracao)}</div>`
       : '';
     const dia = event ? `
-        <td style="border:1px solid #000;padding:8px 10px;vertical-align:middle;background:#fff7f7;">
-          <div style="font-size:16px;font-weight:800;line-height:1.2;">${this.esc(this.dataCompleta(event.data))}</div>
-          <div style="margin-top:2px;font-size:16px;font-weight:800;line-height:1.2;">${this.esc(this.dayLabel(event.data))}</div>
-          <div style="margin-top:4px;font-size:14px;font-weight:700;">${this.esc(event.horario.slice(0, 5))}hs</div>
+        <td style="border:1px solid #000;padding:8px 10px;vertical-align:middle;background:#fff7f7;color:${SEMANAL_AZUL};">
+          <div style="font-size:20px;font-weight:800;line-height:1.2;">${this.esc(this.dataCompleta(event.data))}</div>
+          <div style="margin-top:2px;font-size:20px;font-weight:800;line-height:1.2;">${this.esc(this.dayLabel(event.data))}</div>
+          <div style="margin-top:4px;font-size:17px;font-weight:700;">${this.esc(event.horario.slice(0, 5))}hs</div>
           ${feast}
         </td>` : `<td style="${celula}"></td>`;
     return `
