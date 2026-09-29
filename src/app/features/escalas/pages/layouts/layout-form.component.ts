@@ -1,274 +1,241 @@
-import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule, Location } from '@angular/common';
-import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { CabecalhoPaginaComponent } from '../../../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
-import { RodapeFormComponent } from '../../../../shared/components/rodape-form/rodape-form.component';
+import { Component, OnInit, signal, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { LayoutsEscalaService } from '../../services/layouts-escala.service';
-import { DialogoService } from '../../../../shared/services/dialogo.service';
-import { FUNCOES_ESCALA, FUNCOES_LABEL } from '../../../voluntarios/models/voluntario.model';
-import { ColunaEscala } from '../../models/escala.model';
+import { FUNCOES_ESCALA, FuncaoEscala } from '../../../voluntarios/models/voluntario.model';
+import { ColunaEscala, EscopoLayout, TipoElementoLayout, LayoutEscala } from '../../models/escala.model';
+
+interface LinhaGrade {
+  index: number;
+  elementos: ColunaEscala[];
+}
 
 @Component({
   selector: 'app-layout-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CabecalhoPaginaComponent, RodapeFormComponent],
-  
-  template: `
-    <app-cabecalho-pagina [titulo]="isEdicao ? 'Editar Layout' : 'Novo Layout'" subtitulo="Configure as colunas que irão aparecer na tabela da escala."></app-cabecalho-pagina>
-
-    <form [formGroup]="form" (ngSubmit)="salvar()" class="mx-auto max-w-5xl space-y-6">
-      
-      <!-- Dica geral -->
-      <div class="rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-800 shadow-sm flex gap-3">
-        <i class="ph ph-info flex-shrink-0 text-2xl text-blue-600"></i>
-        <div class="text-sm">
-          <p class="font-bold mb-1">Como funcionam os layouts?</p>
-          <p>Um layout de escala é a <strong>receita das colunas da grade</strong>. Você monta essa receita uma vez e, ao criar a escala, escolhe qual deseja usar. <br>O <strong>Semanal</strong> continua gerando uma tabela (um dia por linha), enquanto o <strong>Mensal</strong> continua gerando os tradicionais cartões por missa. O que o layout altera são as colunas disponíveis para preenchimento!</p>
-        </div>
-      </div>
-
-      <section class="card p-6">
-        <h2 class="mb-4 text-lg font-black text-slate-800 border-b pb-2">1. Dados Básicos</h2>
-        <div class="grid gap-4 md:grid-cols-2">
-          <div>
-            <label class="label" for="nome">Nome do Layout *</label>
-            <input type="text" id="nome" class="field" formControlName="nome" placeholder="Ex.: Especial de Natal"
-                   [class.border-red-500]="f['nome'].invalid && f['nome'].touched">
-            @if (f['nome'].errors?.['required'] && f['nome'].touched) {
-              <div class="mt-1 text-xs font-semibold text-red-600">O nome é obrigatório.</div>
-            }
-          </div>
-          <div>
-            <label class="label" for="tipo">Modelo Base *</label>
-            <select id="tipo" class="field" formControlName="tipo" 
-                    [class.border-red-500]="f['tipo'].invalid && f['tipo'].touched">
-              <option value="SEMANAL">Tabela Semanal (Dias Úteis)</option>
-              <option value="MENSAL">Cartões Mensais (Finais de Semana)</option>
-            </select>
-          </div>
-        </div>
-      </section>
-
-      <section class="card p-6">
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b pb-4 mb-4">
-          <div>
-            <h2 class="text-lg font-black text-slate-800">2. Colunas da Grade</h2>
-            <p class="text-sm text-slate-500 mt-1">Configure exatamente as vagas que aparecerão na escala.</p>
-          </div>
-          <button type="button" class="btn-primary whitespace-nowrap shadow-sm hover:shadow-md transition-all" (click)="adicionarColuna()">
-            <i class="ph ph-plus-circle mr-1"></i> Adicionar Coluna
-          </button>
-        </div>
-
-        <!-- Dicas de colunas -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div class="rounded-lg bg-slate-50 p-3 text-xs text-slate-600 border border-slate-200">
-            <strong class="block text-slate-800 mb-1"><i class="ph ph-arrows-left-right text-brand-blue"></i> Ordem</strong>
-            É a posição da coluna na tela, da esquerda para a direita. Use as setinhas para reordenar.
-          </div>
-          <div class="rounded-lg bg-slate-50 p-3 text-xs text-slate-600 border border-slate-200">
-            <strong class="block text-slate-800 mb-1"><i class="ph ph-user-focus text-brand-blue"></i> Função e Posição</strong>
-            A função filtra quem pode ser escalado. A posição diferencia vagas iguais (ex: Vela 1 e Vela 2). Não podem haver duplicadas!
-          </div>
-          <div class="rounded-lg bg-slate-50 p-3 text-xs text-slate-600 border border-slate-200">
-            <strong class="block text-slate-800 mb-1"><i class="ph ph-text-aa text-brand-blue"></i> Rótulo</strong>
-            É o texto que aparece no cabeçalho da grade. Escreva como preferir ("Acólito Missal", "Vela 01").
-          </div>
-        </div>
-
-        @if (colunas.length === 0) {
-          <div class="py-8 text-center bg-slate-50 rounded-xl border-2 border-dashed border-slate-300">
-            <i class="ph ph-table text-4xl text-slate-400 mb-2"></i>
-            <p class="text-slate-500 font-medium">Nenhuma coluna adicionada ainda.</p>
-            <p class="text-sm text-slate-400">Clique no botão "Adicionar Coluna" para começar.</p>
-          </div>
-        }
-
-        <div class="overflow-x-auto" *ngIf="colunas.length > 0">
-          <table class="w-full text-left text-sm whitespace-nowrap">
-            <thead class="bg-slate-100 text-slate-600">
-              <tr>
-                <th class="px-4 py-3 font-bold rounded-tl-lg w-24 text-center">Ordem</th>
-                <th class="px-4 py-3 font-bold w-48">Função Real *</th>
-                <th class="px-4 py-3 font-bold w-24">Posição *</th>
-                <th class="px-4 py-3 font-bold">Rótulo no Cabeçalho *</th>
-                <th class="px-4 py-3 font-bold rounded-tr-lg w-16 text-center">Ações</th>
-              </tr>
-            </thead>
-            <tbody formArrayName="colunas">
-              @for (col of colunas.controls; track col; let i = $index) {
-                <tr [formGroupName]="i" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                  <td class="px-4 py-2 text-center">
-                    <div class="flex items-center justify-center gap-1 bg-white rounded-lg border border-slate-200 p-1">
-                      <button type="button" class="p-1 rounded text-slate-400 hover:text-brand-blue hover:bg-blue-50 disabled:opacity-30 transition-colors" [disabled]="i === 0" (click)="moverColuna(i, -1)" title="Subir">
-                        <i class="ph-bold ph-caret-up"></i>
-                      </button>
-                      <span class="font-bold w-5 text-center text-slate-600">{{i + 1}}º</span>
-                      <button type="button" class="p-1 rounded text-slate-400 hover:text-brand-blue hover:bg-blue-50 disabled:opacity-30 transition-colors" [disabled]="i === colunas.length - 1" (click)="moverColuna(i, 1)" title="Descer">
-                        <i class="ph-bold ph-caret-down"></i>
-                      </button>
-                    </div>
-                  </td>
-                  <td class="px-4 py-2">
-                    <select class="field w-full py-1.5 px-3 text-sm" formControlName="funcao" 
-                            [class.border-red-500]="col.get('funcao')?.invalid && col.get('funcao')?.touched">
-                      <option [ngValue]="null">Selecione...</option>
-                      @for (f of funcoesOpcoes; track f.valor) {
-                        <option [value]="f.valor">{{ f.label }}</option>
-                      }
-                    </select>
-                  </td>
-                  <td class="px-4 py-2">
-                    <input type="number" class="field w-full py-1.5 px-3 text-sm text-center" formControlName="posicao" min="1" 
-                           [class.border-red-500]="col.get('posicao')?.invalid && col.get('posicao')?.touched">
-                  </td>
-                  <td class="px-4 py-2">
-                    <input type="text" class="field w-full py-1.5 px-3 text-sm" formControlName="rotulo" placeholder="Ex: Acólito Missal"
-                           [class.border-red-500]="col.get('rotulo')?.invalid && col.get('rotulo')?.touched">
-                  </td>
-                  <td class="px-4 py-2 text-center">
-                    <button type="button" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors mx-auto" title="Remover" (click)="removerColuna(i)">
-                      <i class="ph ph-trash text-lg"></i>
-                    </button>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        
-        @if (form.hasError('colunaDuplicada')) {
-          <div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 text-sm font-medium">
-            <i class="ph-fill ph-warning-circle text-lg"></i>
-            Há colunas com a mesma Função e Posição! Mude a posição ou a função para continuar.
-          </div>
-        }
-      </section>
-
-      <app-rodape-form
-        [voltarUrl]="['/escalas/layouts']"
-        [carregando]="salvando"
-        [desabilitado]="form.invalid">
-      </app-rodape-form>
-    </form>
-  `
-
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule],
+  templateUrl: './layout-form.component.html'
 })
 export class LayoutFormComponent implements OnInit {
-  private fb = inject(FormBuilder);
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
-  private service = inject(LayoutsEscalaService);
-  private dialogo = inject(DialogoService);
-  private location = inject(Location);
-
   id: string | null = null;
-  isEdicao = false;
+  form!: FormGroup;
   salvando = false;
+  funcoesOpcoes = FUNCOES_ESCALA;
 
-  funcoesOpcoes = FUNCOES_ESCALA.map(f => ({ valor: f, label: FUNCOES_LABEL[f] }));
+  elementos = signal<ColunaEscala[]>([]);
+  activeTab = signal<'elementos'|'propriedades'>('elementos');
+  selectedId = signal<string | null>(null);
 
-  form: FormGroup = this.fb.group({
-    id: [null],
-    nome: ['', Validators.required],
-    tipo: ['SEMANAL', Validators.required],
-    ativo: [true],
-    sistema: [false],
-    colunas: this.fb.array([], Validators.required)
-  }, { validators: this.validarColunasUnicas });
+  selectedElement = computed(() => this.elementos().find(e => e.idLocal === this.selectedId()) || null);
 
-  get f() { return this.form.controls; }
-  get colunas() { return this.form.get('colunas') as FormArray; }
+  linhasDocumento = computed(() => {
+    return this.agruparLinhas(this.elementos().filter(e => e.escopo === 'DOCUMENTO'));
+  });
+
+  linhasCelebracao = computed(() => {
+    return this.agruparLinhas(this.elementos().filter(e => e.escopo === 'CELEBRACAO'));
+  });
+
+  constructor(
+    private fb: FormBuilder,
+    private route: ActivatedRoute,
+    private router: Router,
+    private service: LayoutsEscalaService
+  ) {}
 
   async ngOnInit() {
+    this.form = this.fb.group({
+      nome: ['', Validators.required],
+      tipo: ['SEMANAL', Validators.required]
+    });
+
     this.id = this.route.snapshot.paramMap.get('id');
     if (this.id) {
-      this.isEdicao = true;
       try {
-        const layout = await this.service.carregar(this.id);
-        if (layout.sistema) {
-          this.form.disable();
-          this.dialogo.avisar('Layouts de sistema não podem ser editados.', 'info');
-        }
+        const dto = await this.service.carregar(this.id);
+        this.form.patchValue({ nome: dto.nome, tipo: dto.tipo });
         
-        while (this.colunas.length !== 0) {
-          this.colunas.removeAt(0);
-        }
-
-        const colsOrdenadas = [...layout.colunas].sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
-        colsOrdenadas.forEach(c => this.adicionarColuna(c));
-
-        this.form.patchValue(layout);
-      } catch (e: any) {
-        this.dialogo.avisar(e.message, 'error');
-        this.location.back();
+        const blocos = (dto.colunas || []).map((c, i) => {
+           if (!c.idLocal) {
+              return {
+                 ...c,
+                 idLocal: 'legado-' + i,
+                 tipo: 'VAGA' as TipoElementoLayout,
+                 escopo: 'CELEBRACAO' as EscopoLayout,
+                 linha: 0,
+                 coluna: i,
+                 largura: 1,
+                 alinhamento: 'center' as const
+              };
+           }
+           return c;
+        });
+        this.elementos.set(blocos);
+      } catch (e) {
+        console.error(e);
+        this.router.navigate(['/escalas/layouts']);
       }
+    } else {
+      this.elementos.set([]);
     }
   }
 
-  adicionarColuna(col?: ColunaEscala) {
-    this.colunas.push(this.fb.group({
-      ordem: [col?.ordem ?? this.colunas.length + 1],
-      funcao: [col?.funcao ?? null, Validators.required],
-      posicao: [col?.posicao ?? 1, [Validators.required, Validators.min(1)]],
-      rotulo: [col?.rotulo ?? '', Validators.required]
-    }));
+  private agruparLinhas(lista: ColunaEscala[]): LinhaGrade[] {
+    const maxLinha = lista.reduce((max, e) => Math.max(max, e.linha || 0), -1);
+    const result: LinhaGrade[] = [];
+    for (let i = 0; i <= maxLinha; i++) {
+      result.push({
+        index: i,
+        elementos: lista.filter(e => e.linha === i).sort((a,b) => (a.coluna||0) - (b.coluna||0))
+      });
+    }
+    return result;
   }
 
-  removerColuna(index: number) {
-    this.colunas.removeAt(index);
-    this.reordenarColunas();
+  getAlignClass(align?: string) {
+    if (align === 'center') return 'text-center';
+    if (align === 'right') return 'text-right';
+    return 'text-left';
   }
 
-  moverColuna(index: number, direcao: number) {
-    const novaPosicao = index + direcao;
-    if (novaPosicao < 0 || novaPosicao >= this.colunas.length) return;
+  getIconFor(tipo?: string) {
+    switch(tipo) {
+       case 'TITULO': return 'ph-text-h-one text-indigo-500';
+       case 'SUBTITULO': return 'ph-text-h-two text-indigo-500';
+       case 'TEXTO_LIVRE': return 'ph-text-align-left text-indigo-500';
+       case 'DATA': return 'ph-calendar-blank text-emerald-600';
+       case 'VAGA': return 'ph-user-focus text-amber-600';
+       default: return 'ph-square';
+    }
+  }
 
-    const current = this.colunas.at(index);
-    this.colunas.removeAt(index);
-    this.colunas.insert(novaPosicao, current);
+  getLabelFor(tipo?: string) {
+    switch(tipo) {
+       case 'TITULO': return 'Título Principal';
+       case 'SUBTITULO': return 'Subtítulo';
+       case 'TEXTO_LIVRE': return 'Texto Livre';
+       case 'DATA': return 'Data / Celebração';
+       case 'VAGA': return 'Vaga / Função';
+       default: return 'Elemento';
+    }
+  }
+
+  onDragStart(event: DragEvent, tipo: string) {
+    event.dataTransfer?.setData('text/plain', tipo);
+  }
+
+  allowDrop(event: DragEvent) {
+    event.preventDefault();
+  }
+
+  onDrop(event: DragEvent, escopo: EscopoLayout, linhaDestino: number) {
+    event.preventDefault();
+    const tipo = event.dataTransfer?.getData('text/plain') as TipoElementoLayout;
+    if (!tipo) return;
+
+    const idLocal = 'el-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
     
-    this.reordenarColunas();
-  }
-
-  private reordenarColunas() {
-    this.colunas.controls.forEach((ctrl, i) => {
-      ctrl.get('ordem')?.setValue(i + 1);
-    });
-  }
-
-  private validarColunasUnicas(group: FormGroup) {
-    const colunas = group.get('colunas')?.value as ColunaEscala[];
-    if (!colunas || !colunas.length) return null;
-
-    const chaves = new Set<string>();
-    for (const c of colunas) {
-      if (!c.funcao) continue;
-      const key = `${c.funcao}-${c.posicao}`;
-      if (chaves.has(key)) {
-        return { colunaDuplicada: true };
-      }
-      chaves.add(key);
+    let novaLinha = linhaDestino;
+    if (linhaDestino === -1) {
+       const escopoEls = this.elementos().filter(e => e.escopo === escopo);
+       novaLinha = escopoEls.length > 0 ? Math.max(...escopoEls.map(e => e.linha || 0)) + 1 : 0;
     }
-    return null;
+
+    const linhaEls = this.elementos().filter(e => e.escopo === escopo && e.linha === novaLinha);
+    const novaColuna = linhaEls.length;
+
+    const novoElemento: ColunaEscala = {
+      idLocal,
+      tipo,
+      escopo,
+      linha: novaLinha,
+      coluna: novaColuna,
+      largura: 1,
+      alinhamento: tipo === 'TEXTO_LIVRE' ? 'left' : 'center'
+    };
+
+    if (tipo === 'TITULO') novoElemento.conteudo = '#TITULO_ESCALA#';
+    if (tipo === 'DATA') novoElemento.conteudo = '#DATA_HORA#';
+    if (tipo === 'VAGA') {
+       novoElemento.funcao = 'OUTRO';
+       novoElemento.posicao = 1;
+       novoElemento.rotulo = 'Nova Vaga';
+    }
+
+    this.elementos.update(els => [...els, novoElemento]);
+    this.selectedId.set(idLocal);
+    this.activeTab.set('propriedades');
+  }
+
+  addLinha(escopo: EscopoLayout) {
+     const escopoEls = this.elementos().filter(e => e.escopo === escopo);
+     const novaLinha = escopoEls.length > 0 ? Math.max(...escopoEls.map(e => e.linha || 0)) + 1 : 0;
+     const idLocal = 'el-' + Date.now();
+     this.elementos.update(els => [...els, {
+        idLocal, tipo: 'TEXTO_LIVRE', escopo, linha: novaLinha, coluna: 0, largura: 1, alinhamento: 'left', conteudo: ''
+     }]);
+     this.selectedId.set(idLocal);
+     this.activeTab.set('propriedades');
+  }
+
+  selectElement(el: ColunaEscala) {
+    this.selectedId.set(el.idLocal || null);
+    this.activeTab.set('propriedades');
+  }
+
+  removeElement(el: ColunaEscala) {
+    this.elementos.update(els => els.filter(x => x.idLocal !== el.idLocal));
+    if (this.selectedId() === el.idLocal) {
+       this.selectedId.set(null);
+       this.activeTab.set('elementos');
+    }
+  }
+
+  updateProp(prop: keyof ColunaEscala, valor: any) {
+    const id = this.selectedId();
+    if (!id) return;
+    this.elementos.update(els => els.map(e => e.idLocal === id ? { ...e, [prop]: valor } : e));
+    this.form.updateValueAndValidity(); // forçar revalidação geral caso afete colunas duplicadas
+  }
+
+  private hasDuplicatedVagas(): boolean {
+    const vagas = this.elementos().filter(e => e.tipo === 'VAGA' || (!e.tipo && e.funcao));
+    const set = new Set<string>();
+    for (const v of vagas) {
+       if (!v.funcao) continue;
+       const key = v.funcao + '-' + (v.posicao || 1);
+       if (set.has(key)) return true;
+       set.add(key);
+    }
+    return false;
   }
 
   async salvar() {
-    if (this.form.invalid || this.salvando) {
-      this.form.markAllAsTouched();
-      return;
+    if (this.form.invalid) return;
+    if (this.hasDuplicatedVagas()) {
+       this.form.setErrors({ colunaDuplicada: true });
+       return;
     }
 
     this.salvando = true;
+    const value = this.form.value;
+    
+    const finalCols = this.elementos().map((e, index) => {
+       return {
+          ...e,
+          ordem: index + 1
+       };
+    });
+
+    const payload: Partial<LayoutEscala> = { ...value, colunas: finalCols };
+    if (this.id) payload.id = this.id;
+
     try {
-      const formValue = this.form.getRawValue();
-      await this.service.salvar(formValue);
-      this.dialogo.avisar('Layout salvo com sucesso.', 'success');
+      await this.service.salvar(payload);
       this.router.navigate(['/escalas/layouts']);
-    } catch (e: any) {
-      this.dialogo.avisar(e.message, 'error');
-    } finally {
+    } catch (e) {
+      console.error(e);
       this.salvando = false;
     }
   }

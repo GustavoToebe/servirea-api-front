@@ -397,7 +397,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
         const type = this.form.controls.tipo.value; const year=this.form.controls.ano.value; const month=this.form.controls.mes.value;
         this.form.controls.titulo.setValue(`Escala ${type==='SEMANAL'?'Semanal':'Mensal'} - ${MESES[month-1]} ${year}`);
         this.atualizarColunasNovo();
-        this.events = this.service.buildDefaultEvents(type, year, month, this.colunas);
+        this.events = this.service.buildDefaultEvents(type, year, month, (this.colunas as any));
       }
 
       this.form.markAsPristine(); this.eventsDirty=false;
@@ -512,7 +512,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
     const {tipo,ano,mes}=this.form.getRawValue();
     if (!this.id && !this.eventsDirty) {
       this.atualizarColunasNovo();
-      this.events=this.service.buildDefaultEvents(tipo,ano,mes, this.colunas);
+      this.events=this.service.buildDefaultEvents(tipo,ano,mes, (this.colunas as any));
       this.form.controls.titulo.setValue(`Escala ${tipo==='SEMANAL'?'Semanal':'Mensal'} - ${MESES[mes-1]} ${ano}`);
     } else if (!this.id) {
       const filled=this.filledCount();
@@ -520,7 +520,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
         return;
       }
       this.atualizarColunasNovo();
-      this.events=this.service.buildDefaultEvents(tipo,ano,mes, this.colunas);
+      this.events=this.service.buildDefaultEvents(tipo,ano,mes, (this.colunas as any));
     } else {
       this.recalcular();
     }
@@ -543,7 +543,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
     if (this.readOnly) return;
     const filled=this.filledCount();
     if (filled && !await this.dialogo.confirmar({ titulo: 'Recriar a grade?', mensagem: `A grade possui ${filled} vaga(s) preenchida(s). Recriar a grade apagará essas seleções.`, confirmar: 'Recriar', perigo: true })) return;
-    const {tipo,ano,mes}=this.form.getRawValue(); this.atualizarColunasNovo(); this.events=this.service.buildDefaultEvents(tipo,ano,mes,this.colunas); this.eventsDirty=true;
+    const {tipo,ano,mes}=this.form.getRawValue(); this.atualizarColunasNovo(); this.events=this.service.buildDefaultEvents(tipo,ano,mes, (this.colunas as any)); this.eventsDirty=true;
   }
 
 
@@ -598,7 +598,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
       return;
     }
     const { tipo } = this.form.getRawValue();
-    this.events = [...this.events, this.service.createEvent(tipo, this.addDate, time, this.addCelebration || 'Missa', this.colunas)]
+    this.events = [...this.events, this.service.createEvent(tipo, this.addDate, time, this.addCelebration || 'Missa', (this.colunas as any))]
       .sort((a, b) => `${a.data} ${a.horario}`.localeCompare(`${b.data} ${b.horario}`));
     this.eventsDirty = true;
   }

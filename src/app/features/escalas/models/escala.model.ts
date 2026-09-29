@@ -119,11 +119,26 @@ export function indisponivelEm(apoio: ApoioEscala | null, voluntarioId: string, 
   return v.indisponiveis.some(i => i.data === data && (i.periodo === null || i.periodo === periodo));
 }
 
+export type TipoElementoLayout = 'TITULO' | 'SUBTITULO' | 'DATA' | 'VAGA' | 'TEXTO_LIVRE';
+export type EscopoLayout = 'DOCUMENTO' | 'CELEBRACAO';
+
 export interface ColunaEscala {
-  funcao: FuncaoEscala;
-  posicao: number;
-  rotulo: string;
+  // Atributos de vaga/coluna legado
+  funcao?: FuncaoEscala;
+  posicao?: number;
+  rotulo?: string;
   ordem?: number;
+  
+  // Novos atributos do editor visual (retrocompativel)
+  tipo?: TipoElementoLayout;
+  idLocal?: string;
+  conteudo?: string;
+  alinhamento?: 'left' | 'center' | 'right';
+  negrito?: boolean;
+  linha?: number;
+  coluna?: number;
+  largura?: number;
+  escopo?: EscopoLayout;
 }
 
 /** Colunas de fábrica quando a API de layouts ainda não respondeu. */

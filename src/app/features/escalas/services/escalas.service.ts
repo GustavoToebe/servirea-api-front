@@ -237,7 +237,7 @@ export class EscalasService {
     }
     for (const lista of porChave.values()) lista.sort((a, b) => a.horario.localeCompare(b.horario));
 
-    const destino = this.buildDefaultEvents('SEMANAL', ano, mes, origem.colunas || []);
+    const destino = this.buildDefaultEvents('SEMANAL', ano, mes, (origem.colunas || []) as any);
     const usadas = new Set<string>();
     const reais: EscalaEvento[] = [];
     for (const data of [...new Set(destino.map(e => e.data))]) {

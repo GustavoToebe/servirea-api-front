@@ -87,13 +87,13 @@ export class ExportService {
         if (semanaAnterior && semana !== semanaAnterior) blocks += this.linhaSemanalEspaco(colunas.length);
         semanaAnterior = semana;
       }
-      blocks += this.eventBlock(event, colunas);
+      blocks += this.eventBlock(event, colunas as any);
     }
     
     const cab = `background:${SEMANAL_VERMELHO};color:#fff;font-weight:700;font-size:21px;border:1px solid #000;padding:0;`;
     const txt = (t: string, alinhar = 'center') => `<div style="padding:4px 6px;line-height:28px;text-align:${alinhar};">${t}</div>`;
     
-    const colHeaders = colunas.map(c => `<th style="${cab}">${txt(this.esc(c.rotulo))}</th>`).join('');
+    const colHeaders = colunas.map(c => `<th style="${cab}">${txt(this.esc(c.rotulo || ''))}</th>`).join('');
     
     host.innerHTML = `
       <div style="margin:0 0 10px;font-size:22px;font-weight:800;text-align:center;">${this.esc(title)}</div>
