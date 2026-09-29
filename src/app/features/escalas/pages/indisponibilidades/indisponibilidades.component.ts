@@ -54,10 +54,17 @@ export function fimDeSemanaDoMes(ano: number, mes: number): Coluna[] {
       <p class="text-sm text-slate-500">Clique na data em que a pessoa <b>não pode</b>. Quem avisou que pode em todas, marque "Sem restrição". Quem não respondeu fica pendente.</p>
 
       <div class="overflow-x-auto">
-        <table class="tabela">
+        <!-- Colunas de largura fixa e marcação do mesmo tamanho da célula vazia: marcar uma data não alarga a
+             coluna nem empurra "Situação" para fora da tela (29/09/2026). -->
+        <table class="tabela table-fixed" [style.min-width.rem]="14 + colunas.length * 4.5 + 7 + 8.5">
+          <colgroup>
+            <col class="w-56">
+            @for (c of colunas; track c.data) { <col class="w-[4.5rem]"> }
+            <col class="w-28"><col class="w-[8.5rem]">
+          </colgroup>
           <thead><tr>
-            <th class="sticky left-0 z-10 min-w-48">Nome</th>
-            @for (c of colunas; track c.data) { <th class="text-center">{{ c.rotulo }}</th> }
+            <th class="sticky left-0 z-10">Nome</th>
+            @for (c of colunas; track c.data) { <th class="!px-1 text-center">{{ c.rotulo }}</th> }
             <th class="text-center">Sem restrição</th><th>Situação</th>
           </tr></thead>
           <tbody>
@@ -65,18 +72,20 @@ export function fimDeSemanaDoMes(ano: number, mes: number): Coluna[] {
               <tr>
                 <td class="sticky left-0 bg-[var(--card)] font-semibold">{{ v.nome_completo }}</td>
                 @for (c of colunas; track c.data) {
-                  <td class="text-center">
+                  <td class="!px-1 text-center">
                     @if (marca(v.id, c.data); as m) {
-                      <div class="inline-flex items-center gap-1 rounded-lg bg-red-50 px-1.5 py-1 text-red-700" [attr.data-marcada]="v.id + '|' + c.data">
-                        <span>⛔</span>
-                        <select class="bg-transparent text-[11px] font-semibold outline-none" [ngModel]="m.periodo ?? ''" (ngModelChange)="trocarPeriodo(v.id, c.data, $event)" aria-label="Período">
+                      <div class="relative mx-auto flex h-8 w-14 items-center justify-center gap-0.5 rounded-lg bg-red-50 text-[11px] font-bold text-red-700 ring-1 ring-red-200"
+                           [attr.data-marcada]="v.id + '|' + c.data" [title]="m.periodo ? rotuloPeriodo[m.periodo] : 'Dia inteiro'">
+                        <span aria-hidden="true">⛔</span>{{ m.periodo ? rotuloCurto[m.periodo] : 'Dia' }}
+                        <!-- O seletor fica por cima, invisível: o clique no quadrinho abre as opções. -->
+                        <select class="absolute inset-0 h-full w-full cursor-pointer opacity-0" [ngModel]="m.periodo ?? ''" (ngModelChange)="trocarPeriodo(v.id, c.data, $event)" aria-label="Período">
                           <option value="">Dia inteiro</option>
                           @for (p of periodos; track p) { <option [value]="p">{{ rotuloPeriodo[p] }}</option> }
                           <option value="TIRAR">Tirar</option>
                         </select>
                       </div>
                     } @else {
-                      <button type="button" class="h-8 w-10 rounded-lg border border-dashed border-[var(--field-line)] hover:bg-red-50"
+                      <button type="button" class="mx-auto block h-8 w-14 rounded-lg border border-dashed border-[var(--field-line)] hover:bg-red-50"
                               [attr.data-celula]="v.id + '|' + c.data" [attr.aria-label]="'Não pode em ' + c.rotulo" (click)="marcar(v.id, c.data)"></button>
                     }
                   </td>
@@ -110,6 +119,7 @@ export class IndisponibilidadesComponent implements OnInit, HasPendingChanges {
   readonly meses = MESES;
   readonly periodos: PeriodoDia[] = ['MANHA', 'TARDE', 'NOITE'];
   readonly rotuloPeriodo = PERIODO_LABEL;
+  readonly rotuloCurto: Record<PeriodoDia, string> = { MANHA: 'Manhã', TARDE: 'Tarde', NOITE: 'Noite' };
   readonly rotuloSituacao = SITUACAO_LABEL;
   readonly tom: Record<SituacaoResposta, string> = {
     COM_RESTRICAO: 'bg-amber-50 text-amber-800', SEM_RESTRICAO: 'bg-emerald-50 text-emerald-700', PENDENTE: 'bg-slate-100 text-slate-600'

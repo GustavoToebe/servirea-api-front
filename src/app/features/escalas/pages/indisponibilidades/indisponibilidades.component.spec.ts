@@ -48,6 +48,20 @@ describe('IndisponibilidadesComponent', () => {
     expect(el.querySelector('[data-situacao="a"]')!.textContent).toContain('Com restrição');
   });
 
+  it('marcar todas as datas não muda a largura das colunas', async () => {
+    const fixture = await montar();
+    const el: HTMLElement = fixture.nativeElement;
+    document.body.appendChild(el);
+    const larguras = () => Array.from(el.querySelectorAll('thead th')).map(th => Math.round(th.getBoundingClientRect().width));
+    const antes = larguras();
+    for (const col of fixture.componentInstance.colunas) fixture.componentInstance.marcar('a', col.data);
+    fixture.componentInstance.trocarPeriodo('a', '2026-10-04', 'MANHA');
+    fixture.detectChanges();
+    expect(el.querySelectorAll('[data-marcada^="a|"]').length).toBe(9);
+    expect(larguras()).toEqual(antes);
+    el.remove();
+  });
+
   it('"Sem restrição" limpa as datas da linha e salvar manda o corpo esperado', async () => {
     const fixture = await montar();
     const c = fixture.componentInstance;
