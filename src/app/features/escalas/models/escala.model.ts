@@ -13,6 +13,8 @@ export interface Escala {
   mes: number;
   status: StatusEscala;
   observacao: string | null;
+  colunas?: ColunaEscala[] | null;
+  layoutId?: string | null;
   /** Controle otimista da API (seção 47): o PUT precisa mandar a versão que leu. */
   version?: number | null;
 }
@@ -115,4 +117,20 @@ export function indisponivelEm(apoio: ApoioEscala | null, voluntarioId: string, 
   if (!v) return false;
   const periodo = periodoDoHorario(horario);
   return v.indisponiveis.some(i => i.data === data && (i.periodo === null || i.periodo === periodo));
+}
+
+export interface ColunaEscala {
+  funcao: FuncaoEscala;
+  posicao: number;
+  rotulo: string;
+  ordem?: number;
+}
+
+export interface LayoutEscala {
+  id: string;
+  nome: string;
+  tipo: TipoEscala;
+  colunas: ColunaEscala[];
+  ativo: boolean;
+  sistema: boolean;
 }

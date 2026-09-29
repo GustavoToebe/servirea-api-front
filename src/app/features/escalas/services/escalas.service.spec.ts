@@ -114,7 +114,7 @@ describe('EscalasService', () => {
   });
 
   it('gera dias úteis na escala semanal e sábado/domingo na mensal', () => {
-    const semanal = service.buildDefaultEvents('SEMANAL', 2026, 9);
+    const semanal = service.buildDefaultEvents('SEMANAL', 2026, 9, [{funcao:'MISSAL',posicao:1},{funcao:'CRUZ',posicao:1},{funcao:'CREDENCIA',posicao:1},{funcao:'VELA',posicao:1},{funcao:'VELA',posicao:2},{funcao:'SINO',posicao:1},{funcao:'SINO',posicao:2}] as any);
     expect(semanal.every(e => {
       const dow = new Date(`${e.data}T12:00:00`).getDay();
       return dow >= 1 && dow <= 5;
@@ -123,7 +123,7 @@ describe('EscalasService', () => {
     expect(semanal[0].vagas.map(v => v.funcao)).toEqual(['MISSAL', 'CRUZ', 'CREDENCIA', 'VELA', 'VELA', 'SINO', 'SINO']);
     expect(semanal.every(e => e.horario === '19:00:00')).toBeTrue();
 
-    const mensal = service.buildDefaultEvents('MENSAL', 2026, 9);
+    const mensal = service.buildDefaultEvents('MENSAL', 2026, 9, [{funcao:'MISSAL',posicao:1},{funcao:'CRUZ',posicao:1},{funcao:'CREDENCIA',posicao:1},{funcao:'VELA',posicao:1},{funcao:'VELA',posicao:2},{funcao:'COLETA',posicao:1},{funcao:'COLETA',posicao:2},{funcao:'COLETA',posicao:3},{funcao:'COLETA',posicao:4},{funcao:'SINO',posicao:1},{funcao:'SINO',posicao:2}] as any);
     const tipos = mensal.map(e => `${e.data} ${e.horario.slice(0, 5)}`);
     expect(tipos).toContain('2026-09-05 19:00');
     expect(tipos).toContain('2026-09-06 09:30');
@@ -136,11 +136,11 @@ describe('EscalasService', () => {
   });
 
   it('nomeia a celebração litúrgica quando a festa cai no tipo da escala', () => {
-    const semanalAbril = service.buildDefaultEvents('SEMANAL', 2026, 4);
+    const semanalAbril = service.buildDefaultEvents('SEMANAL', 2026, 4, [{funcao:'MISSAL',posicao:1},{funcao:'CRUZ',posicao:1},{funcao:'CREDENCIA',posicao:1},{funcao:'VELA',posicao:1},{funcao:'VELA',posicao:2},{funcao:'SINO',posicao:1},{funcao:'SINO',posicao:2}] as any);
     const sextaSanta = semanalAbril.find(e => e.data === '2026-04-03');
     expect(sextaSanta?.celebracao).toBe('Sexta-feira Santa');
 
-    const mensalAbril = service.buildDefaultEvents('MENSAL', 2026, 4);
+    const mensalAbril = service.buildDefaultEvents('MENSAL', 2026, 4, [{funcao:'MISSAL',posicao:1},{funcao:'CRUZ',posicao:1},{funcao:'CREDENCIA',posicao:1},{funcao:'VELA',posicao:1},{funcao:'VELA',posicao:2},{funcao:'COLETA',posicao:1},{funcao:'COLETA',posicao:2},{funcao:'COLETA',posicao:3},{funcao:'COLETA',posicao:4},{funcao:'SINO',posicao:1},{funcao:'SINO',posicao:2}] as any);
     const pascoa = mensalAbril.find(e => e.data === '2026-04-05');
     expect(pascoa?.celebracao).toBe('Páscoa');
     expect(mensalAbril.some(e => e.data === '2026-04-03')).toBeFalse();
@@ -157,7 +157,7 @@ describe('EscalasService.replicarSemanal (setembro → outubro/2026)', () => {
 
   /** Setembro/2026 inteiro, dias úteis, um nome diferente por dia no Missal ("Missal 03" para 03/09). */
   function setembro(): EscalaDetalhe {
-    const eventos = service.buildDefaultEvents('SEMANAL', 2026, 9).map(e => ({
+    const eventos = service.buildDefaultEvents('SEMANAL', 2026, 9, [{funcao:'MISSAL',posicao:1},{funcao:'CRUZ',posicao:1},{funcao:'CREDENCIA',posicao:1},{funcao:'VELA',posicao:1},{funcao:'VELA',posicao:2},{funcao:'SINO',posicao:1},{funcao:'SINO',posicao:2}] as any).map(e => ({
       ...e,
       vagas: e.vagas.map(v => v.funcao === 'MISSAL'
         ? { ...v, voluntario_id: 'p' + e.data.slice(8), voluntario: { id: 'p' + e.data.slice(8), nome_completo: 'Missal ' + e.data.slice(8) } }

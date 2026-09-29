@@ -153,7 +153,7 @@ describe('EscalaBuilderComponent', () => {
   }
 
   it('semanal cheia (22 dias úteis de outubro): o template não chama usedIds nem slotFor a cada detecção', () => {
-    component.form.setValue({ titulo: 'Semanal', tipo: 'SEMANAL', ano: 2026, mes: 10, observacao: '' });
+    component.form.setValue({ titulo: 'Semanal', tipo: 'SEMANAL', ano: 2026, mes: 10, observacao: '', layoutId: null });
     component.events = semanaCheia();
     fixture.detectChanges();
     const usados = spyOn(component, 'usedIds').and.callThrough();
@@ -167,7 +167,7 @@ describe('EscalaBuilderComponent', () => {
   });
 
   it('escala finalizada mostra só os nomes, sem nenhum seletor', () => {
-    component.form.setValue({ titulo: 'Semanal', tipo: 'SEMANAL', ano: 2026, mes: 10, observacao: '' });
+    component.form.setValue({ titulo: 'Semanal', tipo: 'SEMANAL', ano: 2026, mes: 10, observacao: '', layoutId: null });
     component.status = 'FINALIZADA';
     component.events = semanaCheia();
     fixture.detectChanges();
@@ -183,7 +183,7 @@ describe('EscalaBuilderComponent', () => {
   });
 
   it('mensal: vaga de sábado 03/10 mostra ⛔ para quem não pode em 03/10 e sugere o irmão', () => {
-    component.form.setValue({ titulo: 'Mensal', tipo: 'MENSAL', ano: 2026, mes: 10, observacao: '' });
+    component.form.setValue({ titulo: 'Mensal', tipo: 'MENSAL', ano: 2026, mes: 10, observacao: '', layoutId: null });
     component.volunteers = [
       { id: 'a', nome_completo: 'Ana', tipo: 'COROINHA', ativo: true },
       { id: 'b', nome_completo: 'Bruno', tipo: 'COROINHA', ativo: true },

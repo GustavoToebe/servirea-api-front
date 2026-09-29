@@ -14,6 +14,8 @@ import {
 import { TITULOS_CELEBRACAO } from '../../data/calendario-liturgico';
 import { EscalasService } from '../../services/escalas.service';
 import { ExportService } from '../../services/export.service';
+import { LayoutsEscalaService } from '../../services/layouts-escala.service';
+import { LayoutEscala, ColunaEscala } from '../../models/escala.model';
 import { DialogoService } from '../../../../shared/services/dialogo.service';
 import { ReplicarDialogComponent } from '../replicar-dialog.component';
 import { AindaNaoEscaladosComponent } from '../../components/ainda-nao-escalados.component';
@@ -55,6 +57,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
         @if (id) {
           <div class="flex flex-wrap items-center gap-2"><span class="badge" [ngClass]="statusClass(status)">{{ statusLabel(status) }}</span>
             @if (status==='FINALIZADA') {
+              <button type="button" class="btn-secondary !py-2" (click)="gerarPrevia()">Gerar prévia (PDF)</button>
               <button class="btn-secondary !py-2" (click)="exportPdf()">Exportar PDF</button>
               <button class="btn-secondary !py-2" (click)="exportPng()">Exportar PNG</button>
             }
@@ -71,6 +74,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
         <section class="card p-4">
           <form [formGroup]="form" class="grid gap-3 md:grid-cols-[2fr_1fr_110px_1fr]">
             <div><label class="label">Título *</label><input class="field" formControlName="titulo" [readonly]="readOnly"></div>
+            <div><label class="label">Layout</label><select class="field" formControlName="layoutId" [attr.disabled]="metaTravada ? true : null" (change)="metaChanged()"><option [ngValue]="null">Padrão</option>@for(l of layoutsFiltrados; track l.id){<option [ngValue]="l.id">{{ l.nome }}</option>}</select></div>
             <div><label class="label">Modelo *</label><select class="field" formControlName="tipo" [attr.disabled]="metaTravada ? true : null" (change)="metaChanged()"><option value="SEMANAL">Semanal (dias úteis)</option><option value="MENSAL">Mensal (sábados e domingos)</option></select></div>
             <div><label class="label">Ano *</label><input class="field" type="number" min="2020" max="2100" formControlName="ano" [readonly]="metaTravada" (change)="metaChanged()"></div>
             <div><label class="label">Mês *</label><select class="field" formControlName="mes" [attr.disabled]="metaTravada ? true : null" (change)="metaChanged()">@for (m of months; track m; let i = $index) {
@@ -92,6 +96,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
         <div class="flex flex-wrap items-center gap-2">
           @if (!readOnly) {
             <button type="button" class="btn-secondary !py-2" (click)="abrirNovoDia($event)" data-novo-dia>＋ Dia</button>
+          <button type="button" class="btn-secondary !py-2" (click)="gerarPrevia()">Gerar prévia (PDF)</button>
           }
           @if (ehMensal) {
             @if (id) {
@@ -121,17 +126,17 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
                 <thead class="sticky top-0 z-20">
                   <tr class="bg-red-700 text-white">
                     <th class="sticky left-0 z-30 bg-red-700 px-3 py-2">ESCALA SEMANAL</th>
-                    <th class="px-3 py-2 text-center" [attr.colspan]="weeklyColumns.length">{{ months[form.controls.mes.value-1] | uppercase }} {{ form.controls.ano.value }}</th>
+                    <th class="px-3 py-2 text-center" [attr.colspan]="colunas.length">{{ months[form.controls.mes.value-1] | uppercase }} {{ form.controls.ano.value }}</th>
                   </tr>
                   <tr class="bg-red-600 text-white">
                     <th class="sticky left-0 z-30 w-40 bg-red-600 px-3 py-2">Dia</th>
-                    @for (col of weeklyColumns; track col.chave) { <th class="min-w-40 px-2 py-2 text-center">{{ col.label }}</th> }
+                    @for (col of colunas; track col.funcao+'-'+col.posicao) { <th class="min-w-40 px-2 py-2 text-center">{{ col.rotulo }}</th> }
                   </tr>
                 </thead>
                 <tbody>
                   @for (l of linhasSemanal; track l.chave) {
                     @if (l.novaSemana) {
-                      <tr class="bg-slate-50" data-separador-semana><td class="sticky left-0 bg-slate-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-400" [attr.colspan]="weeklyColumns.length + 1">Semana {{ l.semana }}</td></tr>
+                      <tr class="bg-slate-50" data-separador-semana><td class="sticky left-0 bg-slate-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-400" [attr.colspan]="colunas.length + 1">Semana {{ l.semana }}</td></tr>
                     }
                     <tr class="align-top" [class.hover:bg-violet-50/40]="!l.evento.referencia" [class.bg-slate-100]="l.evento.referencia" [class.text-slate-500]="l.evento.referencia"
                         [attr.data-referencia]="l.evento.referencia ? l.evento.data : null">
@@ -155,9 +160,9 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
                           <div class="mt-1 text-[11px] font-bold text-amber-700">Dia a mais — preencher à mão</div>
                         }
                       </td>
-                      @for (col of weeklyColumns; track col.chave) {
+                      @for (col of colunas; track col.funcao+'-'+col.posicao) {
                         <td class="border-b border-slate-200 px-1.5 py-1.5">
-                          @if (l.vagasPorColuna[col.chave]; as slot) {
+                          @if (l.vagasPorColuna[col.funcao+'-'+col.posicao]; as slot) {
                             @if (readOnly) {
                               <span class="block truncate rounded-lg px-2 py-1.5" [class.font-semibold]="!!slot.voluntario_id" [class.text-slate-400]="!slot.voluntario_id">{{ slot.voluntario?.nome_completo || '—' }}</span>
                             } @else {
@@ -315,16 +320,9 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
   currentDetail: EscalaDetalhe | null = null;
   replicarAberto = false;
   observacaoAberta = false;
+  layouts: LayoutEscala[] = [];
   readonly esqueleto = [1, 2, 3, 4, 5, 6];
-  weeklyColumns: { funcao: FuncaoEscala; posicao: number; label: string; chave: string }[] = [
-    { funcao: 'MISSAL', posicao: 1, label: 'Acólito Missal', chave: 'MISSAL-1' },
-    { funcao: 'CRUZ', posicao: 1, label: 'Cruz', chave: 'CRUZ-1' },
-    { funcao: 'CREDENCIA', posicao: 1, label: 'Credência', chave: 'CREDENCIA-1' },
-    { funcao: 'VELA', posicao: 1, label: 'Vela 1', chave: 'VELA-1' },
-    { funcao: 'VELA', posicao: 2, label: 'Vela 2', chave: 'VELA-2' },
-    { funcao: 'SINO', posicao: 1, label: 'Sino 1', chave: 'SINO-1' },
-    { funcao: 'SINO', posicao: 2, label: 'Sino 2', chave: 'SINO-2' }
-  ];
+  colunas: ColunaEscala[] = [];
 
   // ---- Modelo de tela pré-calculado (PLANO-008)
   linhas: Linha[] = [];
@@ -351,6 +349,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
   form = this.fb.nonNullable.group({
     titulo: ['', Validators.required],
     tipo: ['MENSAL' as TipoEscala, Validators.required],
+    layoutId: [null as string | null],
     ano: [new Date().getFullYear(), [Validators.required, Validators.min(2020)]],
     mes: [new Date().getMonth()+1, [Validators.required, Validators.min(1), Validators.max(12)]],
     observacao: ['']
@@ -363,6 +362,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
   get readOnly() { return this.status !== 'RASCUNHO'; }
   /** Numa escala já salva, modelo/ano/mês não mudam pela tela (apagaria a grade); para outro mês existe o Replicar. */
   get metaTravada() { return this.readOnly || !!this.id; }
+  get layoutsFiltrados() { return this.layouts.filter(l => l.tipo === this.form.controls.tipo.value); }
   get ehMensal() { return this.form.controls.tipo.value === 'MENSAL'; }
   get progresso() { return this.total ? Math.round((this.preenchidas / this.total) * 100) : 0; }
   get pendentes() { return this.apoio?.voluntarios.filter(v => v.situacao === 'PENDENTE').length ?? 0; }
@@ -370,7 +370,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
 
   private dialogo = inject(DialogoService);
 
-  constructor(private fb: FormBuilder, private route: ActivatedRoute, private router: Router, private service: EscalasService, private volunteersService: VoluntariosService, private exporter: ExportService) {}
+  constructor(private fb: FormBuilder, private route: ActivatedRoute, private router: Router, private service: EscalasService, private volunteersService: VoluntariosService, private exporter: ExportService, private layoutsService: LayoutsEscalaService) {}
 
   async ngOnInit() {
     this.id = this.route.snapshot.paramMap.get('id');
@@ -378,19 +378,28 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
       this.painelDesktop = localStorage.getItem(CHAVE_PAINEL) !== 'recolhido';
     } catch { /* sem localStorage: painel aberto */ }
     try {
+      
       this.volunteers = await this.volunteersService.active();
+      this.layouts = await this.layoutsService.listar();
+
+      
       if (this.id) {
         const d = await this.service.getById(this.id); this.currentDetail = d; this.status = d.status;
-        this.form.setValue({ titulo:d.titulo, tipo:d.tipo, ano:d.ano, mes:d.mes, observacao:d.observacao||'' });
+        this.form.setValue({ titulo:d.titulo, tipo:d.tipo, ano:d.ano, mes:d.mes, observacao:d.observacao||'', layoutId: d.layoutId || null });
+        this.colunas = d.colunas || [];
+
         this.observacaoAberta = !!d.observacao;
         this.events = d.eventos.map(e => ({...e, vagas:e.vagas.map(v=>({...v}))}));
         if (this.status !== 'RASCUNHO') this.form.disable({ emitEvent: false });
         if (d.tipo === 'MENSAL') await this.carregarApoio();
+      
       } else {
         const type = this.form.controls.tipo.value; const year=this.form.controls.ano.value; const month=this.form.controls.mes.value;
         this.form.controls.titulo.setValue(`Escala ${type==='SEMANAL'?'Semanal':'Mensal'} - ${MESES[month-1]} ${year}`);
-        this.events = this.service.buildDefaultEvents(type, year, month);
+        this.atualizarColunasNovo();
+        this.events = this.service.buildDefaultEvents(type, year, month, this.colunas);
       }
+
       this.form.markAsPristine(); this.eventsDirty=false;
       this.syncAddDate();
     } catch(e:any){this.error=e?.message||'Erro ao carregar a tela de escala.';}
@@ -496,25 +505,47 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
 
   // ---- Ações da grade
 
-  metaChanged() {
+
+  async metaChanged() {
     if (this.metaTravada) return;
     this.form.markAsDirty();
     const {tipo,ano,mes}=this.form.getRawValue();
     if (!this.id && !this.eventsDirty) {
-      this.events=this.service.buildDefaultEvents(tipo,ano,mes);
+      this.atualizarColunasNovo();
+      this.events=this.service.buildDefaultEvents(tipo,ano,mes, this.colunas);
       this.form.controls.titulo.setValue(`Escala ${tipo==='SEMANAL'?'Semanal':'Mensal'} - ${MESES[mes-1]} ${ano}`);
+    } else if (!this.id) {
+      const filled=this.filledCount();
+      if (filled && !await this.dialogo.confirmar({ titulo: 'Alterar layout?', mensagem: `A grade possui ${filled} vaga(s) preenchida(s). Mudar o layout irá recriar a grade. Continuar?`, confirmar: 'Sim', perigo: true })) {
+        return;
+      }
+      this.atualizarColunasNovo();
+      this.events=this.service.buildDefaultEvents(tipo,ano,mes, this.colunas);
     } else {
       this.recalcular();
     }
     this.syncAddDate();
   }
 
+  private atualizarColunasNovo() {
+    const { tipo, layoutId } = this.form.getRawValue();
+    if (layoutId) {
+      const l = this.layouts.find(x => x.id === layoutId);
+      if (l) { this.colunas = l.colunas; return; }
+    }
+    const padrao = this.layouts.find(x => x.tipo === tipo && x.sistema && x.ativo);
+    this.colunas = padrao ? padrao.colunas : [];
+  }
+
+
+
   async regenerate() {
     if (this.readOnly) return;
     const filled=this.filledCount();
     if (filled && !await this.dialogo.confirmar({ titulo: 'Recriar a grade?', mensagem: `A grade possui ${filled} vaga(s) preenchida(s). Recriar a grade apagará essas seleções.`, confirmar: 'Recriar', perigo: true })) return;
-    const {tipo,ano,mes}=this.form.getRawValue(); this.events=this.service.buildDefaultEvents(tipo,ano,mes); this.eventsDirty=true;
+    const {tipo,ano,mes}=this.form.getRawValue(); this.atualizarColunasNovo(); this.events=this.service.buildDefaultEvents(tipo,ano,mes,this.colunas); this.eventsDirty=true;
   }
+
 
   selectVolunteer(event: EscalaEvento, slot: EscalaVaga, id: string | null) {
     if (id && this.usedIds(event, slot.voluntario_id).includes(id)) { void this.dialogo.avisar('Esta pessoa já está alocada em outra função nesta mesma missa.'); return; }
@@ -567,7 +598,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
       return;
     }
     const { tipo } = this.form.getRawValue();
-    this.events = [...this.events, this.service.createEvent(tipo, this.addDate, time, this.addCelebration || 'Missa')]
+    this.events = [...this.events, this.service.createEvent(tipo, this.addDate, time, this.addCelebration || 'Missa', this.colunas)]
       .sort((a, b) => `${a.data} ${a.horario}`.localeCompare(`${b.data} ${b.horario}`));
     this.eventsDirty = true;
   }
@@ -635,7 +666,9 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
     try{
       const m=this.form.getRawValue();
       const eraNova=!this.id;
-      const result=await this.service.save({id:this.id||undefined,titulo:m.titulo,tipo:m.tipo,ano:m.ano,mes:m.mes,status,observacao:m.observacao||null,version:this.currentDetail?.version??null,eventos:this.events});
+      
+      const result=await this.service.save({id:this.id||undefined,titulo:m.titulo,tipo:m.tipo,ano:m.ano,mes:m.mes,status,observacao:m.observacao||null,version:this.currentDetail?.version??null,eventos:this.events, layoutId: m.layoutId || null, colunas: this.colunas});
+
       this.id=result.id;this.currentDetail=result;this.status=result.status;this.events=result.eventos;this.saved=true;this.form.markAsPristine();this.eventsDirty=false;
       if (this.readOnly) this.form.disable({ emitEvent: false });
       if (eraNova && m.tipo==='MENSAL') await this.carregarApoio();
@@ -647,6 +680,18 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
   async cancelScale(){if(!this.id)return;if(!await this.dialogo.confirmar({ titulo: 'Cancelar escala?', mensagem: `Tem certeza que deseja cancelar a escala ${MESES[this.form.controls.mes.value-1]} / ${this.form.controls.ano.value}?`, confirmar: 'Cancelar escala', cancelar: 'Voltar', perigo: true }))return;try{this.currentDetail=await this.service.setStatus(this.id,'CANCELADA');this.status='CANCELADA';this.form.disable({emitEvent:false});this.saved=true;}catch(e:any){this.error=e?.message||'Erro ao cancelar escala.';}}
   async reopen(){if(!this.id)return;if(!await this.dialogo.confirmar({ titulo: 'Reabrir escala?', mensagem: 'A escala volta a ser não finalizada e aceita alterações de novo.', confirmar: 'Reabrir' }))return;try{this.currentDetail=await this.service.setStatus(this.id,'RASCUNHO');this.status='RASCUNHO';this.form.enable({emitEvent:false});this.saved=true;}catch(e:any){this.error=e?.message||'Erro ao reabrir escala.';}}
   async remove(){if(!this.id)return;if(!await this.dialogo.confirmar({ titulo: 'Excluir escala?', mensagem: `Excluir definitivamente a escala de ${MESES[this.form.controls.mes.value-1]} / ${this.form.controls.ano.value}? Esta ação não pode ser desfeita.`, confirmar: 'Excluir', perigo: true }))return;try{await this.service.deleteCancelled(this.id);this.saved=true;await this.router.navigate(['/escalas']);}catch(e:any){this.error=e?.message||'Erro ao excluir escala.';}}
+  
+  async gerarPrevia() {
+    const { titulo, tipo, ano, mes } = this.form.getRawValue();
+    const mockDetail: EscalaDetalhe = {
+      id: '', titulo, tipo, ano, mes, status: 'RASCUNHO', observacao: null, version: null, colunas: this.colunas,
+      eventos: this.events.filter(e => !e.referencia)
+    };
+    try {
+      await this.exporter.exportPdf(mockDetail);
+    } catch(e:any) { this.error=e?.message||'Erro ao gerar prévia.'; }
+  }
+
   async exportPdf(){if(!this.id)return;try{await this.exporter.exportPdf(await this.service.getById(this.id));}catch(e:any){this.error=e?.message||'Erro ao exportar PDF.';}}
   async exportPng(){if(!this.id)return;try{await this.exporter.exportPng(await this.service.getById(this.id));}catch(e:any){this.error=e?.message||'Erro ao exportar PNG.';}}
 

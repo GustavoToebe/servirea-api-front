@@ -170,7 +170,7 @@ export class EscalasService {
     return h && h.length === 5 ? `${h}:00` : h;
   }
 
-  buildDefaultEvents(tipo: TipoEscala, ano: number, mes: number): EscalaEvento[] {
+  buildDefaultEvents(tipo: TipoEscala, ano: number, mes: number, colunas: {funcao: FuncaoEscala, posicao: number}[]): EscalaEvento[] {
     const events: EscalaEvento[] = [];
     const days = new Date(ano, mes, 0).getDate();
     for (let day = 1; day <= days; day++) {
@@ -178,14 +178,14 @@ export class EscalasService {
       const dow = d.getDay();
       const date = `${ano}-${String(mes).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       if (tipo === 'SEMANAL' && dow >= 1 && dow <= 5) {
-        events.push(this.createEvent(tipo, date, '19:00', 'Missa'));
+        events.push(this.createEvent(tipo, date, '19:00', 'Missa', colunas));
       }
       if (tipo === 'MENSAL' && dow === 6) {
-        events.push(this.createEvent(tipo, date, '19:00', 'Missa'));
+        events.push(this.createEvent(tipo, date, '19:00', 'Missa', colunas));
       }
       if (tipo === 'MENSAL' && dow === 0) {
-        events.push(this.createEvent(tipo, date, '09:30', 'Missa'));
-        events.push(this.createEvent(tipo, date, '19:00', 'Missa'));
+        events.push(this.createEvent(tipo, date, '09:30', 'Missa', colunas));
+        events.push(this.createEvent(tipo, date, '19:00', 'Missa', colunas));
       }
     }
     this.mergeLiturgicalDays(events, tipo, ano, mes);
@@ -214,7 +214,7 @@ export class EscalasService {
     }
     for (const lista of porChave.values()) lista.sort((a, b) => a.horario.localeCompare(b.horario));
 
-    const destino = this.buildDefaultEvents('SEMANAL', ano, mes);
+    const destino = this.buildDefaultEvents('SEMANAL', ano, mes, origem.colunas || []);
     const usadas = new Set<string>();
     const reais: EscalaEvento[] = [];
     for (const data of [...new Set(destino.map(e => e.data))]) {
@@ -241,12 +241,12 @@ export class EscalasService {
     return [...referencias.sort(ordem), ...reais.sort(ordem)];
   }
 
-  createEvent(tipo: TipoEscala, data: string, horario: string, celebracao: string): EscalaEvento {
+  createEvent(tipo: TipoEscala, data: string, horario: string, celebracao: string, colunas: {funcao: FuncaoEscala, posicao: number}[]): EscalaEvento {
     return {
       data,
       horario: horario.length === 5 ? `${horario}:00` : horario,
       celebracao: celebracao || 'Missa',
-      vagas: this.defaultSlots(tipo === 'MENSAL')
+      vagas: colunas.map(c => ({ funcao: c.funcao, posicao: c.posicao, voluntario_id: null }))
     };
   }
 
@@ -260,15 +260,6 @@ export class EscalasService {
         if (!event.celebracao || event.celebracao === 'Missa') event.celebracao = feast.titulo;
       }
     }
-  }
-
-  private defaultSlots(includeColeta: boolean): EscalaVaga[] {
-    const defs: FuncaoEscala[] = ['MISSAL','CRUZ','CREDENCIA','VELA','VELA', ...(includeColeta ? ['COLETA' as FuncaoEscala] : []), 'SINO','SINO'];
-    const counters: Record<string, number> = {};
-    return defs.map(funcao => {
-      counters[funcao] = (counters[funcao] || 0) + 1;
-      return { funcao, posicao: counters[funcao], voluntario_id: null };
-    });
   }
 
   private slotOrder(v: EscalaVaga) {
