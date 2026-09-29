@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import { mensagemApi } from '../api/api-error';
 import { CacheDeListas } from '../api/cache-de-listas.service';
 import { AccessTokenResponse, LoginResponse, TenantResumo } from './auth.models';
+import { cabecalhoXsrf } from './xsrf';
 
 const TOKEN_KEY = 'sv_access';
 const TENANT_KEY = 'sv_tenant';
@@ -13,7 +14,15 @@ const EMAIL_KEY = 'sv_email';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  constructor(private http: HttpClient, private cache: CacheDeListas) {}
+  constructor(private http: HttpClient, private cache: CacheDeListas) {
+    // Quem já está logado nesta aba passa a paróquia para a próxima aba.
+    const id = sessionStorage.getItem(TENANT_KEY);
+    if (id && sessionStorage.getItem(TOKEN_KEY)) {
+      localStorage.setItem(TENANT_KEY, id);
+      const nome = sessionStorage.getItem(TENANT_NOME_KEY);
+      if (nome) localStorage.setItem(TENANT_NOME_KEY, nome);
+    }
+  }
 
   token(): string | null {
     return sessionStorage.getItem(TOKEN_KEY);
@@ -38,6 +47,27 @@ export class AuthService {
 
   isLoggedIn(): boolean {
     return !!this.token() && !!this.tenantId();
+  }
+
+  /**
+   * A aba nova não herda o sessionStorage. O cookie de refresh é do domínio
+   * inteiro; a paróquia fica no localStorage para o refresh saber qual é.
+   */
+  async restaurarSessao(): Promise<boolean> {
+    if (this.isLoggedIn()) return true;
+    const tenantId = localStorage.getItem(TENANT_KEY);
+    if (!tenantId) return false;
+    try {
+      const resposta = await firstValueFrom(this.http.post<AccessTokenResponse>(
+        `${environment.apiUrl}/auth/refresh`,
+        { tenantId },
+        { withCredentials: true, headers: cabecalhoXsrf() }
+      ));
+      this.guardarSessao(resposta.accessToken, resposta.tenantAtual);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async login(email: string, senha: string): Promise<LoginResponse> {
@@ -84,6 +114,8 @@ export class AuthService {
       sessionStorage.removeItem(TENANT_KEY);
       sessionStorage.removeItem(TENANT_NOME_KEY);
       sessionStorage.removeItem(EMAIL_KEY);
+      localStorage.removeItem(TENANT_KEY);
+      localStorage.removeItem(TENANT_NOME_KEY);
       this.cache.limpar();
     }
   }
@@ -97,6 +129,10 @@ export class AuthService {
     this.cache.limpar();
     sessionStorage.setItem(TOKEN_KEY, accessToken);
     sessionStorage.setItem(TENANT_KEY, tenant.id);
-    if (tenant.nome) sessionStorage.setItem(TENANT_NOME_KEY, tenant.nome);
+    localStorage.setItem(TENANT_KEY, tenant.id);
+    if (tenant.nome) {
+      sessionStorage.setItem(TENANT_NOME_KEY, tenant.nome);
+      localStorage.setItem(TENANT_NOME_KEY, tenant.nome);
+    }
   }
 }

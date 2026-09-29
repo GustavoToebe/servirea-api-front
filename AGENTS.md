@@ -25,7 +25,7 @@ Rodar junto com as APIs e a Central no PC: README do `central-api-back`, seção
 "Ponta a ponta local (Windows, tudo no PC)". Antes de commitar: `npm test` e `npm run build:prod` verdes.
 
 ## Estrutura (`src/app/`)
-- `core/auth/` — sessão (`sessionStorage`), `parishAuthInterceptor` (Bearer + `X-XSRF-TOKEN` **só** para
+- `core/auth/` — sessão (`sessionStorage`; a paróquia também no `localStorage` para a aba nova renovar pelo cookie), `parishAuthInterceptor` (Bearer + `X-XSRF-TOKEN` **só** para
   URLs de `environment.apiUrl`; refresh compartilhado num 401), `authGuard`.
 - `core/guards/pending-changes.guard.ts` — sair com alteração pendente pergunta no `DialogoService`.
 - `core/layout/` — moldura, menu por permissão (`menu.ts`).

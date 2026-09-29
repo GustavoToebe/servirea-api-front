@@ -84,6 +84,8 @@ function encerrarSessao(router: Router): void {
   sessionStorage.removeItem(TOKEN_KEY);
   sessionStorage.removeItem(TENANT_KEY);
   sessionStorage.removeItem(EMAIL_KEY);
+  localStorage.removeItem(TENANT_KEY);
+  localStorage.removeItem('sv_tenant_nome');
   void router.navigate(['/login']);
 }
 

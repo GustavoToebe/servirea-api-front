@@ -25,6 +25,8 @@ describe('AuthService', () => {
 
   beforeEach(() => {
     sessionStorage.clear();
+    localStorage.removeItem('sv_tenant');
+    localStorage.removeItem('sv_tenant_nome');
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()]
     });
@@ -55,6 +57,7 @@ describe('AuthService', () => {
     await promise;
     expect(service.token()).toBe('jwt-abc');
     expect(service.tenantId()).toBe('paroquia-1');
+    expect(localStorage.getItem('sv_tenant')).toBe('paroquia-1');
     expect(service.email()).toBe('mae@paroquia.com');
     expect(service.isLoggedIn()).toBeTrue();
   });
@@ -90,6 +93,7 @@ describe('AuthService', () => {
     sessionStorage.setItem('sv_access', 'jwt');
     sessionStorage.setItem('sv_tenant', tenant.id);
     sessionStorage.setItem('sv_email', 'mae@paroquia.com');
+    localStorage.setItem('sv_tenant', tenant.id);
 
     const promise = service.logout();
     http.expectOne(`${environment.apiUrl}/auth/logout`).flush(
@@ -101,6 +105,20 @@ describe('AuthService', () => {
     expect(service.token()).toBeNull();
     expect(service.tenantId()).toBeNull();
     expect(service.email()).toBe('');
+    expect(localStorage.getItem('sv_tenant')).toBeNull();
+  });
+
+  it('aba nova sem token recupera a sessão pelo cookie e pela paróquia guardada', async () => {
+    localStorage.setItem('sv_tenant', tenant.id);
+    const promise = service.restaurarSessao();
+    const req = http.expectOne(`${environment.apiUrl}/auth/refresh`);
+    expect(req.request.body).toEqual({ tenantId: tenant.id });
+    expect(req.request.withCredentials).toBeTrue();
+    req.flush({ accessToken: 'jwt-aba', expiresInSeconds: 900, tenantAtual: tenant });
+
+    expect(await promise).toBeTrue();
+    expect(service.token()).toBe('jwt-aba');
+    expect(service.tenantId()).toBe(tenant.id);
   });
 
   it('traduz erro de login da API', async () => {
