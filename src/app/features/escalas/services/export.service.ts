@@ -8,6 +8,8 @@ import { FuncaoEscala } from '../../voluntarios/models/voluntario.model';
 const BLUE = '#1e4fa3';
 const RED = '#c62828';
 const HEADER = '#b71c1c';
+const SEMANAL_VERMELHO = '#c00000';
+const SEMANAL_AZUL = '#0070c0';
 
 @Injectable({ providedIn: 'root' })
 export class ExportService {
@@ -49,6 +51,7 @@ export class ExportService {
   }
 
   private buildSheet(escala: EscalaDetalhe): HTMLElement {
+    if (escala.tipo === 'SEMANAL') return this.buildSemanal(escala);
     const host = document.createElement('div');
     host.style.cssText = 'position:fixed;left:-12000px;top:0;width:1180px;background:#fff;padding:18px 18px 28px;font-family:Calibri,Arial,sans-serif;color:#111;';
     const month = MESES[escala.mes - 1].toUpperCase();
@@ -118,6 +121,105 @@ export class ExportService {
       </tr>
       <tr><td colspan="8" style="height:16px;border:none;background:#fff;"></td></tr>
     `;
+  }
+
+  /**
+   * Semanal no layout da planilha que a paróquia já usava (29/09/2026): uma linha por missa, uma coluna por vaga
+   * (Missal, Cruz, Credência, Vela 1 e 2, Sino 1 e 2), linha em branco entre as semanas e os dias úteis da
+   * primeira semana que caem no mês anterior só com o nome do dia.
+   */
+  private buildSemanal(escala: EscalaDetalhe): HTMLElement {
+    const host = document.createElement('div');
+    host.style.cssText = 'position:fixed;left:-12000px;top:0;width:1500px;background:#fff;padding:18px;font-family:Calibri,Arial,sans-serif;color:#000;';
+    const eventos = escala.eventos.filter(event => !event.referencia);
+    const linhas: string[] = [];
+    let semanaAnterior = '';
+    eventos.forEach((event, i) => {
+      const semana = this.segundaDaSemana(event.data);
+      if (i === 0) {
+        const primeiroDoMes = `${event.data.slice(0, 7)}-01`;
+        for (let d = new Date(`${semana}T12:00:00`); this.iso(d) < event.data; d.setDate(d.getDate() + 1)) {
+          if (this.iso(d) < primeiroDoMes) linhas.push(this.linhaSemanal('', this.diaDaSemana(this.iso(d)), '', []));
+        }
+      } else if (semana !== semanaAnterior) {
+        linhas.push(this.linhaSemanal('', '', '', []));
+      }
+      semanaAnterior = semana;
+      const extra = [
+        event.celebracao && event.celebracao !== 'Missa' ? event.celebracao : '',
+        event.horario.slice(0, 5) !== '19:00' ? event.horario.slice(0, 5) : ''
+      ].filter(Boolean).join(' · ');
+      linhas.push(this.linhaSemanal(this.diaMes(event.data), this.diaDaSemana(event.data), extra, [
+        this.person(event, 'MISSAL', 1), this.person(event, 'CRUZ', 1), this.person(event, 'CREDENCIA', 1),
+        this.person(event, 'VELA', 1), this.person(event, 'VELA', 2), this.person(event, 'SINO', 1), this.person(event, 'SINO', 2)
+      ]));
+    });
+    const cab = `background:${SEMANAL_VERMELHO};color:#fff;font-weight:700;font-size:21px;border:1px solid #000;padding:2px 6px;`;
+    host.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+        <colgroup>
+          <col style="width:6%"><col style="width:11%"><col style="width:12.5%"><col style="width:11.5%"><col style="width:11.5%">
+          <col style="width:11.9%"><col style="width:11.9%"><col style="width:11.9%"><col style="width:11.8%">
+        </colgroup>
+        <tr>
+          <td colspan="2" style="${cab}text-align:center;">ESCALA SEMANAL</td>
+          <td style="${cab}text-align:center;">${this.esc(MESES[escala.mes - 1].toUpperCase())}</td>
+          <td colspan="2" style="${cab}text-align:center;">${escala.ano}</td>
+          <td style="${cab}"></td><td style="${cab}"></td><td style="${cab}"></td><td style="${cab}"></td>
+        </tr>
+        <tr>
+          <td rowspan="2" style="${cab}"></td>
+          <td rowspan="2" style="${cab}text-align:center;">Dia/Semana</td>
+          <td rowspan="2" style="${cab}text-align:center;">Acólito Missal</td>
+          <td colspan="2" style="${cab}border-bottom:none;text-align:center;line-height:1.1;">Coroinhas Cruz / Credencia</td>
+          <td rowspan="2" style="${cab}vertical-align:bottom;">Coroinha Vela</td>
+          <td rowspan="2" style="${cab}vertical-align:bottom;">Coroinha vela</td>
+          <td rowspan="2" style="${cab}vertical-align:bottom;text-decoration:underline;">Coroinha sino</td>
+          <td rowspan="2" style="${cab}vertical-align:bottom;text-decoration:underline;">Coroinha sino</td>
+        </tr>
+        <tr>
+          <td style="${cab}border-top:none;text-align:center;line-height:1.1;">Acolito</td>
+          <td style="${cab}border-top:none;text-align:center;line-height:1.1;">Acolito</td>
+        </tr>
+        ${linhas.join('')}
+      </table>
+    `;
+    return host;
+  }
+
+  /** Uma linha da semanal; sem nomes, é o espaço entre semanas ou um dia do mês anterior. */
+  private linhaSemanal(data: string, dia: string, extra: string, nomes: string[]): string {
+    const celula = 'border:1px solid #000;padding:3px 6px;font-size:18px;font-weight:700;height:30px;';
+    const nome = (n: string, centro: boolean) => `<td style="${celula}${centro ? 'text-align:center;' : ''}">${this.esc(n)}</td>`;
+    const vagas = Array.from({ length: 7 }, (_, i) => nomes[i] ?? '');
+    return `
+      <tr>
+        <td style="${celula}text-align:right;">${this.esc(data)}</td>
+        <td style="${celula}text-align:center;color:${SEMANAL_AZUL};">${this.esc(dia)}${extra
+          ? `<div style="font-size:13px;color:${SEMANAL_VERMELHO};">${this.esc(extra)}</div>` : ''}</td>
+        ${vagas.map((n, i) => nome(n, i < 3)).join('')}
+      </tr>
+    `;
+  }
+
+  /** "1-set." como na planilha. */
+  private diaMes(iso: string): string {
+    return `${Number(iso.slice(8, 10))}-${MESES[Number(iso.slice(5, 7)) - 1].slice(0, 3).toLowerCase()}.`;
+  }
+
+  /** "terça-feira". */
+  private diaDaSemana(iso: string): string {
+    return new Intl.DateTimeFormat('pt-BR', { weekday: 'long' }).format(new Date(`${iso}T12:00:00`));
+  }
+
+  private segundaDaSemana(iso: string): string {
+    const d = new Date(`${iso}T12:00:00`);
+    d.setDate(d.getDate() - (d.getDay() + 6) % 7);
+    return this.iso(d);
+  }
+
+  private iso(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
   private fn(label: string, color: string): string {

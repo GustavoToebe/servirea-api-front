@@ -76,6 +76,44 @@ describe('ExportService', () => {
     expect(titulo).toContain('04/10/2026');
   });
 
+  it('semanal sai no layout da planilha: uma coluna por vaga, dia anterior ao mês e linha entre semanas', async () => {
+    let folha = '';
+    const appendOriginal = document.body.appendChild.bind(document.body);
+    spyOn(document.body, 'appendChild').and.callFake(<T extends Node>(no: T): T => {
+      const el = no as unknown as HTMLElement;
+      if (!folha && el.tagName === 'DIV') folha = el.innerHTML;
+      return appendOriginal(no);
+    });
+    spyOn(HTMLAnchorElement.prototype, 'click');
+    const vaga = (funcao: EscalaDetalhe['eventos'][0]['vagas'][0]['funcao'], posicao: number, nome: string | null) =>
+      ({ funcao, posicao, voluntario_id: nome, voluntario: nome ? { id: nome, nome_completo: nome } : null });
+    const semanal: EscalaDetalhe = {
+      ...escala, tipo: 'SEMANAL', mes: 9,
+      eventos: [
+        { data: '2026-09-01', horario: '19:00:00', celebracao: 'Missa', vagas: [
+          vaga('MISSAL', 1, 'Henrique'), vaga('CRUZ', 1, 'Alice'), vaga('CREDENCIA', 1, 'Daniel'),
+          vaga('VELA', 1, 'Isabelly'), vaga('VELA', 2, 'Vinicius'), vaga('SINO', 1, 'Giancarlo'), vaga('SINO', 2, null)
+        ] },
+        { data: '2026-09-07', horario: '19:00:00', celebracao: 'Missa', vagas: [vaga('MISSAL', 1, 'Nicolly')] }
+      ]
+    };
+
+    await service.exportPng(semanal);
+
+    const texto = (html: string) => html.replace(/<[^>]+>/g, '|').replace(/\s+/g, ' ');
+    expect(folha).toContain('ESCALA SEMANAL');
+    expect(folha).toContain('SETEMBRO');
+    expect(folha).toContain('Coroinhas Cruz / Credencia');
+    expect(folha).not.toContain('OFERTÓRIO');
+    const linhas = folha.split('<tr>').map(texto);
+    const primeira = linhas.findIndex(l => l.includes('1-set.'));
+    expect(linhas[primeira - 1]).toContain('segunda-feira');
+    expect(linhas[primeira]).toMatch(/1-set\..*terça-feira.*Henrique.*Alice.*Daniel.*Isabelly.*Vinicius.*Giancarlo/);
+    const segunda = linhas.findIndex(l => l.includes('7-set.'));
+    expect(segunda).toBe(primeira + 2);
+    expect(linhas[primeira + 1].replace(/[| ]/g, '')).toBe('');
+  });
+
   it('linha de referência não gera bloco no PNG', async () => {
     let folha = '';
     const appendOriginal = document.body.appendChild.bind(document.body);
