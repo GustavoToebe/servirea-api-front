@@ -1,19 +1,6 @@
-import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule, Location } from '@angular/common';
-import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { CabecalhoPaginaComponent } from '../../../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
-import { RodapeFormComponent } from '../../../../shared/components/rodape-form/rodape-form.component';
-import { LayoutsEscalaService } from '../../services/layouts-escala.service';
-import { DialogoService } from '../../../../shared/services/dialogo.service';
-import { FUNCOES_ESCALA, FUNCOES_LABEL } from '../../../voluntarios/models/voluntario.model';
-import { ColunaEscala } from '../../models/escala.model';
+import os
 
-@Component({
-  selector: 'app-layout-form',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CabecalhoPaginaComponent, RodapeFormComponent],
-  
+new_template = """
   template: `
     <app-cabecalho-pagina [titulo]="isEdicao ? 'Editar Layout' : 'Novo Layout'" subtitulo="Configure as colunas que irão aparecer na tabela da escala."></app-cabecalho-pagina>
 
@@ -153,123 +140,14 @@ import { ColunaEscala } from '../../models/escala.model';
       </app-rodape-form>
     </form>
   `
+"""
 
-})
-export class LayoutFormComponent implements OnInit {
-  private fb = inject(FormBuilder);
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
-  private service = inject(LayoutsEscalaService);
-  private dialogo = inject(DialogoService);
-  private location = inject(Location);
+with open('src/app/features/escalas/pages/layouts/layout-form.component.ts', 'r', encoding='utf-8') as f:
+    content = f.read()
 
-  id: string | null = null;
-  isEdicao = false;
-  salvando = false;
+import re
+# Replace everything between template: ` and `
+content = re.sub(r'template: `[\s\S]*?`\s*\n}\)', new_template + '\n})', content)
 
-  funcoesOpcoes = FUNCOES_ESCALA.map(f => ({ valor: f, label: FUNCOES_LABEL[f] }));
-
-  form: FormGroup = this.fb.group({
-    id: [null],
-    nome: ['', Validators.required],
-    tipo: ['SEMANAL', Validators.required],
-    ativo: [true],
-    sistema: [false],
-    colunas: this.fb.array([], Validators.required)
-  }, { validators: this.validarColunasUnicas });
-
-  get f() { return this.form.controls; }
-  get colunas() { return this.form.get('colunas') as FormArray; }
-
-  async ngOnInit() {
-    this.id = this.route.snapshot.paramMap.get('id');
-    if (this.id) {
-      this.isEdicao = true;
-      try {
-        const layout = await this.service.carregar(this.id);
-        if (layout.sistema) {
-          this.form.disable();
-          this.dialogo.avisar('Layouts de sistema não podem ser editados.', 'info');
-        }
-        
-        while (this.colunas.length !== 0) {
-          this.colunas.removeAt(0);
-        }
-
-        const colsOrdenadas = [...layout.colunas].sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
-        colsOrdenadas.forEach(c => this.adicionarColuna(c));
-
-        this.form.patchValue(layout);
-      } catch (e: any) {
-        this.dialogo.avisar(e.message, 'error');
-        this.location.back();
-      }
-    }
-  }
-
-  adicionarColuna(col?: ColunaEscala) {
-    this.colunas.push(this.fb.group({
-      ordem: [col?.ordem ?? this.colunas.length + 1],
-      funcao: [col?.funcao ?? null, Validators.required],
-      posicao: [col?.posicao ?? 1, [Validators.required, Validators.min(1)]],
-      rotulo: [col?.rotulo ?? '', Validators.required]
-    }));
-  }
-
-  removerColuna(index: number) {
-    this.colunas.removeAt(index);
-    this.reordenarColunas();
-  }
-
-  moverColuna(index: number, direcao: number) {
-    const novaPosicao = index + direcao;
-    if (novaPosicao < 0 || novaPosicao >= this.colunas.length) return;
-
-    const current = this.colunas.at(index);
-    this.colunas.removeAt(index);
-    this.colunas.insert(novaPosicao, current);
-    
-    this.reordenarColunas();
-  }
-
-  private reordenarColunas() {
-    this.colunas.controls.forEach((ctrl, i) => {
-      ctrl.get('ordem')?.setValue(i + 1);
-    });
-  }
-
-  private validarColunasUnicas(group: FormGroup) {
-    const colunas = group.get('colunas')?.value as ColunaEscala[];
-    if (!colunas || !colunas.length) return null;
-
-    const chaves = new Set<string>();
-    for (const c of colunas) {
-      if (!c.funcao) continue;
-      const key = `${c.funcao}-${c.posicao}`;
-      if (chaves.has(key)) {
-        return { colunaDuplicada: true };
-      }
-      chaves.add(key);
-    }
-    return null;
-  }
-
-  async salvar() {
-    if (this.form.invalid || this.salvando) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
-    this.salvando = true;
-    try {
-      const formValue = this.form.getRawValue();
-      await this.service.salvar(formValue);
-      this.dialogo.avisar('Layout salvo com sucesso.', 'success');
-      this.router.navigate(['/escalas/layouts']);
-    } catch (e: any) {
-      this.dialogo.avisar(e.message, 'error');
-    } finally {
-      this.salvando = false;
-    }
-  }
-}
+with open('src/app/features/escalas/pages/layouts/layout-form.component.ts', 'w', encoding='utf-8') as f:
+    f.write(content)
