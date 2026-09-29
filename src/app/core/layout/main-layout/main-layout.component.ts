@@ -1,7 +1,5 @@
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
-import { ActivatedRouteSnapshot, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { filter } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, inject, OnInit } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { AuthService } from '../../auth/auth.service';
 import { BARRA, CONTA, montarMenu } from '../menu';
@@ -12,8 +10,8 @@ import { SessaoAtual } from '../sessao-atual';
     imports: [RouterOutlet, RouterLink, RouterLinkActive, NgClass],
     template: `
     <div class="parish min-h-screen bg-app lg:flex">
-      <aside class="fixed inset-y-0 left-0 z-40 hidden flex-col bg-brand-navy text-white lg:flex transition-[width] duration-200" [ngClass]="recolhido ? 'w-20' : 'w-72'">
-        <div class="flex h-20 items-center gap-3 border-b border-white/10" [ngClass]="recolhido ? 'justify-center px-0' : 'px-6'">
+      <aside class="fixed inset-y-0 left-0 z-40 hidden flex-col overflow-x-hidden bg-brand-navy text-white lg:flex transition-[width] duration-200" [ngClass]="recolhido ? 'w-20' : 'w-72'">
+        <div class="flex h-20 shrink-0 items-center gap-3 border-b border-white/10" [ngClass]="recolhido ? 'justify-center px-0' : 'px-6'">
           <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-blue text-sm font-black">{{ marca() }}</div>
           @if (!recolhido) {
           <div class="min-w-0">
@@ -23,7 +21,8 @@ import { SessaoAtual } from '../sessao-atual';
           }
         </div>
 
-        <nav class="min-h-0 flex-1 space-y-1 overflow-y-auto p-4" data-menu="lateral">
+        <div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto [scrollbar-color:rgba(255,255,255,0.35)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/30">
+        <nav class="space-y-1 p-4" data-menu="lateral">
           @for (item of menu().barra; track item.url) {
             <a [routerLink]="item.url" routerLinkActive="!bg-brand-blue !text-white"
               [title]="recolhido ? item.label : ''"
@@ -56,8 +55,9 @@ import { SessaoAtual } from '../sessao-atual';
             </a>
           }
         </nav>
+        </div>
 
-        <div class="mt-3 w-full border-t border-white/10 p-4" [ngClass]="recolhido ? 'px-2' : 'px-4'">
+        <div class="mt-3 w-full shrink-0 border-t border-white/10 p-4" [ngClass]="recolhido ? 'px-2' : 'px-4'">
           <button type="button" class="mb-1 flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold text-violet-100/80 hover:bg-white/10 hover:text-white" (click)="alternarRecolhido()" data-menu="recolher" [attr.aria-label]="recolhido ? 'Expandir menu' : 'Recolher menu'" [ngClass]="recolhido ? 'justify-center px-0' : ''">
             <span class="text-xl font-bold">{{ recolhido ? '»' : '«' }}</span>
           </button>
@@ -85,7 +85,7 @@ import { SessaoAtual } from '../sessao-atual';
             <button class="rounded-full px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-white/60" (click)="logout()">Sair</button>
           </div>
         </header>
-        <section class="mx-auto p-4 pb-24 md:p-8 lg:pb-8" [class.max-w-7xl]="!larguraTotal" [class.max-w-none]="larguraTotal"><router-outlet /></section>
+        <section class="p-4 pb-24 md:p-6 lg:pb-8"><router-outlet /></section>
       </main>
 
       @if (maisAberto) {
@@ -135,24 +135,12 @@ export class MainLayoutComponent implements OnInit {
   maisAberto = false;
 
   recolhido = false;
-  /** Rota com `data.larguraTotal` (montagem da escala, PLANO-008) ocupa a largura toda. */
-  larguraTotal = false;
-  private destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
     this.sessao.carregar();
-    this.larguraTotal = this.rotaPedeLarguraTotal();
-    this.router.events.pipe(filter(e => e instanceof NavigationEnd), takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.larguraTotal = this.rotaPedeLarguraTotal());
     try {
       this.recolhido = localStorage.getItem('servire.menuRecolhido') === 'true';
     } catch (e) {}
-  }
-
-  private rotaPedeLarguraTotal(): boolean {
-    let rota: ActivatedRouteSnapshot | null = this.router.routerState.snapshot.root;
-    while (rota?.firstChild) rota = rota.firstChild;
-    return !!rota?.data?.['larguraTotal'];
   }
 
   alternarRecolhido() {

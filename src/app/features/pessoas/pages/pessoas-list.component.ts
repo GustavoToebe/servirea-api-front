@@ -1,5 +1,4 @@
 import { CommonModule } from '@angular/common';
-import { NumeroComponent } from '../../../shared/components/numero/numero.component';
 import { CONDICAO_LABEL, CondicaoEspecial } from '../../../shared/components/cuidados/condicoes';
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -25,7 +24,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
 
 @Component({
     selector: 'app-pessoas-list',
-    imports: [CommonModule, FormsModule, RouterLink, ConfirmDialogComponent, NumeroComponent, ListaAssinaturaDialogComponent, BarraFiltrosComponent, DuplicidadesDialogComponent, ComunicadoDialogComponent, CabecalhoPaginaComponent, EstadoListaComponent],
+    imports: [CommonModule, FormsModule, RouterLink, ConfirmDialogComponent, ListaAssinaturaDialogComponent, BarraFiltrosComponent, DuplicidadesDialogComponent, ComunicadoDialogComponent, CabecalhoPaginaComponent, EstadoListaComponent],
     template: `
 
     <div class="space-y-6">
@@ -33,7 +32,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
         <a acoes routerLink="/pessoas/nova" class="btn-primary">＋ Novo cadastro</a>
       </app-cabecalho-pagina>
 
-      <div class="mb-4 flex flex-wrap gap-2">
+      <div class="flex flex-wrap gap-2 pb-6">
         <button type="button" class="rounded-2xl px-4 py-2.5 text-sm font-bold" [class.bg-brand-blue]="aba==='todas'" [class.text-white]="aba==='todas'" [class.bg-white]="aba!=='todas'" [class.border]="aba!=='todas'" (click)="setAba('todas')">Todas {{ counts.pessoas }}</button>
         <button type="button" class="rounded-2xl px-4 py-2.5 text-sm font-bold" [class.bg-brand-blue]="aba==='ativos'" [class.text-white]="aba==='ativos'" [class.bg-white]="aba!=='ativos'" [class.border]="aba!=='ativos'" (click)="setAba('ativos')">Ativos {{ counts.ativos }}</button>
         <button type="button" class="rounded-2xl px-4 py-2.5 text-sm font-bold" [class.bg-brand-blue]="aba==='inativos'" [class.text-white]="aba==='inativos'" [class.bg-white]="aba!=='inativos'" [class.border]="aba!=='inativos'" (click)="setAba('inativos')">Inativos {{ counts.inativos }}</button>
@@ -113,7 +112,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
                     <div class="flex items-center gap-3">
                       <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-bold text-brand-blue">{{ initials(p.nomeCompleto) }}</div>
                       <div>
-                        <div class="font-black flex items-center gap-1">{{ p.nomeCompleto }}<app-numero [numero]="p.sequencial" />
+                        <div class="font-black flex items-center gap-1">{{ p.nomeCompleto }}
                           @if (temCuidado(p)) { <span class="text-violet-600 ml-1" [title]="formatarCondicoes(p)">💜</span> }
                         </div>
                         @if (responsavelDe(p)) {
@@ -190,6 +189,9 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
                   <td><span class="badge" [ngClass]="v.ativo ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'">{{ v.ativo ? 'Ativo' : 'Inativo' }}</span></td>
                   <td class="text-right">
                     <div class="flex justify-end gap-2">
+                      @if (podeAtivar) {
+                        <button type="button" class="btn-secondary !px-3 !py-1.5 text-xs" (click)="$event.stopPropagation(); alternarAtivo(v)">{{ v.ativo ? 'Inativar' : 'Ativar' }}</button>
+                      }
                       <a [routerLink]="['/pessoas', v.id]" class="btn-secondary !px-3 !py-1.5 text-xs" (click)="$event.stopPropagation()">Ver</a>
                       <a [routerLink]="['/pessoas', v.id, 'editar']" class="btn-secondary !px-3 !py-1.5 text-xs" (click)="$event.stopPropagation()">Editar</a>
                     </div>
@@ -211,7 +213,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
             <tbody>
               @for (i of inscricoes; track i.id) {
                 <tr class="clicavel" tabindex="0" (click)="abrirInscricao(i.id)" (keydown.enter)="abrirInscricao(i.id)" [attr.data-inscricao]="i.id">
-                  <td class="font-black">{{ i.nomeCompleto }}<app-numero [numero]="i.sequencial" /></td>
+                  <td class="font-black">{{ i.nomeCompleto }}</td>
                   <td>{{ tipoLabel[i.tipo] }}</td>
                   <td>{{ ageFromDate(i.dataNascimento) ?? '—' }}</td>
                   <td class="hidden md:table-cell">{{ principalNome(i) }}</td>
@@ -440,6 +442,21 @@ export class PessoasListComponent implements OnInit {
 
   get podeComunicar(): boolean {
     return this.sessao.permissoes().includes('COMUNICADO_ENVIAR');
+  }
+
+  /** Quem só edita a ficha não liga nem desliga o cadastro. */
+  get podeAtivar(): boolean {
+    return this.sessao.permissoes().includes('PESSOA_ATIVAR_INATIVAR');
+  }
+
+  async alternarAtivo(v: VoluntarioLista) {
+    this.error = '';
+    try {
+      await this.voluntarios.setAtivo(v.id, !v.ativo);
+      await this.load();
+    } catch (err) {
+      this.error = err instanceof Error ? err.message : 'Não foi possível alterar o status.';
+    }
   }
 
   /** Nas abas Todas, Ativos e Inativos o id da linha é o da pessoa (o voluntário usa o mesmo id). */

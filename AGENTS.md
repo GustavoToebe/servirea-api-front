@@ -37,7 +37,7 @@ Rodar junto com as APIs e a Central no PC: README do `central-api-back`, seção
 - `shared/services/cep.service.ts` — endereço pelo CEP no ViaCEP.
 - `shared/services/dialogo.service.ts` + `shared/components/dialogo-host/` — confirmação e aviso.
 - `shared/components/numero/` — `<app-numero [numero]="x.sequencial" />`: número curto da paróquia "(12)" que copia
-  ao clicar; use ao lado do nome de todo cadastro que tem `sequencial`.
+  ao clicar. Só no detalhe (ou no título do formulário de edição, quando a edição é na mesma página). A lista mostra só o nome.
 - Lista suspensa dentro de `.card` (tem `backdrop-filter` e `overflow-hidden`): painel movido para o `body` ao abrir
   (ver `volunteer-picker` e `shared/components/datas/painel-flutuante.ts`).
 - Datas: nunca `type="date"`/`type="month"` nativo. `app-campo-data` (form control ISO, tela `DD/MM/AAAA`,

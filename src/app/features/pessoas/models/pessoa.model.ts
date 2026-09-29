@@ -36,7 +36,8 @@ export interface Relacao {
 
 export interface VoluntarioPerfil {
   tipo: TipoVoluntario;
-  ativo: boolean;
+  /** Presente na resposta. A ficha não envia: ativo/inativo é o botão da lista. */
+  ativo?: boolean;
   fotoPath?: string | null;
   etapaCatequese?: string | null;
   eucaristiaAno?: string | null;

@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { Pessoa } from '../models/pessoa.model';
+import { Pessoa, VoluntarioLista } from '../models/pessoa.model';
 import { InscricoesApiService } from '../services/inscricoes-api.service';
 import { PessoasService } from '../services/pessoas.service';
 import { VoluntariosApiService } from '../services/voluntarios-api.service';
@@ -26,8 +26,10 @@ describe('PessoasListComponent (lista de assinatura)', () => {
       pessoa('3', 'Carla', 'COROINHA'),
       pessoa('4', 'Dirce', null, ['RESPONSAVEL'])
     ]);
-    const voluntarios = jasmine.createSpyObj<VoluntariosApiService>('VoluntariosApiService', ['contar', 'listar']);
+    const voluntarios = jasmine.createSpyObj<VoluntariosApiService>('VoluntariosApiService', ['contar', 'listar', 'setAtivo']);
     voluntarios.contar.and.resolveTo(0);
+    voluntarios.listar.and.resolveTo([]);
+    voluntarios.setAtivo.and.resolveTo();
     const inscricoes = jasmine.createSpyObj<InscricoesApiService>('InscricoesApiService', ['listar']);
     inscricoes.listar.and.resolveTo([]);
     TestBed.configureTestingModule({
@@ -130,6 +132,27 @@ describe('PessoasListComponent (lista de assinatura)', () => {
     expect(tr?.classList.contains('marcada')).toBeTrue();
   });
 
+  it('Inativar só aparece com PESSOA_ATIVAR_INATIVAR e chama a API', async () => {
+    const semPermissao = await montar();
+    semPermissao.componentInstance.aba = 'ativos';
+    semPermissao.componentInstance.rows = [voluntarioLista('v1', true)];
+    semPermissao.detectChanges();
+    expect((semPermissao.nativeElement as HTMLElement).textContent).not.toContain('Inativar');
+    TestBed.resetTestingModule();
+
+    const fixture = await montar(['PESSOA_ATIVAR_INATIVAR']);
+    const tela = fixture.componentInstance;
+    tela.aba = 'ativos';
+    tela.rows = [voluntarioLista('v1', true)];
+    fixture.detectChanges();
+    const botao = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button'))
+      .find(b => b.textContent?.trim() === 'Inativar');
+    expect(botao).toBeTruthy();
+    botao!.click();
+    await fixture.whenStable();
+    expect(TestBed.inject(VoluntariosApiService).setAtivo).toHaveBeenCalledWith('v1', false);
+  });
+
   it('Criar comunicado exige marcados e COMUNICADO_ENVIAR, e abre o assistente com os ids marcados', async () => {
     const semPermissao = await montar();
     semPermissao.componentInstance.marcarTodos(true);
@@ -147,3 +170,11 @@ describe('PessoasListComponent (lista de assinatura)', () => {
     expect(tela.idsComunicado).toEqual(['1', '3']);
   });
 });
+
+function voluntarioLista(id: string, ativo: boolean): VoluntarioLista {
+  return {
+    id, nomeCompleto: 'Ana', nome_completo: 'Ana', tipo: 'COROINHA', ativo,
+    fotoPath: null, etapaCatequese: null, eucaristiaAno: null, crismaAno: null,
+    horarioEstudo: null, autorizaWhatsapp: false, funcoesHabilitadas: []
+  };
+}

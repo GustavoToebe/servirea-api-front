@@ -21,7 +21,7 @@ export interface FiltroAtivo {
   imports: [CommonModule, FormsModule],
   template: `
     <div class="relative w-full" #container>
-      <div class="flex flex-col md:flex-row gap-2 w-full">
+      <div class="flex w-full flex-col gap-4 md:flex-row">
         <!-- Campo de busca -->
         <div *ngIf="!semBusca" class="flex-1">
           <input type="text" class="field w-full" [placeholder]="placeholder"

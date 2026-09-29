@@ -30,7 +30,7 @@ import { RodapeFormComponent } from '../../../shared/components/rodape-form/roda
           <tbody>
             @for (perfil of visiveis; track perfil.id) {
               <tr class="clicavel" tabindex="0" (click)="editar(perfil)" (keydown.enter)="editar(perfil)" [attr.data-perfil]="perfil.id">
-                <td class="font-extrabold">{{ perfil.nome }}<app-numero [numero]="perfil.sequencial" /></td>
+                <td class="font-extrabold">{{ perfil.nome }}</td>
                 <td>{{ perfil.usuarios }} {{ perfil.usuarios === 1 ? 'usuário' : 'usuários' }}</td>
                 <td class="text-xs font-bold uppercase tracking-wide text-slate-500">{{ perfil.acessoTotal ? 'Acesso total' : (perfil.ativo ? 'Ativo' : 'Inativo') }}</td>
               </tr>
@@ -42,7 +42,7 @@ import { RodapeFormComponent } from '../../../shared/components/rodape-form/roda
 
       @if (form) {
         <form class="card secao-form p-6" (ngSubmit)="salvar()">
-          <h2 class="secao-titulo">{{ form.id ? 'Editar perfil' : 'Novo perfil' }}</h2>
+          <h2 class="secao-titulo">{{ form.id ? 'Editar perfil' : 'Novo perfil' }}<app-numero [numero]="form.sequencial" /></h2>
           <label class="block text-sm font-semibold">Nome
             <input class="mt-1 w-full rounded-xl border px-3 py-2" name="nome" [(ngModel)]="form.nome" required>
           </label>
@@ -98,7 +98,7 @@ export class PerfisComponent implements OnInit {
   catalogo: SecaoCatalogo[] = [];
   erro = '';
   salvando = false;
-  form: { id?: string; nome: string; ativo: boolean; acessoTotal: boolean; sistema: boolean; permissoes: string[] } | null = null;
+  form: { id?: string; nome: string; ativo: boolean; acessoTotal: boolean; sistema: boolean; permissoes: string[]; sequencial?: number } | null = null;
 
   ngOnInit(): void {
     this.api.catalogo().subscribe({
@@ -121,6 +121,7 @@ export class PerfisComponent implements OnInit {
       ativo: perfil.ativo,
       acessoTotal: perfil.acessoTotal,
       sistema: perfil.sistema,
+      sequencial: perfil.sequencial,
       permissoes: [...perfil.permissoes]
     };
   }

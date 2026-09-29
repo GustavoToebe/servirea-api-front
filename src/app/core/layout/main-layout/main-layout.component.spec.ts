@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { MeuPerfil } from '../../../features/acesso/acesso.models';
 import { AcessoApiService } from '../../../features/acesso/acesso-api.service';
@@ -136,24 +136,11 @@ describe('MainLayoutComponent', () => {
     expect(texto('[data-menu="barra"]')).toContain('Mais');
   });
 
-  it('rota com data.larguraTotal tira o max-w-7xl da área de conteúdo', async () => {
-    acesso.eu.and.returnValue(of(eu(['ESCALA'])));
-    TestBed.resetTestingModule();
-    await TestBed.configureTestingModule({
-      imports: [MainLayoutComponent],
-      providers: [
-        provideRouter([{ path: 'larga', data: { larguraTotal: true }, children: [] }, { path: 'normal', children: [] }]),
-        { provide: AcessoApiService, useValue: acesso },
-        { provide: AuthService, useValue: { tenantNome: () => 'Paróquia Teste', signOut: () => Promise.resolve() } }
-      ]
-    }).compileComponents();
+  it('a área de conteúdo ocupa a largura do painel, sem max-w-7xl', () => {
+    acesso.eu.and.returnValue(of(eu(['PESSOA'])));
     criar();
-    const router = TestBed.inject(Router);
-    await router.navigateByUrl('/larga');
-    fixture.detectChanges();
-    expect((fixture.nativeElement.querySelector('section') as HTMLElement).classList).not.toContain('max-w-7xl');
-    await router.navigateByUrl('/normal');
-    fixture.detectChanges();
-    expect((fixture.nativeElement.querySelector('section') as HTMLElement).classList).toContain('max-w-7xl');
+    const secao = fixture.nativeElement.querySelector('section') as HTMLElement;
+    expect(secao.classList).not.toContain('max-w-7xl');
+    expect(secao.classList).not.toContain('mx-auto');
   });
 });

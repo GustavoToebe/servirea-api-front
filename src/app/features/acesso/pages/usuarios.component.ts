@@ -37,7 +37,7 @@ import { RodapeFormComponent } from '../../../shared/components/rodape-form/roda
           <tbody>
             @for (usuario of visiveis; track usuario.usuarioId) {
               <tr class="clicavel" tabindex="0" (click)="editar(usuario)" (keydown.enter)="editar(usuario)" [attr.data-usuario]="usuario.usuarioId">
-                <td class="font-extrabold">{{ usuario.nome }}<app-numero [numero]="usuario.sequencial" /></td>
+                <td class="font-extrabold">{{ usuario.nome }}</td>
                 <td class="hidden md:table-cell">{{ usuario.email }}</td>
                 <td>{{ usuario.perfilNome }}</td>
                 <td class="text-xs font-bold uppercase tracking-wide text-slate-500">{{ usuario.ativo ? usuario.situacaoAcesso.replaceAll('_', ' ') : 'Inativo' }}</td>
@@ -50,7 +50,7 @@ import { RodapeFormComponent } from '../../../shared/components/rodape-form/roda
 
       @if (form) {
         <form class="card space-y-4 p-5" (ngSubmit)="salvar()">
-          <h2 class="text-lg font-black">{{ form.usuarioId ? 'Editar usuário' : 'Convidar usuário' }}</h2>
+          <h2 class="text-lg font-black">{{ form.usuarioId ? 'Editar usuário' : 'Convidar usuário' }}<app-numero [numero]="form.sequencial" /></h2>
           @if (form.somenteLeitura) {
             <p class="text-sm text-slate-500">Nome, e-mail e telefone pertencem a alguém que também acessa outra paróquia. Aqui dá para mudar o perfil e se está ativo.</p>
           }
@@ -110,6 +110,7 @@ export class UsuariosComponent implements OnInit {
     telefone: string;
     perfilId: string;
     ativo: boolean;
+    sequencial?: number;
     somenteLeitura: boolean;
   } | null = null;
 
@@ -140,6 +141,7 @@ export class UsuariosComponent implements OnInit {
       telefone: formatarTelefone(usuario.telefone),
       perfilId: usuario.perfilId || '',
       ativo: usuario.ativo,
+      sequencial: usuario.sequencial,
       somenteLeitura: usuario.somenteLeitura
     };
   }

@@ -1,5 +1,4 @@
 import { CommonModule } from '@angular/common';
-import { NumeroComponent } from '../../../../shared/components/numero/numero.component';
 import { CampoCompetenciaComponent } from '../../../../shared/components/datas/campo-competencia.component';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -14,7 +13,7 @@ import { BarraFiltrosComponent, FiltroAtivo } from '../../../../shared/component
 
 @Component({
     selector: 'app-escalas-list',
-    imports: [CommonModule, FormsModule, RouterLink, NumeroComponent, CampoCompetenciaComponent, BarraFiltrosComponent, ReplicarDialogComponent, CabecalhoPaginaComponent],
+    imports: [CommonModule, FormsModule, RouterLink, CampoCompetenciaComponent, BarraFiltrosComponent, ReplicarDialogComponent, CabecalhoPaginaComponent],
     template: `
     <div class="space-y-6">
       <app-cabecalho-pagina titulo="Escalas litúrgicas" subtitulo="As escalas do mês, com as vagas preenchidas e as que ainda estão livres.">
@@ -58,7 +57,7 @@ import { BarraFiltrosComponent, FiltroAtivo } from '../../../../shared/component
             <div class="flex items-start justify-between gap-3">
               <div>
                 <div class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ e.tipo === 'SEMANAL' ? 'Semanal · dias úteis' : 'Mensal · sábados e domingos' }}</div>
-                <h2 class="mt-1 text-lg font-black">{{ e.titulo }}<app-numero [numero]="e.sequencial" /></h2>
+                <h2 class="mt-1 text-lg font-black">{{ e.titulo }}</h2>
                 <div class="text-sm text-slate-500">{{ months[e.mes - 1] }} de {{ e.ano }} · {{ missas(e) }} {{ missas(e) === 1 ? 'celebração' : 'celebrações' }}</div>
               </div>
               <span class="badge" [ngClass]="statusClass(e.status)">{{ status(e.status) }}</span>

@@ -221,7 +221,6 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
                         }
                       </select>
                     </div>
-                    <label class="flex items-center gap-2 pt-6"><input type="checkbox" formControlName="ativo"> Cadastro ativo</label>
                     <div><label class="label">Catequese</label><input class="field" formControlName="etapaCatequese"></div>
                     <div>
                       <label class="label">Horário de estudo</label>
@@ -319,7 +318,6 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
     cuidados: [null],
     voluntario: this.fb.group({
       tipo: ['COROINHA'],
-      ativo: [true],
       etapaCatequese: [''],
       eucaristiaAno: [''],
       crismaAno: [''],
@@ -579,7 +577,6 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
       observacoes: p.observacoes || '',
       voluntario: {
         tipo: p.voluntario?.tipo || 'COROINHA',
-        ativo: p.voluntario?.ativo ?? true,
         etapaCatequese: p.voluntario?.etapaCatequese || '',
         eucaristiaAno: p.voluntario?.eucaristiaAno || '',
         crismaAno: p.voluntario?.crismaAno || '',
@@ -649,7 +646,6 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
       .map(t => ({ tipo: t.tipo.trim() || 'telefone', numero: t.numero.trim(), principal: t.principal }));
     const voluntario = this.papeis.has('VOLUNTARIO') ? {
       tipo: v.voluntario.tipo,
-      ativo: !!v.voluntario.ativo,
       etapaCatequese: v.voluntario.etapaCatequese || null,
       eucaristiaAno: v.voluntario.eucaristiaAno || null,
       crismaAno: v.voluntario.crismaAno || null,
