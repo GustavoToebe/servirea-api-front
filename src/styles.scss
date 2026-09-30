@@ -107,11 +107,6 @@ button, input, select, textarea { font: inherit; }
   .tabela tbody tr:nth-child(even) {
     background: color-mix(in srgb, var(--brand) 3%, transparent);
   }
-  .tabela tr.marcada td {
-    background: #fff !important;
-    color: #000 !important;
-    box-shadow: inset 3px 0 0 var(--brand);
-  }
   .menu-solido, .menu-solido button {
     background: #fff !important;
     color: #000 !important;
@@ -122,6 +117,11 @@ button, input, select, textarea { font: inherit; }
   }
   .tabela tbody tr:hover td {
     background: color-mix(in srgb, var(--brand) 6%, transparent);
+  }
+  /* Linha marcada: a cor principal do sistema bem fraquinha, sem barra e sem trocar a cor do texto. */
+  .tabela tbody tr.marcada td,
+  .tabela tbody tr.marcada:hover td {
+    background: color-mix(in srgb, var(--brand) 10%, var(--card));
   }
   .tabela-check {
     @apply h-4 w-4 cursor-pointer accent-[var(--brand)];
@@ -214,9 +214,9 @@ html.dark .parish .tabela tbody tr:nth-child(even) td {
 html.dark .parish .tabela tbody tr:hover td {
   background: rgba(255, 255, 255, 0.06);
 }
-html.dark .parish .tabela tr.marcada td {
-  background: #fff !important;
-  color: #000 !important;
+html.dark .parish .tabela tbody tr.marcada td,
+html.dark .parish .tabela tbody tr.marcada:hover td {
+  background: color-mix(in srgb, var(--brand) 24%, var(--card));
 }
 html.dark .parish .tabela tbody td {
   border-bottom-color: var(--line);

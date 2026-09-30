@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 
-export type PaletaId = 'ROXO' | 'MARIANA' | 'COMUM' | 'QUARESMA' | 'OURO' | 'MONASTICO';
+export type PaletaId = 'ROXO' | 'MARIANA' | 'COMUM' | 'QUARESMA' | 'OURO' | 'MONASTICO'
+  | 'PENTECOSTES' | 'ROSA' | 'CELESTE' | 'TURQUESA' | 'OLIVA' | 'TERRACOTA';
 export type FonteId = 'PADRAO' | 'CONFORTO' | 'GRANDE' | 'EXTRA';
 
 export interface Paleta {
@@ -26,7 +27,13 @@ export const PALETAS: Paleta[] = [
   { id: 'COMUM', nome: 'Verde tempo comum', descricao: 'O cotidiano da paróquia', brand: '#2E6B4F', hover: '#23533D', navy: '#163323', bg: '#F3F8F5' },
   { id: 'QUARESMA', nome: 'Borgonha sacro', descricao: 'Recolhimento e solenidade', brand: '#7B283A', hover: '#611E2D', navy: '#3D121B', bg: '#FAF4F5' },
   { id: 'OURO', nome: 'Âmbar eucarístico', descricao: 'Festas do Senhor e ouro velho', brand: '#855812', hover: '#6A460E', navy: '#422D08', bg: '#FAF7F2' },
-  { id: 'MONASTICO', nome: 'Ardósia monástico', descricao: 'Neutro, para leitura longa', brand: '#475569', hover: '#334155', navy: '#0F172A', bg: '#F8FAFC' }
+  { id: 'MONASTICO', nome: 'Ardósia monástico', descricao: 'Neutro, para leitura longa', brand: '#475569', hover: '#334155', navy: '#0F172A', bg: '#F8FAFC' },
+  { id: 'PENTECOSTES', nome: 'Vermelho pentecostes', descricao: 'Fogo do Espírito, mártires e festas de Pentecostes', brand: '#B42318', hover: '#912018', navy: '#4A0F0B', bg: '#FBF5F4' },
+  { id: 'ROSA', nome: 'Rosa gaudete', descricao: 'A alegria do terceiro domingo do Advento e do Laetare', brand: '#B83280', hover: '#97266D', navy: '#4A1234', bg: '#FBF4F8' },
+  { id: 'CELESTE', nome: 'Azul celeste', descricao: 'Céu aberto, claro e sereno para a tela o dia todo', brand: '#0369A1', hover: '#075985', navy: '#0C2E47', bg: '#F2F8FC' },
+  { id: 'TURQUESA', nome: 'Turquesa batismal', descricao: 'Água viva, batismo e renovação', brand: '#0F766E', hover: '#115E59', navy: '#0B3B38', bg: '#F2F9F8' },
+  { id: 'OLIVA', nome: 'Verde oliva', descricao: 'Paz e oliveira, um verde mais terroso que o do tempo comum', brand: '#4D7C0F', hover: '#3F6212', navy: '#1A2E05', bg: '#F7F9F2' },
+  { id: 'TERRACOTA', nome: 'Terracota', descricao: 'Barro e tijolo, acolhedor para a sacristia', brand: '#C2410C', hover: '#9A3412', navy: '#431407', bg: '#FCF6F2' }
 ];
 
 export const FONTES: { id: FonteId; rotulo: string; detalhe: string; px: string }[] = [

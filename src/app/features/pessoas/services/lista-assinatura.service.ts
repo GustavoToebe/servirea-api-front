@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { coresDaFolha } from '../../../shared/export/cores-folha';
 import { Orientacao } from '../../../shared/export/orientacao';
 
 /** Uma linha da lista: só o necessário para ordenar e imprimir o nome. */
@@ -127,6 +128,7 @@ export class ListaAssinaturaService {
    */
   montarFolha(linhas: ItemAssinatura[], opcoes: OpcoesListaAssinatura, rodape: string, inicio = 0): HTMLElement {
     const folha = document.createElement('div');
+    const c = coresDaFolha();
     const largura = opcoes.orientacao === 'PAISAGEM' ? 1100 : 760;
     folha.style.cssText = `position:fixed;left:-12000px;top:0;width:${largura}px;background:#ffffff;padding:20px 24px;`
       + "font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;color:#0f172a;";
@@ -142,8 +144,8 @@ export class ListaAssinaturaService {
     }).join('');
 
     folha.innerHTML = `
-      <div style="text-align:center;padding:16px 20px;margin-bottom:14px;background:linear-gradient(135deg, #1e1b4b 0%, #2e1065 50%, #1e1b4b 100%);border-radius:12px;color:#ffffff;box-shadow:0 3px 10px rgba(30,27,75,0.12);">
-        <div style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:#c7d2fe;margin-bottom:4px;">
+      <div style="text-align:center;padding:16px 20px;margin-bottom:14px;background:linear-gradient(135deg, ${c.navy} 0%, ${c.meio} 50%, ${c.navy} 100%);border-radius:12px;color:#ffffff;box-shadow:0 3px 10px rgba(30,27,75,0.12);">
+        <div style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:${c.tom(0.78)};margin-bottom:4px;">
           <span>SERVIREA • GESTÃO PAROQUIAL</span>
         </div>
         <div style="font-size:24px;font-weight:900;letter-spacing:-0.01em;text-transform:uppercase;color:#ffffff;line-height:1.2;">
@@ -155,11 +157,11 @@ export class ListaAssinaturaService {
           </div>` : ''}
       </div>
 
-      <table style="width:100%;border-collapse:collapse;table-layout:fixed;border:2px solid #1e1b4b;border-radius:10px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.03);">
+      <table style="width:100%;border-collapse:collapse;table-layout:fixed;border:2px solid ${c.navy};border-radius:10px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.03);">
         <colgroup><col style="width:48%"><col style="width:52%"></colgroup>
         <thead>
-          <tr style="background:#1e1b4b;color:#ffffff;">
-            <th style="padding:10px 14px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;vertical-align:middle;text-align:left;border-right:1px solid #312e81;">Nome</th>
+          <tr style="background:${c.navy};color:#ffffff;">
+            <th style="padding:10px 14px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;vertical-align:middle;text-align:left;border-right:1px solid ${c.brand};">Nome</th>
             <th style="padding:10px 14px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;vertical-align:middle;text-align:left;">Assinatura / Responsável</th>
           </tr>
         </thead>

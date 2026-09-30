@@ -5,10 +5,8 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { ColunaEscala, EscalaDetalhe, EscalaEvento, MESES, resolverTags, textosDoLayout, vagasDoLayout } from '../models/escala.model';
 import { FuncaoEscala } from '../../voluntarios/models/voluntario.model';
 import { Orientacao } from '../../../shared/export/orientacao';
+import { coresDaFolha } from '../../../shared/export/cores-folha';
 
-const BLUE = '#1e1b4b';
-const RED = '#c62828';
-const HEADER = '#b71c1c';
 const AGNOMES = new Set(['neto', 'filho', 'junior', 'júnior', 'sobrinho']);
 
 /**
@@ -74,6 +72,7 @@ export class ExportService {
 
   /** Retrato usa uma folha mais estreita, e um pouco mais larga quando há muitas colunas (senão o nome e o título da coluna saem cortados). */
   private buildSheet(escala: EscalaDetalhe, orientacao: Orientacao = 'PAISAGEM'): HTMLElement {
+    const c = coresDaFolha();
     const host = document.createElement('div');
     host.style.cssText = `position:fixed;left:-12000px;top:0;width:1500px;background:#ffffff;padding:24px 28px;font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;color:#0f172a;`;
     const month = MESES[escala.mes - 1].toUpperCase();
@@ -97,15 +96,15 @@ export class ExportService {
       blocks += this.eventBlock(event, colunas as any, textosCel, ctx);
     }
     
-    const cabTop = 'background:#1e1b4b;color:#ffffff;font-weight:900;font-size:15px;letter-spacing:0.08em;text-transform:uppercase;border:1px solid #312e81;padding:0;';
-    const cabCol = 'background:#312e81;color:#ffffff;font-weight:800;font-size:' + (orientacao === 'RETRATO' && muitasColunas ? 11 : 13) + 'px;letter-spacing:0.04em;text-transform:uppercase;border:1px solid #4338ca;padding:0;';
+    const cabTop = `background:${c.navy};color:#ffffff;font-weight:900;font-size:15px;letter-spacing:0.08em;text-transform:uppercase;border:1px solid ${c.brand};padding:0;`;
+    const cabCol = `background:${c.brand};color:#ffffff;font-weight:800;font-size:${orientacao === 'RETRATO' && muitasColunas ? 11 : 13}px;letter-spacing:0.04em;text-transform:uppercase;border:1px solid ${c.linha};padding:0;`;
     const txt = (t: string, alinhar = 'center', py = '8px') => `<div style="padding:${py} 8px;line-height:22px;text-align:${alinhar};">${t}</div>`;
     
     const colHeaders = colunas.map(c => `<th style="${cabCol}">${txt(this.esc(c.rotulo || ''))}</th>`).join('');
     
     host.innerHTML = `
       <div style="margin:0 0 14px;">${cabecalho}</div>
-      <table style="width:100%;border-collapse:collapse;table-layout:fixed;border:2px solid #1e1b4b;border-radius:10px;overflow:hidden;box-shadow:0 4px 10px rgba(0,0,0,0.05);">
+      <table style="width:100%;border-collapse:collapse;table-layout:fixed;border:2px solid ${c.navy};border-radius:10px;overflow:hidden;box-shadow:0 4px 10px rgba(0,0,0,0.05);">
         <thead>
           <tr>
             <td style="${cabTop}width:190px;">${txt(`ESCALA ${escala.tipo}`, 'center', '10px')}</td>
@@ -135,11 +134,12 @@ export class ExportService {
 
   /** Cabeçalho pelos blocos de texto do layout (Título, Subtítulo, Texto Livre). Sem blocos, usa o título padrão. */
   private cabecalhoDoLayout(escala: EscalaDetalhe, ctx: { titulo: string; mesAno: string; paroquia: string }): string {
+    const c = coresDaFolha();
     const textos = textosDoLayout(escala.colunas, 'DOCUMENTO').filter(t => t.tipo !== 'DATA');
     if (!textos.length) {
       return `
-        <div style="text-align:center;padding:18px 24px;margin-bottom:14px;background:linear-gradient(135deg, #1e1b4b 0%, #2e1065 50%, #1e1b4b 100%);border-radius:14px;color:#ffffff;box-shadow:0 4px 14px rgba(30,27,75,0.15);">
-          <div style="display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:#c7d2fe;margin-bottom:6px;">
+        <div style="text-align:center;padding:18px 24px;margin-bottom:14px;background:linear-gradient(135deg, ${c.navy} 0%, ${c.meio} 50%, ${c.navy} 100%);border-radius:14px;color:#ffffff;box-shadow:0 4px 14px rgba(30,27,75,0.15);">
+          <div style="display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:${c.tom(0.78)};margin-bottom:6px;">
             <span>${this.esc(ctx.paroquia)}</span>
           </div>
           <div style="font-size:26px;font-weight:900;letter-spacing:-0.01em;text-transform:uppercase;color:#ffffff;line-height:1.2;">
@@ -152,16 +152,16 @@ export class ExportService {
       `;
     }
     return `
-      <div style="text-align:center;padding:16px 20px;margin-bottom:14px;background:#ffffff;border:2px solid #e0e7ff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
-        <div style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:#6366f1;margin-bottom:6px;">
+      <div style="text-align:center;padding:16px 20px;margin-bottom:14px;background:#ffffff;border:2px solid ${c.tom(0.88)};border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+        <div style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:${c.brand};margin-bottom:6px;">
           <span>${this.esc(ctx.paroquia)}</span>
         </div>
         ${textos.map(t => {
           const conteudo = this.esc(resolverTags(t.conteudo, ctx));
           const align = t.alinhamento === 'left' ? 'left' : t.alinhamento === 'right' ? 'right' : 'center';
-          if (t.tipo === 'TITULO') return `<div style="font-size:26px;font-weight:900;color:#1e1b4b;text-align:${align};line-height:1.2;margin-bottom:4px;">${conteudo || this.esc(ctx.titulo)}</div>`;
+          if (t.tipo === 'TITULO') return `<div style="font-size:26px;font-weight:900;color:${c.navy};text-align:${align};line-height:1.2;margin-bottom:4px;">${conteudo || this.esc(ctx.titulo)}</div>`;
           if (t.tipo === 'SUBTITULO') return `<div style="margin-bottom:6px;font-size:15px;font-weight:700;color:#475569;text-align:${align};text-transform:uppercase;letter-spacing:0.04em;">${conteudo}</div>`;
-          return `<div style="margin-top:6px;padding:8px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #6366f1;border-radius:8px;font-size:13px;color:#334155;text-align:${align};white-space:pre-wrap;font-weight:600;">${conteudo}</div>`;
+          return `<div style="margin-top:6px;padding:8px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid ${c.brand};border-radius:8px;font-size:13px;color:#334155;text-align:${align};white-space:pre-wrap;font-weight:600;">${conteudo}</div>`;
         }).join('')}
       </div>
     `;
@@ -182,12 +182,14 @@ export class ExportService {
   }
 
   private linhaSemanalEspaco(numCols: number): string {
-    const celula = 'border-bottom:1px solid #c7d2fe;border-top:1px solid #c7d2fe;padding:0;height:10px;line-height:0;font-size:0;background:#eef2ff;';
+    const c = coresDaFolha();
+    const celula = `border-bottom:1px solid ${c.tom(0.75)};border-top:1px solid ${c.tom(0.75)};padding:0;height:10px;line-height:0;font-size:0;background:${c.tom(0.93)};`;
     return `<tr><td style="${celula}"></td>${Array(numCols).fill(`<td style="${celula}"></td>`).join('')}</tr>`;
   }
 
   private eventBlock(event: EscalaEvento, colunas: { funcao: string, posicao: number }[], textosCel: ColunaEscala[] = [], ctx: { titulo?: string; mesAno?: string; paroquia?: string } = {}): string {
-    const extras = textosCel.map(t => `<div style="margin-top:3px;font-size:12px;font-weight:700;color:#4338ca;">${this.esc(resolverTags(t.conteudo, ctx))}</div>`).join('');
+    const c = coresDaFolha();
+    const extras = textosCel.map(t => `<div style="margin-top:3px;font-size:12px;font-weight:700;color:${c.brand};">${this.esc(resolverTags(t.conteudo, ctx))}</div>`).join('');
     const nomes = colunas.map(c => {
       const nome = event.vagas.find(v => v.funcao === c.funcao && v.posicao === c.posicao)?.voluntario?.nome_completo || '';
       return nomeCurto(nome);
@@ -204,8 +206,8 @@ export class ExportService {
     const bgDia = isDom ? '#faf5ff' : isSab ? '#f0f9ff' : '#f8fafc';
     const bordaDia = isDom ? '#9333ea' : isSab ? '#0284c7' : '#64748b';
     const corSemana = isDom ? '#7e22ce' : isSab ? '#0369a1' : '#475569';
-    const bgHora = isDom ? '#f3e8ff' : isSab ? '#e0f2fe' : '#ede9fe';
-    const corHora = isDom ? '#6b21a8' : isSab ? '#075985' : '#4338ca';
+    const bgHora = isDom ? '#f3e8ff' : isSab ? '#e0f2fe' : c.tom(0.9);
+    const corHora = isDom ? '#6b21a8' : isSab ? '#075985' : c.brand;
 
     const dia = `
         <td style="border-bottom:1px solid #cbd5e1;border-right:1px solid #cbd5e1;padding:8px 10px;vertical-align:middle;background:${bgDia};border-left:4px solid ${bordaDia};width:190px;">

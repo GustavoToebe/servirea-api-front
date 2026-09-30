@@ -134,6 +134,22 @@ describe('PessoasListComponent (lista de assinatura)', () => {
     expect(tr?.classList.contains('marcada')).toBeTrue();
   });
 
+  it('linha marcada fica com a cor principal bem fraca, sem barra lateral e sem forçar o texto', async () => {
+    const fixture = await montar();
+    const el = fixture.nativeElement as HTMLElement;
+    document.body.appendChild(el);
+    (el.querySelector('[data-marcar="1"]') as HTMLInputElement).click();
+    fixture.detectChanges();
+
+    const celula = el.querySelector('tr.marcada td') as HTMLElement;
+    const estilo = getComputedStyle(celula);
+    expect(estilo.boxShadow).toBe('none');
+    expect(estilo.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+    expect(estilo.backgroundColor).not.toBe('rgb(255, 255, 255)');
+    expect(estilo.color).not.toBe('rgb(0, 0, 0)');
+    el.remove();
+  });
+
   it('Inativar só aparece com PESSOA_ATIVAR_INATIVAR e chama a API', async () => {
     const semPermissao = await montar();
     semPermissao.componentInstance.aba = 'ativos';

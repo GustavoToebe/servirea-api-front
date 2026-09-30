@@ -36,15 +36,15 @@ import { ItemAssinatura, ListaAssinaturaService, ORDENAR_POR, Ordem, OrdenarPor,
       </div>
 
       <!-- Prévia Visual da Folha A4 -->
-      <div class="mt-4 rounded-xl border border-indigo-100 bg-slate-50/70 p-4 space-y-2.5 shadow-2xs">
-        <div class="text-[11px] font-black uppercase tracking-wider text-indigo-700 flex items-center justify-between">
+      <div class="mt-4 rounded-xl border border-[var(--line)] bg-slate-50/70 p-4 space-y-2.5 shadow-2xs">
+        <div class="text-[11px] font-black uppercase tracking-wider text-brand-blue flex items-center justify-between">
           <span>📄 Prévia da Folha de Impressão</span>
           <span class="text-slate-400 font-semibold normal-case text-[11px]">Formato A4</span>
         </div>
-        <div class="bg-white border-2 border-indigo-950 rounded-xl overflow-hidden shadow-xs">
+        <div class="bg-white border-2 border-[var(--brand-navy)] rounded-xl overflow-hidden shadow-xs">
           <!-- Mini Banner -->
-          <div class="p-3 bg-gradient-to-r from-indigo-950 via-purple-950 to-indigo-950 text-white text-center">
-            <div class="text-[10px] font-black tracking-widest text-indigo-300 uppercase">SERVIREA • GESTÃO PAROQUIAL</div>
+          <div class="p-3 bg-[var(--brand-navy)] text-white text-center">
+            <div class="text-[10px] font-black tracking-widest text-white/70 uppercase">SERVIREA • GESTÃO PAROQUIAL</div>
             <div class="text-base font-black uppercase mt-0.5">{{ titulo || 'Lista de Assinatura' }}</div>
             @if (subtitulo) {
               <div class="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-white/15 border border-white/25 text-[10px] font-bold uppercase text-slate-100">{{ subtitulo }}</div>
@@ -53,8 +53,8 @@ import { ItemAssinatura, ListaAssinaturaService, ORDENAR_POR, Ordem, OrdenarPor,
           <!-- Tabela Miniatura -->
           <table class="w-full text-xs">
             <thead>
-              <tr class="bg-indigo-950 text-white text-[11px] font-black uppercase">
-                <th class="p-2 text-left w-1/2 border-r border-indigo-900">Nome</th>
+              <tr class="bg-[var(--brand-navy)] text-white text-[11px] font-black uppercase">
+                <th class="p-2 text-left w-1/2 border-r border-white/15">Nome</th>
                 <th class="p-2 text-left">Assinatura / Responsável</th>
               </tr>
             </thead>
