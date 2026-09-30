@@ -73,7 +73,7 @@ import { SessaoAtual } from '../sessao-atual';
           <div class="flex items-center gap-3">
             <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-blue text-xs font-black text-white lg:hidden">{{ marca() }}</div>
             <div>
-              <div class="text-[11px] font-extrabold uppercase tracking-wider text-brand-blue">Servire</div>
+              <div class="text-[11px] font-extrabold uppercase tracking-wider text-brand-blue">Servirea</div>
               <div class="font-extrabold leading-tight text-brand-ink">{{ titulo() }}</div>
             </div>
           </div>

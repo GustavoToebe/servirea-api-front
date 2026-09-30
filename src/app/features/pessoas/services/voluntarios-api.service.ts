@@ -23,19 +23,6 @@ interface VoluntarioResponse {
   mandatoFim: string | null;
 }
 
-const VOLUNTARIOS_DEMO: VoluntarioLista[] = [
-  { id: 'v-1', nomeCompleto: 'Henrique Neiverth Luciano', nome_completo: 'Henrique Neiverth Luciano', tipo: 'ACOLITO', ativo: true, fotoPath: null, etapaCatequese: null, eucaristiaAno: null, crismaAno: null, horarioEstudo: 'MANHA', autorizaWhatsapp: true, funcoesHabilitadas: ['MISSAL', 'CRUZ', 'CREDENCIA', 'VELA', 'COLETA', 'SINO'] },
-  { id: 'v-2', nomeCompleto: 'Valentina Linzmeyer Zonitta Silvati', nome_completo: 'Valentina Linzmeyer Zonitta Silvati', tipo: 'COROINHA', ativo: true, fotoPath: null, etapaCatequese: null, eucaristiaAno: null, crismaAno: null, horarioEstudo: 'TARDE', autorizaWhatsapp: true, funcoesHabilitadas: ['CRUZ', 'CREDENCIA', 'VELA', 'COLETA', 'SINO'] },
-  { id: 'v-3', nomeCompleto: 'Alice dos Santos', nome_completo: 'Alice dos Santos', tipo: 'ACOLITO', ativo: true, fotoPath: null, etapaCatequese: null, eucaristiaAno: null, crismaAno: null, horarioEstudo: 'MANHA', autorizaWhatsapp: true, funcoesHabilitadas: ['MISSAL', 'CRUZ', 'CREDENCIA', 'VELA', 'COLETA', 'SINO'] },
-  { id: 'v-4', nomeCompleto: 'Daniel Oliveira', nome_completo: 'Daniel Oliveira', tipo: 'ACOLITO', ativo: true, fotoPath: null, etapaCatequese: null, eucaristiaAno: null, crismaAno: null, horarioEstudo: 'TARDE', autorizaWhatsapp: true, funcoesHabilitadas: ['MISSAL', 'CRUZ', 'CREDENCIA', 'VELA', 'COLETA', 'SINO'] },
-  { id: 'v-5', nomeCompleto: 'Isabelly Souza', nome_completo: 'Isabelly Souza', tipo: 'COROINHA', ativo: true, fotoPath: null, etapaCatequese: null, eucaristiaAno: null, crismaAno: null, horarioEstudo: 'MANHA', autorizaWhatsapp: true, funcoesHabilitadas: ['VELA', 'COLETA', 'SINO'] },
-  { id: 'v-6', nomeCompleto: 'Vinicius Almeida', nome_completo: 'Vinicius Almeida', tipo: 'COROINHA', ativo: true, fotoPath: null, etapaCatequese: null, eucaristiaAno: null, crismaAno: null, horarioEstudo: 'TARDE', autorizaWhatsapp: true, funcoesHabilitadas: ['VELA', 'COLETA', 'SINO'] },
-  { id: 'v-7', nomeCompleto: 'Giancarlo Rossi', nome_completo: 'Giancarlo Rossi', tipo: 'COROINHA', ativo: true, fotoPath: null, etapaCatequese: null, eucaristiaAno: null, crismaAno: null, horarioEstudo: 'MANHA', autorizaWhatsapp: true, funcoesHabilitadas: ['SINO', 'COLETA'] },
-  { id: 'v-8', nomeCompleto: 'Pedro Souza Júnior', nome_completo: 'Pedro Souza Júnior', tipo: 'ACOLITO', ativo: true, fotoPath: null, etapaCatequese: null, eucaristiaAno: null, crismaAno: null, horarioEstudo: 'NOITE', autorizaWhatsapp: true, funcoesHabilitadas: ['MISSAL', 'CRUZ', 'CREDENCIA', 'VELA', 'COLETA', 'SINO'] },
-  { id: 'v-9', nomeCompleto: 'Ana Beatriz Ferreira', nome_completo: 'Ana Beatriz Ferreira', tipo: 'ACOLITO', ativo: true, fotoPath: null, etapaCatequese: null, eucaristiaAno: null, crismaAno: null, horarioEstudo: 'MANHA', autorizaWhatsapp: true, funcoesHabilitadas: ['MISSAL', 'CRUZ', 'CREDENCIA', 'VELA', 'COLETA', 'SINO'] },
-  { id: 'v-10', nomeCompleto: 'João Oliveira Neto', nome_completo: 'João Oliveira Neto', tipo: 'COROINHA', ativo: true, fotoPath: null, etapaCatequese: null, eucaristiaAno: null, crismaAno: null, horarioEstudo: 'TARDE', autorizaWhatsapp: true, funcoesHabilitadas: ['VELA', 'COLETA', 'SINO'] }
-];
-
 @Injectable({ providedIn: 'root' })
 export class VoluntariosApiService {
   private readonly base = `${environment.apiUrl}/voluntarios`;
@@ -58,16 +45,8 @@ export class VoluntariosApiService {
         this.cache.gravar(`voluntarios:${filtro.ativo}`, this.auth.tenantId(), lista);
       }
       return lista;
-    } catch {
-      // Fallback gracioso com voluntários demo para não bloquear tela de escala
-      let lista = VOLUNTARIOS_DEMO;
-      if (filtro.ativo != null) lista = lista.filter(v => v.ativo === filtro.ativo);
-      if (filtro.tipo) lista = lista.filter(v => v.tipo === filtro.tipo);
-      if (filtro.nome?.trim()) {
-        const termo = filtro.nome.trim().toLowerCase();
-        lista = lista.filter(v => v.nomeCompleto.toLowerCase().includes(termo));
-      }
-      return lista;
+    } catch (erro) {
+      throw new Error(mensagemApi(erro, 'Não foi possível listar os voluntários.'));
     }
   }
 

@@ -38,12 +38,6 @@ import { TenantResumo } from '../../../../core/auth/auth.models';
               <a routerLink="/reset-password" class="font-semibold text-brand-blue">Esqueci minha senha</a>
             </p>
           </form>
-
-          <div class="mt-4 pt-4 border-t border-slate-100 text-center">
-            <button type="button" class="text-xs font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 py-2.5 px-3 rounded-xl w-full transition-all shadow-2xs flex items-center justify-center gap-1.5" (click)="entrarDemonstracao()">
-              <span>🚀</span> Entrar em Modo de Teste (Ver Telas e Layouts)
-            </button>
-          </div>
         }
     
         @if (tenants.length) {
@@ -109,10 +103,5 @@ export class LoginComponent {
     } finally {
       this.loading = false;
     }
-  }
-
-  entrarDemonstracao() {
-    this.auth.entrar('demo-preview-token', { id: 'demo-tenant', nome: 'Paróquia São José', slug: 'paroquia-sao-jose' });
-    void this.router.navigate(['/escalas/layouts']);
   }
 }

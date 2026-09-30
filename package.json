@@ -2,10 +2,12 @@
   "name": "paroquia-escalas-front",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": "^24.21.0"
+  },
   "scripts": {
     "ng": "ng",
-    "dev": "ng serve --host 0.0.0.0 --port 3000",
-    "start": "ng serve --host 0.0.0.0 --port 3000",
+    "start": "ng serve",
     "build": "ng build",
     "build:prod": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
