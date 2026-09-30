@@ -357,7 +357,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
           <div class="grid gap-4" [class.lg:grid-cols-[1fr_20rem]]="!!apoio && painelDesktop">
             <section class="space-y-3">
               @for (l of linhas; track l.chave) {
-                <div class="card overflow-visible border-l-4" [class.border-l-sky-400]="l.fimDeSemana === 'SAB'" [class.border-l-red-400]="l.fimDeSemana === 'DOM'" [attr.data-evento]="l.evento.data">
+                <div class="card overflow-visible border-l-4" [class.border-l-violet-400]="l.fimDeSemana === 'SAB'" [class.border-l-violet-700]="l.fimDeSemana === 'DOM'" [attr.data-evento]="l.evento.data">
                   <div class="flex items-center justify-between gap-3 border-b border-[var(--line)] px-4 py-2.5">
                     <div class="min-w-0 truncate font-black"><span class="capitalize">{{ l.diaEData }}</span> · {{ l.evento.horario.slice(0,5) }} ·
                       <span [class.text-red-700]="l.evento.celebracao !== 'Missa'">{{ l.evento.celebracao || 'Missa' }}</span></div>
@@ -373,7 +373,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
                     @for (linha of linhasCelebracaoLayout; track linha.index) {
                       <div class="p-3 rounded-xl border border-slate-200 bg-white shadow-2xs">
                         <div class="text-[11px] font-bold text-slate-400 mb-2 pb-1 border-b border-slate-100 flex items-center justify-between">
-                          <span class="text-emerald-700 font-extrabold uppercase tracking-wide">Linha {{ linha.index + 1 }} da Missa</span>
+                          <span class="text-violet-700 font-extrabold uppercase tracking-wide">Linha {{ linha.index + 1 }} da Missa</span>
                         </div>
                         <div class="flex flex-wrap gap-2.5 items-stretch">
                           @for (bloco of linha.elementos; track bloco.idLocal || (bloco.funcao + '-' + bloco.posicao)) {
@@ -409,7 +409,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
                               }
                             } @else if (bloco.tipo === 'DATA') {
                               <div [style.flex]="bloco.largura === 12 ? '1 1 100%' : (bloco.largura || 1)"
-                                   class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 flex items-center justify-between text-xs font-bold">
+                                   class="p-2.5 rounded-xl bg-violet-50 border border-violet-200 text-violet-950 flex items-center justify-between text-xs font-bold">
                                 <span>📅 Data / Celebração: <strong class="capitalize">{{ l.diaEData }}</strong> · {{ l.evento.horario.slice(0,5) }}</span>
                                 @if (l.evento.celebracao && l.evento.celebracao !== 'Missa') {
                                   <span class="text-red-700 font-extrabold uppercase px-1.5 py-0.5 rounded bg-red-100">{{ l.evento.celebracao }}</span>

@@ -36,4 +36,42 @@ describe('paletas do tema', () => {
     expect(JSON.parse(localStorage.getItem('sv_aparencia') || '{}').paleta).toBe('TURQUESA');
     tema.restaurar();
   });
+  describe('classes violet e indigo do Tailwind', () => {
+    afterEach(() => TestBed.inject(ThemeService).restaurar());
+
+    function corDe(classe: string, propriedade: 'backgroundColor' | 'color' | 'borderTopColor'): string {
+      const el = document.createElement('div');
+      el.className = classe;
+      el.style.borderTopStyle = 'solid';
+      document.body.appendChild(el);
+      const cor = getComputedStyle(el)[propriedade];
+      el.remove();
+      return cor;
+    }
+
+    /** O Chrome devolve `rgb(r, g, b)` ou `color(srgb r g b)` (0 a 1): os dois viram [r, g, b] de 0 a 255. */
+    function canais(css: string): number[] {
+      const numeros = (css.match(/[\d.]+/g) || []).map(Number);
+      return (css.startsWith('color(') ? numeros.slice(0, 3).map(n => Math.round(n * 255)) : numeros.slice(0, 3));
+    }
+
+    it('acompanham a cor principal escolhida em Ajustes', () => {
+      const tema = TestBed.inject(ThemeService);
+      tema.escolherPaleta('TURQUESA'); // #0F766E = rgb(15, 118, 110)
+      expect(canais(corDe('bg-violet-600', 'backgroundColor'))).toEqual([15, 118, 110]);
+      expect(canais(corDe('bg-indigo-600', 'backgroundColor'))).toEqual([15, 118, 110]);
+      tema.escolherPaleta('ROSA'); // #B83280 = rgb(184, 50, 128)
+      expect(canais(corDe('bg-violet-600', 'backgroundColor'))).toEqual([184, 50, 128]);
+    });
+
+    it('os tons claros e escuros também mudam, e a transparência continua funcionando', () => {
+      const tema = TestBed.inject(ThemeService);
+      tema.escolherPaleta('TURQUESA');
+      const claro = corDe('bg-violet-50', 'backgroundColor');
+      expect(canais(claro)).not.toEqual([245, 243, 255]); // o violet-50 original do Tailwind
+      expect(claro).not.toContain('/'); // opaco
+      expect(corDe('bg-violet-50/50', 'backgroundColor')).toContain('/ 0.5'); // metade da opacidade: canal alfa 0,5
+      expect(canais(corDe('text-indigo-950', 'color'))).not.toEqual([30, 27, 75]); // o indigo-950 original
+    });
+  });
 });

@@ -53,7 +53,9 @@ Regras:
 - Arquivo de estilo: `src/styles.scss`, com Tailwind. Sem prefixo.
 - Classes: `.card`, `.btn-primary`, `.btn-secondary`, `.btn-danger`, `.field`, `.label`, `.secao-form` e `.secao-titulo`, `.badge` (forma do micro-badge; a cor vem dos utilitários Tailwind da tabela acima), `.chip`, `.tabela` (+ `.tabela-rolagem`, `tr.clicavel`, `tr.marcada`).
 - Claro e escuro. O escuro ajusta os utilitários de status em `html.dark .parish ...`. Toda tela nova fora da moldura envolve o conteúdo em `<div class="parish">`.
-- Marca roxa fixa `#673de6`, por `--brand` / `--brand-hover` / `--brand-navy` (cabeçalho da tabela). Hover da linha: marca a 6%.
+- A cor da marca é a que a pessoa escolhe em Ajustes (12 paletas; o padrão é o roxo `#673de6`), por `--brand` / `--brand-hover` / `--brand-navy` (cabeçalho da tabela). Hover da linha: marca a 6%. Linha marcada: marca a 10%, sem barra lateral e sem trocar a cor do texto.
+- `violet` e `indigo` do Tailwind são tons da marca (`tailwind.config.js`), então acompanham o tema. Use-os só para decoração da marca, nunca para status. Não escreva `#673de6` nem outro hexadecimal de marca no código.
+- PDF e imagem (`ExportService`, `ListaAssinaturaService`) pegam as cores de `coresDaFolha()` (`shared/export/cores-folha.ts`), que lê `--brand` e `--brand-navy`. O html2canvas não entende `color-mix`, então os tons claros são calculados lá. Todo PDF e imagem novo oferece Paisagem e Retrato (`app-orientacao-toggle`).
 
 ## Checklist para tela nova
 1. Achei a tela existente mais parecida e copiei a estrutura (lista, ficha ou formulário).

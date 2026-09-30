@@ -203,11 +203,13 @@ export class ExportService {
     const isDom = dow === 0;
     const isSab = dow === 6;
     
-    const bgDia = isDom ? '#faf5ff' : isSab ? '#f0f9ff' : '#f8fafc';
-    const bordaDia = isDom ? '#9333ea' : isSab ? '#0284c7' : '#64748b';
-    const corSemana = isDom ? '#7e22ce' : isSab ? '#0369a1' : '#475569';
-    const bgHora = isDom ? '#f3e8ff' : isSab ? '#e0f2fe' : c.tom(0.9);
-    const corHora = isDom ? '#6b21a8' : isSab ? '#075985' : c.brand;
+    // Domingo é o mais forte, sábado um tom abaixo e dia útil neutro: tudo na cor principal do tema, e a palavra
+    // "Sábado" ou "Domingo" vem escrita, então a cor nunca é a única pista.
+    const bgDia = isDom ? c.tom(0.92) : isSab ? c.tom(0.96) : '#f8fafc';
+    const bordaDia = isDom ? c.brand : isSab ? c.tom(0.45) : '#64748b';
+    const corSemana = isDom ? c.brand : isSab ? c.navy : '#475569';
+    const bgHora = isDom ? c.tom(0.82) : c.tom(0.9);
+    const corHora = isDom ? c.navy : isSab ? c.navy : c.brand;
 
     const dia = `
         <td style="border-bottom:1px solid #cbd5e1;border-right:1px solid #cbd5e1;padding:8px 10px;vertical-align:middle;background:${bgDia};border-left:4px solid ${bordaDia};width:190px;">
