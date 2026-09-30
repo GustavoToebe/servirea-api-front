@@ -1,7 +1,7 @@
-# AGENTS.md — servire-api-front
+# AGENTS.md — servirea-api-front
 
 Front Angular do **Servire** (gestão paroquial: pessoas/voluntários, escalas de missa,
-inscrição pública). A API é o irmão **`servire-api-back`** (outro git); regras de negócio,
+inscrição pública). A API é o irmão **`servirea-api-back`** (outro git); regras de negócio,
 multi-tenancy e contrato ficam lá (`AGENTS.md` e `README.md` do back). Idioma da interface,
 do código e dos commits: **português**.
 
