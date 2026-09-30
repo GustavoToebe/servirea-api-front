@@ -128,9 +128,7 @@ export class ListaAssinaturaService {
     folha.innerHTML = `
       <div style="text-align:center;padding:16px 20px;margin-bottom:14px;background:linear-gradient(135deg, #1e1b4b 0%, #2e1065 50%, #1e1b4b 100%);border-radius:12px;color:#ffffff;box-shadow:0 3px 10px rgba(30,27,75,0.12);">
         <div style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:#c7d2fe;margin-bottom:4px;">
-          <span>✟</span>
           <span>SERVIREA • GESTÃO PAROQUIAL</span>
-          <span>✟</span>
         </div>
         <div style="font-size:24px;font-weight:900;letter-spacing:-0.01em;text-transform:uppercase;color:#ffffff;line-height:1.2;">
           ${this.esc(opcoes.titulo)}
@@ -155,7 +153,7 @@ export class ListaAssinaturaService {
       </table>
 
       <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#64748b;padding:0 4px;">
-        <span style="font-weight:600;">✟ Pastoral de Coroinhas e Acólitos • Servirea</span>
+        <span style="font-weight:600;">Pastoral de Coroinhas e Acólitos • Servirea</span>
         ${rodape ? `<span style="font-weight:700;color:#475569;">${this.esc(rodape)}</span>` : ''}
       </div>
     `;

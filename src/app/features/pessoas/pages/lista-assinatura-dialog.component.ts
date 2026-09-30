@@ -40,7 +40,7 @@ import { ItemAssinatura, ListaAssinaturaService, ORDENAR_POR, Ordem, OrdenarPor,
         <div class="bg-white border-2 border-indigo-950 rounded-xl overflow-hidden shadow-xs">
           <!-- Mini Banner -->
           <div class="p-3 bg-gradient-to-r from-indigo-950 via-purple-950 to-indigo-950 text-white text-center">
-            <div class="text-[10px] font-black tracking-widest text-indigo-300 uppercase">✟ SERVIREA • GESTÃO PAROQUIAL ✟</div>
+            <div class="text-[10px] font-black tracking-widest text-indigo-300 uppercase">SERVIREA • GESTÃO PAROQUIAL</div>
             <div class="text-base font-black uppercase mt-0.5">{{ titulo || 'Lista de Assinatura' }}</div>
             @if (subtitulo) {
               <div class="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-white/15 border border-white/25 text-[10px] font-bold uppercase text-slate-100">{{ subtitulo }}</div>

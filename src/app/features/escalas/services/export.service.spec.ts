@@ -64,6 +64,11 @@ describe('ExportService', () => {
     const conteudo = await (arquivo as unknown as Blob).text();
     expect(conteudo.startsWith('%PDF-')).toBeTrue();
     expect(conteudo).toContain('/Image');
+    // Escala curta: a página tem de continuar em paisagem (297 mm = 841,89 pt de largura), senão a direita sai cortada.
+    const caixa = /\/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]/.exec(conteudo);
+    expect(caixa).not.toBeNull();
+    expect(Number(caixa![1])).toBeGreaterThan(Number(caixa![2]) - 1);
+    expect(Number(caixa![1])).toBeCloseTo(841.89, 0);
   });
 
   it('gera o PNG e usa o nome da paróquia da sessão no título, com o texto escapado', async () => {

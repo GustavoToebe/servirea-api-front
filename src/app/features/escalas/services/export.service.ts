@@ -31,7 +31,9 @@ export class ExportService {
     const img = canvas.toDataURL('image/png');
     const mmW = 297;
     const mmH = Math.max(210, canvas.height * mmW / canvas.width + 12);
-    const doc = new jsPDF({ unit: 'mm', format: [mmW, mmH] });
+    // Sem a orientação explícita, o jsPDF vira a página quando a altura é menor que a largura (escala curta) e
+    // a imagem, de 285 mm, sai cortada numa página de 210 mm.
+    const doc = new jsPDF({ unit: 'mm', format: [mmW, mmH], orientation: mmW > mmH ? 'landscape' : 'portrait' });
     const margin = 6;
     const imgW = mmW - margin * 2;
     const imgH = canvas.height * imgW / canvas.width;
@@ -115,7 +117,6 @@ export class ExportService {
       </table>
       <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;padding:10px 4px;font-size:12px;color:#64748b;border-top:1px solid #e2e8f0;">
         <div style="font-weight:700;display:flex;align-items:center;gap:6px;">
-          <span style="color:#6366f1;">✟</span>
           <span>${this.esc(paroquia)} • Pastoral de Coroinhas e Acólitos</span>
         </div>
         <div style="display:flex;align-items:center;gap:12px;">
@@ -134,9 +135,7 @@ export class ExportService {
       return `
         <div style="text-align:center;padding:18px 24px;margin-bottom:14px;background:linear-gradient(135deg, #1e1b4b 0%, #2e1065 50%, #1e1b4b 100%);border-radius:14px;color:#ffffff;box-shadow:0 4px 14px rgba(30,27,75,0.15);">
           <div style="display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:#c7d2fe;margin-bottom:6px;">
-            <span>✟</span>
             <span>${this.esc(ctx.paroquia)}</span>
-            <span>✟</span>
           </div>
           <div style="font-size:26px;font-weight:900;letter-spacing:-0.01em;text-transform:uppercase;color:#ffffff;line-height:1.2;">
             ${this.esc(ctx.paroquia)} - ESCALA ${MESES[escala.mes - 1].toUpperCase()} ${escala.ano}
@@ -150,7 +149,7 @@ export class ExportService {
     return `
       <div style="text-align:center;padding:16px 20px;margin-bottom:14px;background:#ffffff;border:2px solid #e0e7ff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
         <div style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:#6366f1;margin-bottom:6px;">
-          <span>✟</span> <span>${this.esc(ctx.paroquia)}</span>
+          <span>${this.esc(ctx.paroquia)}</span>
         </div>
         ${textos.map(t => {
           const conteudo = this.esc(resolverTags(t.conteudo, ctx));
