@@ -9,9 +9,9 @@ import { CabecalhoPaginaComponent } from '../../../shared/components/cabecalho-p
 import { EstadoListaComponent } from '../../../shared/components/estado-lista/estado-lista.component';
 
 export const TOM_STATUS_COMUNICADO: Record<StatusComunicado, string> = {
-  NA_FILA: 'bg-slate-100 text-slate-700',
-  ENVIANDO: 'bg-amber-50 text-amber-800',
-  CONCLUIDO: 'bg-emerald-50 text-emerald-700'
+  NA_FILA: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold border border-slate-200 dark:border-slate-700',
+  ENVIANDO: 'bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold',
+  CONCLUIDO: 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold'
 };
 
 /** Histórico dos comunicados (PLANO-005). Recarrega a cada 10 s enquanto algum está na fila ou enviando. */

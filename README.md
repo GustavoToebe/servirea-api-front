@@ -35,7 +35,7 @@ Projeto Angular + Tailwind + Supabase para substituir as planilhas usadas no cad
 - O suggest respeita tipo e função configurada no cadastro.
 - Bloqueio de nome duplicado dentro da mesma missa.
 - Status: Não finalizada (rascunho), Finalizada e Cancelada.
-- Confirmações de segurança para sair sem salvar, finalizar, cancelar, recriar a grade e excluir, no diálogo do próprio Servirea (`DialogoService` + `app-dialogo-host`; nada de `confirm()`/`alert()` do navegador).
+- Confirmações de segurança para sair sem salvar, finalizar, cancelar, recriar a grade e excluir, no diálogo do próprio Servire (`DialogoService` + `app-dialogo-host`; nada de `confirm()`/`alert()` do navegador).
 - Cadastros com máscara e validação de CPF, CNPJ (inclusive alfanumérico), RG, CEP, UF, telefone e e-mail (`shared/utils/formatos.ts`, `appMascara`), sexo em lista (Masculino, Feminino, Outro) e endereço preenchido pelo CEP (ViaCEP, `CepService`). A API confere as mesmas regras e grava no mesmo formato.
 - Exclusão permitida somente para escala cancelada (regra aplicada no front e no serviço).
 - Exportação de escala finalizada para PDF e PNG.

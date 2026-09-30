@@ -74,7 +74,7 @@ export function fimDeSemanaDoMes(ano: number, mes: number): Coluna[] {
                 @for (c of colunas; track c.data) {
                   <td class="!px-1 text-center">
                     @if (marca(v.id, c.data); as m) {
-                      <div class="relative mx-auto flex h-10 w-16 items-center justify-center rounded-lg bg-red-50 px-1 text-[11px] font-bold leading-tight text-red-700 ring-1 ring-red-200"
+                      <div class="relative mx-auto flex h-10 w-16 items-center justify-center rounded-lg bg-rose-50 dark:bg-rose-950/40 px-1 text-xs font-bold leading-tight text-rose-700 dark:text-rose-300 ring-1 ring-rose-200 dark:ring-rose-800"
                            [attr.data-marcada]="v.id + '|' + c.data">
                         {{ m.periodo ? rotuloPeriodo[m.periodo] : 'Dia inteiro' }}
                         <!-- O seletor fica por cima, invisível: o clique no quadrinho abre as opções. -->
@@ -86,7 +86,7 @@ export function fimDeSemanaDoMes(ano: number, mes: number): Coluna[] {
                       </div>
                     } @else {
                       <!-- Clicar abre as opções; a data só é marcada quando uma delas é escolhida. -->
-                      <div class="relative mx-auto h-10 w-16 rounded-lg border border-dashed border-[var(--field-line)] hover:bg-red-50">
+                      <div class="relative mx-auto h-10 w-16 rounded-lg border border-dashed border-[var(--field-line)] hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors">
                         <select class="absolute inset-0 h-full w-full cursor-pointer opacity-0" [attr.data-celula]="v.id + '|' + c.data"
                                 [attr.aria-label]="'Não pode em ' + c.rotulo" (change)="escolher(v.id, c.data, $any($event.target).value)">
                           <option value="" disabled selected hidden></option>
@@ -98,7 +98,7 @@ export function fimDeSemanaDoMes(ano: number, mes: number): Coluna[] {
                   </td>
                 }
                 <td class="text-center"><input type="checkbox" class="tabela-check" [checked]="semRestricao.has(v.id)" (change)="alternarSemRestricao(v.id, $event)" [attr.data-sem-restricao]="v.id"></td>
-                <td><span class="badge" [class]="'badge ' + tom[situacao(v.id)]" [attr.data-situacao]="v.id">{{ rotuloSituacao[situacao(v.id)] }}</span></td>
+                <td><span [class]="'badge ' + tom[situacao(v.id)]" [attr.data-situacao]="v.id">{{ rotuloSituacao[situacao(v.id)] }}</span></td>
               </tr>
             } @empty {
               <tr><td [attr.colspan]="colunas.length + 3" class="p-8 text-center text-slate-500">{{ carregando ? 'Carregando...' : 'Nenhum voluntário.' }}</td></tr>
@@ -107,9 +107,9 @@ export function fimDeSemanaDoMes(ano: number, mes: number): Coluna[] {
         </table>
       </div>
 
-      <div class="fixed bottom-0 left-0 right-0 z-20 border-t border-[var(--line)] bg-[var(--card)] px-4 py-3">
+      <div class="fixed bottom-0 left-0 right-0 z-20 border-t border-[var(--line)] bg-[var(--card)] px-4 py-3 backdrop-blur">
         <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
-          <p class="text-sm text-slate-600">{{ contagem.COM_RESTRICAO }} com restrição · {{ contagem.SEM_RESTRICAO }} sem restrição · {{ contagem.PENDENTE }} pendentes</p>
+          <p class="text-sm text-[var(--muted)]"><strong class="text-amber-600 dark:text-amber-400">{{ contagem.COM_RESTRICAO }}</strong> com restrição · <strong class="text-emerald-600 dark:text-emerald-400">{{ contagem.SEM_RESTRICAO }}</strong> sem restrição · <strong class="text-[var(--ink)]">{{ contagem.PENDENTE }}</strong> pendentes</p>
           <button type="button" class="btn-primary" [disabled]="salvando" (click)="salvar()" data-salvar>{{ salvando ? 'Salvando...' : 'Salvar' }}</button>
         </div>
       </div>
@@ -128,7 +128,9 @@ export class IndisponibilidadesComponent implements OnInit, HasPendingChanges {
   readonly rotuloPeriodo = PERIODO_LABEL;
   readonly rotuloSituacao = SITUACAO_LABEL;
   readonly tom: Record<SituacaoResposta, string> = {
-    COM_RESTRICAO: 'bg-amber-50 text-amber-800', SEM_RESTRICAO: 'bg-emerald-50 text-emerald-700', PENDENTE: 'bg-slate-100 text-slate-600'
+    COM_RESTRICAO: 'bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold',
+    SEM_RESTRICAO: 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold',
+    PENDENTE: 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold'
   };
 
   ano = new Date().getFullYear();

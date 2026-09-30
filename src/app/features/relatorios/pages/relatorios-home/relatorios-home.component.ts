@@ -59,53 +59,53 @@ interface Ranking {
 
       <div class="grid gap-4 sm:grid-cols-3">
         <div class="card p-5">
-          <div class="text-xs font-extrabold uppercase tracking-wider text-slate-500">Presenças</div>
-          <div class="mt-2 text-3xl font-black">{{ presencaPct === null ? '—' : presencaPct + '%' }}</div>
-          <div class="mt-2 text-xs text-slate-500">Entre as vagas com presença marcada.</div>
+          <div class="text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">Presenças</div>
+          <div class="mt-2 text-3xl font-black text-emerald-600 dark:text-emerald-400">{{ presencaPct === null ? '—' : presencaPct + '%' }}</div>
+          <div class="mt-2 text-xs text-[var(--muted)]">Entre as vagas com presença marcada.</div>
         </div>
         <div class="card p-5">
-          <div class="text-xs font-extrabold uppercase tracking-wider text-slate-500">Celebrações</div>
-          <div class="mt-2 text-3xl font-black">{{ celebracoes }}</div>
-          <div class="mt-2 text-xs text-slate-500">Nas escalas finalizadas deste filtro.</div>
+          <div class="text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">Celebrações</div>
+          <div class="mt-2 text-3xl font-black text-[var(--ink)]">{{ celebracoes }}</div>
+          <div class="mt-2 text-xs text-[var(--muted)]">Nas escalas finalizadas deste filtro.</div>
         </div>
         <div class="card p-5">
-          <div class="text-xs font-extrabold uppercase tracking-wider text-slate-500">Escalas</div>
-          <div class="mt-2 text-3xl font-black">{{ rows.length }}</div>
-          <div class="mt-2 text-xs text-slate-500">Prontas para imprimir.</div>
+          <div class="text-xs font-extrabold uppercase tracking-wider text-[var(--muted)]">Escalas</div>
+          <div class="mt-2 text-3xl font-black text-[var(--ink)]">{{ rows.length }}</div>
+          <div class="mt-2 text-xs text-[var(--muted)]">Prontas para imprimir.</div>
         </div>
       </div>
 
       <section class="card p-6">
-        <h2 class="text-lg font-black">Funções mais escaladas</h2>
+        <h2 class="text-lg font-black text-[var(--ink)]">Funções mais escaladas</h2>
         <div class="mt-4 space-y-3">
           @for (barra of funcoes; track barra.rotulo) {
             <div>
-              <div class="mb-1 flex justify-between text-sm font-semibold">
+              <div class="mb-1 flex justify-between text-sm font-semibold text-[var(--ink)]">
                 <span>{{ barra.rotulo }}</span>
-                <span class="text-slate-500">{{ barra.total }}</span>
+                <span class="text-[var(--muted)]">{{ barra.total }}</span>
               </div>
-              <div class="h-2 overflow-hidden rounded-full bg-slate-100">
-                <div class="h-2 rounded-full bg-brand-blue" [style.width.%]="barra.pct"></div>
+              <div class="h-2 overflow-hidden rounded-full bg-[var(--app-bg)] border border-[var(--line)]">
+                <div class="h-2 rounded-full transition-all" [style.background]="'var(--brand)'" [style.width.%]="barra.pct"></div>
               </div>
             </div>
           }
           @if (!loading && !funcoes.length) {
-            <p class="text-sm text-slate-400">Nenhuma vaga preenchida neste período.</p>
+            <p class="text-sm text-[var(--muted)]">Nenhuma vaga preenchida neste período.</p>
           }
         </div>
       </section>
 
       <section class="card p-6">
-        <h2 class="text-lg font-black">Quem mais serviu</h2>
-        <div class="mt-4 divide-y divide-slate-100">
+        <h2 class="text-lg font-black text-[var(--ink)]">Quem mais serviu</h2>
+        <div class="mt-4 divide-y divide-[var(--line)]">
           @for (pessoa of ranking; track pessoa.nome) {
             <div class="flex items-center justify-between py-3">
-              <strong>{{ pessoa.nome }}</strong>
-              <span class="text-sm text-slate-500">{{ pessoa.vezes }} {{ pessoa.vezes === 1 ? 'celebração' : 'celebrações' }}</span>
+              <strong class="text-[var(--ink)]">{{ pessoa.nome }}</strong>
+              <span class="text-sm text-[var(--muted)]">{{ pessoa.vezes }} {{ pessoa.vezes === 1 ? 'celebração' : 'celebrações' }}</span>
             </div>
           }
           @if (!loading && !ranking.length) {
-            <p class="py-4 text-sm text-slate-400">Ainda não há nomes nestas escalas.</p>
+            <p class="py-4 text-sm text-[var(--muted)]">Ainda não há nomes nestas escalas.</p>
           }
         </div>
       </section>

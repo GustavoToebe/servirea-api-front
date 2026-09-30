@@ -14,7 +14,7 @@ interface DialogoAberto extends PedidoDeDialogo {
 }
 
 /**
- * Confirmações e avisos no visual do Servirea, no lugar do `confirm()` e do
+ * Confirmações e avisos no visual do Servire, no lugar do `confirm()` e do
  * `alert()` do navegador (pedido de 26/09/2026). Quem mostra é o
  * `DialogoHostComponent`, uma vez só no `AppComponent`. Um pedido novo
  * enquanto outro está aberto responde "não" ao anterior.

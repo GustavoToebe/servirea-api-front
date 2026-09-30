@@ -4,7 +4,7 @@ export const environment = {
   supabaseUrl: 'https://qcybebkhwhrudbwoweip.supabase.co',
   supabaseAnonKey: 'sb_publishable_AHHQ4S_VM0hDJ5lFJgcrgQ_q-dwLgW0',
   turnstileSiteKey: '0x4AAAAAAE5LAuNTiGgIUjVG',
-  apiUrl: 'http://localhost:8080',
+  apiUrl: 'https://app.servirea.com.br/api',
   /** Slug do tenant no POST /public/{slug}/inscricoes. Seed local: `placeholder` (V020). */
   publicTenantSlug: 'placeholder'
 };

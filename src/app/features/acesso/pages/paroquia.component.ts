@@ -92,7 +92,7 @@ const ENDERECO_VAZIO: Endereco = { cep: '', logradouro: '', numero: '', compleme
           <section class="card secao-form p-6">
             <div class="secao-titulo flex items-center justify-between">
               <h2>E-mails</h2>
-              <button type="button" class="btn-secondary !px-3 !py-1.5 text-sm" (click)="addEmail()">+ E-mail</button>
+              <button type="button" class="btn-secondary !px-3 !py-1.5 text-xs font-bold cursor-pointer" (click)="addEmail()">＋ E-mail</button>
             </div>
             @for (e of emails; track $index; let i = $index) {
               <div class="grid items-end gap-3 md:grid-cols-[10rem_1fr_auto_auto]">
@@ -105,7 +105,7 @@ const ENDERECO_VAZIO: Endereco = { cep: '', logradouro: '', numero: '', compleme
                 <label class="flex items-center gap-2 pb-3 text-sm font-semibold">
                   <input type="radio" name="emailPrincipal" [checked]="e.principal" (change)="principalEmail(i)"> Principal
                 </label>
-                <button type="button" class="pb-3 text-sm font-semibold text-red-600" (click)="removerEmail(i)">Excluir</button>
+                <button type="button" class="pb-3 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 px-2 py-1 rounded-lg cursor-pointer" (click)="removerEmail(i)">🗑 Excluir</button>
               </div>
             } @empty {
               <p class="text-sm text-slate-500">Nenhum e-mail.</p>
@@ -115,7 +115,7 @@ const ENDERECO_VAZIO: Endereco = { cep: '', logradouro: '', numero: '', compleme
           <section class="card secao-form p-6">
             <div class="secao-titulo flex items-center justify-between">
               <h2>Telefones</h2>
-              <button type="button" class="btn-secondary !px-3 !py-1.5 text-sm" (click)="addTelefone()">+ Telefone</button>
+              <button type="button" class="btn-secondary !px-3 !py-1.5 text-xs font-bold cursor-pointer" (click)="addTelefone()">＋ Telefone</button>
             </div>
             @for (t of telefones; track $index; let i = $index) {
               <div class="grid items-end gap-3 md:grid-cols-[10rem_1fr_auto_auto]">
@@ -128,7 +128,7 @@ const ENDERECO_VAZIO: Endereco = { cep: '', logradouro: '', numero: '', compleme
                 <label class="flex items-center gap-2 pb-3 text-sm font-semibold">
                   <input type="radio" name="telPrincipal" [checked]="t.principal" (change)="principalTelefone(i)"> Principal
                 </label>
-                <button type="button" class="pb-3 text-sm font-semibold text-red-600" (click)="removerTelefone(i)">Excluir</button>
+                <button type="button" class="pb-3 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 px-2 py-1 rounded-lg cursor-pointer" (click)="removerTelefone(i)">🗑 Excluir</button>
               </div>
             } @empty {
               <p class="text-sm text-slate-500">Nenhum telefone.</p>

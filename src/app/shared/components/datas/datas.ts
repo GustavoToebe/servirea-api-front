@@ -1,5 +1,5 @@
 /**
- * Datas dos campos do Servirea (27/09/2026, mesmos componentes da Central):
+ * Datas dos campos do Servire (27/09/2026, mesmos componentes da Central):
  * tudo em ISO (`AAAA-MM-DD`, competência `AAAA-MM`) por dentro e
  * `DD/MM/AAAA` / `MM/AAAA` na tela.
  */
