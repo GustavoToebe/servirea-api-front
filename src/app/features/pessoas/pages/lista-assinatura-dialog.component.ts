@@ -1,6 +1,8 @@
 import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { OrientacaoToggleComponent } from '../../../shared/components/orientacao-toggle/orientacao-toggle.component';
+import { Orientacao, lerOrientacao } from '../../../shared/export/orientacao';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ParoquiaApiService } from '../../acesso/paroquia-api.service';
 import { ItemAssinatura, ListaAssinaturaService, ORDENAR_POR, Ordem, OrdenarPor, ordenar } from '../services/lista-assinatura.service';
@@ -11,7 +13,7 @@ import { ItemAssinatura, ListaAssinaturaService, ORDENAR_POR, Ordem, OrdenarPor,
  */
 @Component({
   selector: 'app-lista-assinatura-dialog',
-  imports: [FormsModule, ModalComponent],
+  imports: [FormsModule, ModalComponent, OrientacaoToggleComponent],
   template: `
     <app-modal [aberto]="open" titulo="🖨 Lista de assinatura" rotulo="Gerar lista de assinatura" [fecharNoFundo]="!gerando" (fechar)="fecharSeLivre()" tamanho="lg">
       <p class="text-sm text-slate-500">{{ itens.length }} pessoa(s) selecionada(s).</p>
@@ -29,6 +31,8 @@ import { ItemAssinatura, ListaAssinaturaService, ORDENAR_POR, Ordem, OrdenarPor,
             <option ngValue="ASC">Crescente</option>
             <option ngValue="DESC">Decrescente</option>
           </select></div>
+        <div class="sm:col-span-2"><span class="label">Orientação da folha</span>
+          <div><app-orientacao-toggle chave="lista-assinatura" [(valor)]="orientacao" /></div></div>
       </div>
 
       <!-- Prévia Visual da Folha A4 -->
@@ -98,6 +102,7 @@ export class ListaAssinaturaDialogComponent implements OnChanges {
   subtitulo = '';
   ordenarPor: OrdenarPor = 'NOME';
   ordem: Ordem = 'ASC';
+  orientacao: Orientacao = lerOrientacao('lista-assinatura', 'RETRATO');
   gerando = false;
   erro = '';
 
@@ -134,7 +139,7 @@ export class ListaAssinaturaDialogComponent implements OnChanges {
     }
     this.gerando = true;
     this.erro = '';
-    const opcoes = { titulo: this.titulo.trim(), subtitulo: this.subtitulo.trim(), ordenarPor: this.ordenarPor, ordem: this.ordem };
+    const opcoes = { titulo: this.titulo.trim(), subtitulo: this.subtitulo.trim(), ordenarPor: this.ordenarPor, ordem: this.ordem, orientacao: this.orientacao };
     try {
       if (formato === 'PDF') await this.servico.gerarPdf(this.itens, opcoes);
       else await this.servico.gerarImagem(this.itens, opcoes);

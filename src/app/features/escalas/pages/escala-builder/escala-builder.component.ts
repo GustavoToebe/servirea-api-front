@@ -1,3 +1,5 @@
+import { OrientacaoToggleComponent } from '../../../../shared/components/orientacao-toggle/orientacao-toggle.component';
+import { Orientacao, lerOrientacao } from '../../../../shared/export/orientacao';
 import { CommonModule } from '@angular/common';
 import { NumeroComponent } from '../../../../shared/components/numero/numero.component';
 import { CampoDataComponent } from '../../../../shared/components/datas/campo-data.component';
@@ -48,7 +50,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
 
 @Component({
     selector: 'app-escala-builder',
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, VolunteerPickerComponent, NumeroComponent, CampoDataComponent,
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, OrientacaoToggleComponent, VolunteerPickerComponent, NumeroComponent, CampoDataComponent,
       ReplicarDialogComponent, AindaNaoEscaladosComponent],
     template: `
     <div class="space-y-4">
@@ -58,6 +60,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
         @if (id) {
           <div class="flex flex-wrap items-center gap-2"><span class="badge" [ngClass]="statusClass(status)">{{ statusLabel(status) }}</span>
             @if (status==='FINALIZADA') {
+              <app-orientacao-toggle chave="escala" [(valor)]="orientacao" />
               <button type="button" class="btn-secondary !py-2" (click)="gerarPrevia()">Gerar prévia (PDF)</button>
               <button class="btn-secondary !py-2" (click)="exportPdf()">Exportar PDF</button>
               <button class="btn-secondary !py-2" (click)="exportPng()">Exportar PNG</button>
@@ -1026,6 +1029,8 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
   async reopen(){if(!this.id)return;if(!await this.dialogo.confirmar({ titulo: 'Reabrir escala?', mensagem: 'A escala volta a ser não finalizada e aceita alterações de novo.', confirmar: 'Reabrir' }))return;try{this.currentDetail=await this.service.setStatus(this.id,'RASCUNHO');this.status='RASCUNHO';this.form.enable({emitEvent:false});this.saved=true;}catch(e:any){this.error=e?.message||'Erro ao reabrir escala.';}}
   async remove(){if(!this.id)return;if(!await this.dialogo.confirmar({ titulo: 'Excluir escala?', mensagem: `Excluir definitivamente a escala de ${MESES[this.form.controls.mes.value-1]} / ${this.form.controls.ano.value}? Esta ação não pode ser desfeita.`, confirmar: 'Excluir', perigo: true }))return;try{await this.service.deleteCancelled(this.id);this.saved=true;await this.router.navigate(['/escalas']);}catch(e:any){this.error=e?.message||'Erro ao excluir escala.';}}
   
+  orientacao: Orientacao = lerOrientacao('escala', 'PAISAGEM');
+
   async gerarPrevia() {
     const { titulo, tipo, ano, mes } = this.form.getRawValue();
     const mockDetail: EscalaDetalhe = {
@@ -1033,12 +1038,12 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
       eventos: this.events.filter(e => !e.referencia)
     };
     try {
-      await this.exporter.exportPdf(mockDetail);
+      await this.exporter.exportPdf(mockDetail, this.orientacao);
     } catch(e:any) { this.error=e?.message||'Erro ao gerar prévia.'; }
   }
 
-  async exportPdf(){if(!this.id)return;try{await this.exporter.exportPdf(await this.service.getById(this.id));}catch(e:any){this.error=e?.message||'Erro ao exportar PDF.';}}
-  async exportPng(){if(!this.id)return;try{await this.exporter.exportPng(await this.service.getById(this.id));}catch(e:any){this.error=e?.message||'Erro ao exportar PNG.';}}
+  async exportPdf(){if(!this.id)return;try{await this.exporter.exportPdf(await this.service.getById(this.id), this.orientacao);}catch(e:any){this.error=e?.message||'Erro ao exportar PDF.';}}
+  async exportPng(){if(!this.id)return;try{await this.exporter.exportPng(await this.service.getById(this.id), this.orientacao);}catch(e:any){this.error=e?.message||'Erro ao exportar PNG.';}}
 
   /** Referência (escala replicada) não conta em vagas: nunca é publicada. Lê o que `recalcular` já contou. */
   totalSlots(){return this.total;}

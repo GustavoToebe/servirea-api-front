@@ -4,6 +4,7 @@ import jsPDF from 'jspdf';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ColunaEscala, EscalaDetalhe, EscalaEvento, MESES, resolverTags, textosDoLayout, vagasDoLayout } from '../models/escala.model';
 import { FuncaoEscala } from '../../voluntarios/models/voluntario.model';
+import { Orientacao } from '../../../shared/export/orientacao';
 
 const BLUE = '#1e1b4b';
 const RED = '#c62828';
@@ -26,11 +27,12 @@ export function nomeCurto(completo: string): string {
 export class ExportService {
   private auth = inject(AuthService);
 
-  async exportPdf(escala: EscalaDetalhe) {
-    const canvas = await this.renderCanvas(escala);
+  async exportPdf(escala: EscalaDetalhe, orientacao: Orientacao = 'PAISAGEM') {
+    const canvas = await this.renderCanvas(escala, orientacao);
     const img = canvas.toDataURL('image/png');
-    const mmW = 297;
-    const mmH = Math.max(210, canvas.height * mmW / canvas.width + 12);
+    const retrato = orientacao === 'RETRATO';
+    const mmW = retrato ? 210 : 297;
+    const mmH = Math.max(retrato ? 297 : 210, canvas.height * mmW / canvas.width + 12);
     // Sem a orientação explícita, o jsPDF vira a página quando a altura é menor que a largura (escala curta) e
     // a imagem, de 285 mm, sai cortada numa página de 210 mm.
     const doc = new jsPDF({ unit: 'mm', format: [mmW, mmH], orientation: mmW > mmH ? 'landscape' : 'portrait' });
@@ -41,16 +43,16 @@ export class ExportService {
     doc.save(this.fileName(escala, 'pdf'));
   }
 
-  async exportPng(escala: EscalaDetalhe) {
-    const canvas = await this.renderCanvas(escala);
+  async exportPng(escala: EscalaDetalhe, orientacao: Orientacao = 'PAISAGEM') {
+    const canvas = await this.renderCanvas(escala, orientacao);
     const link = document.createElement('a');
     link.href = canvas.toDataURL('image/png');
     link.download = this.fileName(escala, 'png');
     link.click();
   }
 
-  private async renderCanvas(escala: EscalaDetalhe): Promise<HTMLCanvasElement> {
-    const host = this.buildSheet(escala);
+  private async renderCanvas(escala: EscalaDetalhe, orientacao: Orientacao): Promise<HTMLCanvasElement> {
+    const host = this.buildSheet(escala, orientacao);
     // O preflight do Tailwind põe `img { display: block }`, e o html2canvas mede a linha de base do texto com uma
     // imagem em linha: com a regra, todo texto saía mais baixo e o cabeçalho ficava cortado (PDF de 29/09/2026).
     const baseDoTexto = document.createElement('style');
@@ -70,15 +72,18 @@ export class ExportService {
   }
 
 
-  private buildSheet(escala: EscalaDetalhe): HTMLElement {
+  /** Retrato usa uma folha mais estreita, e um pouco mais larga quando há muitas colunas (senão o nome e o título da coluna saem cortados). */
+  private buildSheet(escala: EscalaDetalhe, orientacao: Orientacao = 'PAISAGEM'): HTMLElement {
     const host = document.createElement('div');
-    host.style.cssText = "position:fixed;left:-12000px;top:0;width:1500px;background:#ffffff;padding:24px 28px;font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;color:#0f172a;";
+    host.style.cssText = `position:fixed;left:-12000px;top:0;width:1500px;background:#ffffff;padding:24px 28px;font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;color:#0f172a;`;
     const month = MESES[escala.mes - 1].toUpperCase();
     const paroquia = (this.auth.tenantNome() || 'Paróquia').toUpperCase();
     const ctx = { titulo: escala.titulo, mesAno: `${MESES[escala.mes - 1]} ${escala.ano}`, paroquia };
     const cabecalho = this.cabecalhoDoLayout(escala, ctx);
     const textosCel = textosDoLayout(escala.colunas, 'CELEBRACAO').filter(t => t.tipo === 'TEXTO_LIVRE');
     const colunas = this.colunasDa(escala);
+    const muitasColunas = colunas.length > 8;
+    host.style.width = `${orientacao === 'RETRATO' ? (muitasColunas ? 1300 : 1100) : 1500}px`;
     
     let blocks = '';
     let semanaAnterior = '';
@@ -93,7 +98,7 @@ export class ExportService {
     }
     
     const cabTop = 'background:#1e1b4b;color:#ffffff;font-weight:900;font-size:15px;letter-spacing:0.08em;text-transform:uppercase;border:1px solid #312e81;padding:0;';
-    const cabCol = 'background:#312e81;color:#ffffff;font-weight:800;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;border:1px solid #4338ca;padding:0;';
+    const cabCol = 'background:#312e81;color:#ffffff;font-weight:800;font-size:' + (orientacao === 'RETRATO' && muitasColunas ? 11 : 13) + 'px;letter-spacing:0.04em;text-transform:uppercase;border:1px solid #4338ca;padding:0;';
     const txt = (t: string, alinhar = 'center', py = '8px') => `<div style="padding:${py} 8px;line-height:22px;text-align:${alinhar};">${t}</div>`;
     
     const colHeaders = colunas.map(c => `<th style="${cabCol}">${txt(this.esc(c.rotulo || ''))}</th>`).join('');

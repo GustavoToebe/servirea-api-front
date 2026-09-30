@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { Orientacao } from '../../../shared/export/orientacao';
 
 /** Uma linha da lista: só o necessário para ordenar e imprimir o nome. */
 export interface ItemAssinatura {
@@ -18,6 +19,8 @@ export interface OpcoesListaAssinatura {
   subtitulo: string;
   ordenarPor: OrdenarPor;
   ordem: Ordem;
+  /** Sem valor, retrato (como sempre foi). */
+  orientacao?: Orientacao;
 }
 
 export const ORDENAR_POR: { valor: OrdenarPor; rotulo: string }[] = [
@@ -29,6 +32,8 @@ export const ORDENAR_POR: { valor: OrdenarPor; rotulo: string }[] = [
 
 /** Linhas por folha A4 no PDF (cabeçalho + 22 linhas altas, com espaço para assinar). */
 export const LINHAS_POR_FOLHA = 22;
+/** Em paisagem a folha A4 é mais baixa: menos linhas por página. */
+export const LINHAS_POR_FOLHA_PAISAGEM = 11;
 
 /**
  * Ordena a lista. Sem o dado (número, nascimento, tipo), a pessoa vai para o fim nos dois sentidos, e o
@@ -68,15 +73,25 @@ export class ListaAssinaturaService {
 
   async gerarPdf(itens: ItemAssinatura[], opcoes: OpcoesListaAssinatura) {
     const linhas = ordenar(itens, opcoes.ordenarPor, opcoes.ordem);
-    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-    const folhas = Math.max(1, Math.ceil(linhas.length / LINHAS_POR_FOLHA));
+    const paisagem = opcoes.orientacao === 'PAISAGEM';
+    const porFolha = paisagem ? LINHAS_POR_FOLHA_PAISAGEM : LINHAS_POR_FOLHA;
+    const [larguraPagina, alturaPagina] = paisagem ? [297, 210] : [210, 297];
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: paisagem ? 'landscape' : 'portrait' });
+    const folhas = Math.max(1, Math.ceil(linhas.length / porFolha));
+    const margem = 10;
     for (let f = 0; f < folhas; f++) {
-      const canvas = await this.desenhar(linhas.slice(f * LINHAS_POR_FOLHA, (f + 1) * LINHAS_POR_FOLHA), opcoes,
-        folhas > 1 ? `Folha ${f + 1} de ${folhas}` : '', f * LINHAS_POR_FOLHA);
+      const canvas = await this.desenhar(linhas.slice(f * porFolha, (f + 1) * porFolha), opcoes,
+        folhas > 1 ? `Folha ${f + 1} de ${folhas}` : '', f * porFolha);
       if (f > 0) doc.addPage();
-      const margem = 10;
-      const largura = 210 - margem * 2;
-      doc.addImage(canvas.toDataURL('image/png'), 'PNG', margem, margem, largura, canvas.height * largura / canvas.width);
+      // Cabe na página inteira: se a imagem ficar mais alta que a folha, encolhe em vez de cortar.
+      let largura = larguraPagina - margem * 2;
+      let altura = canvas.height * largura / canvas.width;
+      const alturaMaxima = alturaPagina - margem * 2;
+      if (altura > alturaMaxima) {
+        altura = alturaMaxima;
+        largura = canvas.width * altura / canvas.height;
+      }
+      doc.addImage(canvas.toDataURL('image/png'), 'PNG', (larguraPagina - largura) / 2, margem, largura, altura);
     }
     doc.save(this.nomeArquivo(opcoes.titulo, 'pdf'));
   }
@@ -112,7 +127,8 @@ export class ListaAssinaturaService {
    */
   montarFolha(linhas: ItemAssinatura[], opcoes: OpcoesListaAssinatura, rodape: string, inicio = 0): HTMLElement {
     const folha = document.createElement('div');
-    folha.style.cssText = "position:fixed;left:-12000px;top:0;width:760px;background:#ffffff;padding:20px 24px;"
+    const largura = opcoes.orientacao === 'PAISAGEM' ? 1100 : 760;
+    folha.style.cssText = `position:fixed;left:-12000px;top:0;width:${largura}px;background:#ffffff;padding:20px 24px;`
       + "font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;color:#0f172a;";
     const borda = 'border-bottom:1px solid #e2e8f0;';
     const celula = 'height:42px;padding:0 14px;vertical-align:middle;line-height:1.25;';
