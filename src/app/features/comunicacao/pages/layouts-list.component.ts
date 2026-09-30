@@ -79,15 +79,15 @@ import { EstadoListaComponent } from '../../../shared/components/estado-lista/es
                 </td>
                 <td>
                   @if (layout.ativo) {
-                    <span class="badge bg-emerald-50 text-emerald-700">Ativo</span>
+                    <span class="badge bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold">Ativo</span>
                   } @else {
-                    <span class="badge bg-slate-100 text-slate-600">Inativo</span>
+                    <span class="badge bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold">Inativo</span>
                   }
                 </td>
                 <td (click)="$event.stopPropagation()">
                   <div class="flex gap-2">
-                    <a [routerLink]="['/layouts', layout.id]" class="btn-secondary !px-3 !py-1 text-sm">Editar</a>
-                    <button type="button" class="btn-danger !px-3 !py-1 text-sm" (click)="excluir(layout)">Excluir</button>
+                    <a [routerLink]="['/layouts', layout.id]" class="btn-secondary !px-3 !py-1 text-xs font-bold">Editar</a>
+                    <button type="button" class="btn-danger !px-3 !py-1 text-xs font-bold cursor-pointer" (click)="excluir(layout)">🗑 Excluir</button>
                   </div>
                 </td>
               </tr>

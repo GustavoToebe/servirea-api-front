@@ -25,21 +25,23 @@ import { VoluntariosApiService } from '../services/voluntarios-api.service';
               <img [src]="fotoUrl" class="h-40 w-40 rounded-3xl object-cover" alt="Foto">
             }
             @if (!fotoUrl) {
-              <div class="flex h-40 w-40 items-center justify-center rounded-3xl bg-violet-100 text-4xl font-black text-brand-blue">{{ initials(pessoa.nomeCompleto) }}</div>
+              <div class="flex h-40 w-40 items-center justify-center rounded-3xl border border-[var(--line)] bg-[var(--app-bg)] text-4xl font-black shadow-xs" [style.color]="'var(--brand)'">{{ initials(pessoa.nomeCompleto) }}</div>
             }
             <div>
               <div class="flex flex-wrap gap-2">
-                <h1 class="text-3xl font-black">{{ pessoa.nomeCompleto }}<app-numero [numero]="pessoa.sequencial" /></h1>
+                <h1 class="text-3xl font-black text-[var(--ink)]">{{ pessoa.nomeCompleto }}<app-numero [numero]="pessoa.sequencial" /></h1>
                 @for (p of pessoa.papeis; track p) {
-                  <span class="badge bg-violet-50 text-brand-blue">{{ p === 'VOLUNTARIO' ? 'Voluntário' : 'Responsável' }}</span>
+                  <span class="badge" [ngClass]="p === 'VOLUNTARIO' ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold' : 'bg-indigo-500/15 border border-indigo-500/30 text-indigo-700 dark:text-indigo-300 font-bold'">
+                    {{ p === 'VOLUNTARIO' ? 'Voluntário' : 'Responsável' }}
+                  </span>
                 }
               </div>
-              <p class="mt-2 text-slate-500">{{ ageFromDate(pessoa.dataNascimento) ?? '—' }} anos</p>
-              <p class="text-sm text-slate-600">{{ contatoPrincipalEmail(pessoa) || 'sem e-mail' }} · {{ contatoPrincipalTelefone(pessoa) || 'sem telefone' }}</p>
+              <p class="mt-2 text-sm text-[var(--muted)]">{{ ageFromDate(pessoa.dataNascimento) ?? '—' }} anos</p>
+              <p class="text-sm text-[var(--muted)]">{{ contatoPrincipalEmail(pessoa) || 'sem e-mail' }} · {{ contatoPrincipalTelefone(pessoa) || 'sem telefone' }}</p>
               @if (pessoa.voluntario) {
                 <p class="mt-2"><span class="badge" [ngClass]="tipoBadgeClass(pessoa.voluntario.tipo)">{{ tipoLabel[pessoa.voluntario.tipo] }}</span></p>
                 @if (mandatoDe(pessoa.voluntario.mandatoInicio, pessoa.voluntario.mandatoFim)) {
-                  <p class="mt-2 text-sm text-amber-800">{{ mandatoDe(pessoa.voluntario.mandatoInicio, pessoa.voluntario.mandatoFim) }}</p>
+                  <p class="mt-2 text-sm text-amber-700 dark:text-amber-400 font-medium">{{ mandatoDe(pessoa.voluntario.mandatoInicio, pessoa.voluntario.mandatoFim) }}</p>
                 }
               }
             </div>
@@ -47,14 +49,14 @@ import { VoluntariosApiService } from '../services/voluntarios-api.service';
         </section>
         @if (pessoa.responsaveis.length) {
           <section class="card p-6">
-            <h2 class="mb-4 text-lg font-black">Responsáveis</h2>
+            <h2 class="mb-4 text-lg font-black text-[var(--ink)]">Responsáveis</h2>
             <div class="space-y-2">
               @for (r of pessoa.responsaveis; track r) {
-                <a [routerLink]="['/pessoas', r.pessoaId]" class="block rounded-2xl border p-4 hover:bg-slate-50">
-                  <strong>{{ r.nomeCompleto }}</strong>
-                  <span class="text-sm text-slate-500"> · {{ r.parentesco }}</span>
+                <a [routerLink]="['/pessoas', r.pessoaId]" class="block rounded-2xl border border-[var(--line)] bg-[var(--card)] p-4 hover:border-[var(--brand)] transition-all shadow-2xs">
+                  <strong class="text-[var(--ink)]">{{ r.nomeCompleto }}</strong>
+                  <span class="text-sm text-[var(--muted)]"> · {{ r.parentesco }}</span>
                   @if (r.principal) {
-                    <span class="ml-2 text-amber-500">★ principal</span>
+                    <span class="ml-2 text-amber-600 dark:text-amber-400 font-bold">★ principal</span>
                   }
                 </a>
               }
@@ -63,14 +65,14 @@ import { VoluntariosApiService } from '../services/voluntarios-api.service';
         }
         @if (pessoa.dependentes.length) {
           <section class="card p-6">
-            <h2 class="mb-4 text-lg font-black">Dependentes</h2>
+            <h2 class="mb-4 text-lg font-black text-[var(--ink)]">Dependentes</h2>
             <div class="space-y-2">
               @for (r of pessoa.dependentes; track r) {
-                <a [routerLink]="['/pessoas', r.pessoaId]" class="block rounded-2xl border p-4 hover:bg-slate-50">
-                  <strong>{{ r.nomeCompleto }}</strong>
-                  <span class="text-sm text-slate-500"> · {{ r.parentesco }}</span>
+                <a [routerLink]="['/pessoas', r.pessoaId]" class="block rounded-2xl border border-[var(--line)] bg-[var(--card)] p-4 hover:border-[var(--brand)] transition-all shadow-2xs">
+                  <strong class="text-[var(--ink)]">{{ r.nomeCompleto }}</strong>
+                  <span class="text-sm text-[var(--muted)]"> · {{ r.parentesco }}</span>
                   @if (r.principal) {
-                    <span class="ml-2 text-amber-500">★ responsável principal</span>
+                    <span class="ml-2 text-amber-600 dark:text-amber-400 font-bold">★ responsável principal</span>
                   }
                 </a>
               }
@@ -78,10 +80,10 @@ import { VoluntariosApiService } from '../services/voluntarios-api.service';
           </section>
         }
         <section class="card p-6">
-          <h2 class="mb-2 text-lg font-black">Endereço</h2>
-          <p class="text-sm text-slate-600">{{ endereco(pessoa) }}</p>
+          <h2 class="mb-2 text-lg font-black text-[var(--ink)]">Endereço</h2>
+          <p class="text-sm text-[var(--muted)]">{{ endereco(pessoa) }}</p>
           @if (pessoa.observacoes) {
-            <p class="mt-4 text-sm">{{ pessoa.observacoes }}</p>
+            <p class="mt-4 text-sm text-[var(--ink)]">{{ pessoa.observacoes }}</p>
           }
         </section>
       </div>

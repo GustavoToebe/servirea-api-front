@@ -158,7 +158,10 @@ export const TIPO_LABEL: Record<TipoVoluntario, string> = {
 export const TIPOS_VOLUNTARIO: TipoVoluntario[] = ['COROINHA', 'ACOLITO', 'AMBOS', 'MESC'];
 
 export function tipoBadgeClass(tipo: TipoVoluntario): string {
-  return tipo === 'MESC' ? 'bg-amber-50 text-amber-800' : 'bg-violet-50 text-brand-blue';
+  if (tipo === 'MESC') return 'bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-200 font-bold';
+  if (tipo === 'ACOLITO') return 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 font-bold';
+  if (tipo === 'COROINHA') return 'bg-indigo-500/15 border border-indigo-500/30 text-indigo-800 dark:text-indigo-200 font-bold';
+  return 'bg-purple-500/15 border border-purple-500/30 text-purple-800 dark:text-purple-200 font-bold';
 }
 
 function dataBr(iso: string): string {

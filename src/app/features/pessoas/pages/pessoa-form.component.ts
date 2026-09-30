@@ -84,13 +84,13 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
                     @if (erro(g.get('email')); as e) { <p class="mt-1 text-xs text-red-600">{{ e }}</p> }
                   </div>
                   <label class="flex items-center gap-2 md:col-span-2"><input type="checkbox" formControlName="principal"> Principal</label>
-                  <button type="button" class="text-sm text-red-600" (click)="emails.removeAt(i)">Excluir</button>
+                  <button type="button" class="text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 px-2 py-1 rounded-lg cursor-pointer" (click)="emails.removeAt(i)">🗑 Excluir</button>
                 </div>
               }
             </div>
           </section>
           <section class="card p-6">
-            <div class="mb-4 flex items-center justify-between"><h2 class="text-lg font-black">Telefones</h2><button type="button" class="btn-secondary" (click)="addTelefone()">＋</button></div>
+            <div class="mb-4 flex items-center justify-between"><h2 class="text-lg font-black text-[var(--ink)]">Telefones</h2><button type="button" class="btn-secondary" (click)="addTelefone()">＋</button></div>
             <div formArrayName="telefones" class="space-y-3">
               @for (g of telefones.controls; track g; let i = $index) {
                 <div [formGroupName]="i" class="grid gap-3 md:grid-cols-12">
@@ -100,7 +100,7 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
                     @if (erro(g.get('numero')); as e) { <p class="mt-1 text-xs text-red-600">{{ e }}</p> }
                   </div>
                   <label class="flex items-center gap-2 md:col-span-2"><input type="checkbox" formControlName="principal"> Principal</label>
-                  <button type="button" class="text-sm text-red-600" (click)="telefones.removeAt(i)">Excluir</button>
+                  <button type="button" class="text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 px-2 py-1 rounded-lg cursor-pointer" (click)="telefones.removeAt(i)">🗑 Excluir</button>
                 </div>
               }
             </div>
@@ -176,7 +176,7 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
                           {{ lado === 'responsaveis' ? 'Responsável principal' : 'Sou o responsável principal' }}
                         </label>
                       </div>
-                      <button type="button" class="mt-3 text-sm text-red-600" (click)="removerRelacao($any(lista), i)">Remover</button>
+                      <button type="button" class="mt-3 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 px-2 py-1 rounded-lg cursor-pointer" (click)="removerRelacao($any(lista), i)">🗑 Remover</button>
                     </div>
                   }
                   @if (!$any(lista).length) {
