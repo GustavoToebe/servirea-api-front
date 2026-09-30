@@ -143,23 +143,26 @@ export interface ColunaEscala {
 
 /** Colunas de fábrica quando a API de layouts ainda não respondeu. */
 export const COLUNAS_PADRAO_SEMANAL: ColunaEscala[] = [
-  { ordem: 1, funcao: 'MISSAL', posicao: 1, rotulo: 'Acólito Missal' },
-  { ordem: 2, funcao: 'CRUZ', posicao: 1, rotulo: 'Cruz' },
-  { ordem: 3, funcao: 'CREDENCIA', posicao: 1, rotulo: 'Credência' },
-  { ordem: 4, funcao: 'VELA', posicao: 1, rotulo: 'Vela 1' },
-  { ordem: 5, funcao: 'VELA', posicao: 2, rotulo: 'Vela 2' },
-  { ordem: 6, funcao: 'SINO', posicao: 1, rotulo: 'Sino 1' },
-  { ordem: 7, funcao: 'SINO', posicao: 2, rotulo: 'Sino 2' }
+  { idLocal: 'c-dt', tipo: 'DATA', escopo: 'CELEBRACAO', linha: 0, coluna: 0, largura: 1, conteudo: '#DATA_HORA#' },
+  { idLocal: 'v-mis', tipo: 'VAGA', escopo: 'CELEBRACAO', linha: 0, coluna: 1, largura: 1, ordem: 1, funcao: 'MISSAL', posicao: 1, rotulo: 'Acólito Missal' },
+  { idLocal: 'v-crz', tipo: 'VAGA', escopo: 'CELEBRACAO', linha: 0, coluna: 2, largura: 1, ordem: 2, funcao: 'CRUZ', posicao: 1, rotulo: 'Cruz' },
+  { idLocal: 'v-crd', tipo: 'VAGA', escopo: 'CELEBRACAO', linha: 0, coluna: 3, largura: 1, ordem: 3, funcao: 'CREDENCIA', posicao: 1, rotulo: 'Credência' },
+  { idLocal: 'v-vl1', tipo: 'VAGA', escopo: 'CELEBRACAO', linha: 0, coluna: 4, largura: 1, ordem: 4, funcao: 'VELA', posicao: 1, rotulo: 'Vela 1' },
+  { idLocal: 'v-vl2', tipo: 'VAGA', escopo: 'CELEBRACAO', linha: 0, coluna: 5, largura: 1, ordem: 5, funcao: 'VELA', posicao: 2, rotulo: 'Vela 2' },
+  { idLocal: 'v-sn1', tipo: 'VAGA', escopo: 'CELEBRACAO', linha: 0, coluna: 6, largura: 1, ordem: 6, funcao: 'SINO', posicao: 1, rotulo: 'Sino 1' },
+  { idLocal: 'v-sn2', tipo: 'VAGA', escopo: 'CELEBRACAO', linha: 0, coluna: 7, largura: 1, ordem: 7, funcao: 'SINO', posicao: 2, rotulo: 'Sino 2' }
 ];
 
 export const COLUNAS_PADRAO_MENSAL: ColunaEscala[] = [
-  ...COLUNAS_PADRAO_SEMANAL.slice(0, 5),
-  { ordem: 6, funcao: 'COLETA', posicao: 1, rotulo: 'Coleta' },
-  { ordem: 7, funcao: 'COLETA', posicao: 2, rotulo: 'Coleta' },
-  { ordem: 8, funcao: 'COLETA', posicao: 3, rotulo: 'Coleta' },
-  { ordem: 9, funcao: 'COLETA', posicao: 4, rotulo: 'Coleta' },
-  { ordem: 10, funcao: 'SINO', posicao: 1, rotulo: 'Sino 1' },
-  { ordem: 11, funcao: 'SINO', posicao: 2, rotulo: 'Sino 2' }
+  { idLocal: 'c-dt', tipo: 'DATA', escopo: 'CELEBRACAO', linha: 0, coluna: 0, largura: 12, conteudo: '#DATA_HORA#' },
+  { idLocal: 'v-mis', tipo: 'VAGA', escopo: 'CELEBRACAO', linha: 1, coluna: 0, largura: 1, ordem: 1, funcao: 'MISSAL', posicao: 1, rotulo: 'Acólito Missal' },
+  { idLocal: 'v-crz', tipo: 'VAGA', escopo: 'CELEBRACAO', linha: 1, coluna: 1, largura: 1, ordem: 2, funcao: 'CRUZ', posicao: 1, rotulo: 'Cruz' },
+  { idLocal: 'v-crd', tipo: 'VAGA', escopo: 'CELEBRACAO', linha: 1, coluna: 2, largura: 1, ordem: 3, funcao: 'CREDENCIA', posicao: 1, rotulo: 'Credência' },
+  { idLocal: 'v-vl1', tipo: 'VAGA', escopo: 'CELEBRACAO', linha: 2, coluna: 0, largura: 1, ordem: 4, funcao: 'VELA', posicao: 1, rotulo: 'Círio 1' },
+  { idLocal: 'v-vl2', tipo: 'VAGA', escopo: 'CELEBRACAO', linha: 2, coluna: 1, largura: 1, ordem: 5, funcao: 'VELA', posicao: 2, rotulo: 'Círio 2' },
+  { idLocal: 'v-cl1', tipo: 'VAGA', escopo: 'CELEBRACAO', linha: 3, coluna: 0, largura: 1, ordem: 6, funcao: 'COLETA', posicao: 1, rotulo: 'Oferta 1' },
+  { idLocal: 'v-cl2', tipo: 'VAGA', escopo: 'CELEBRACAO', linha: 3, coluna: 1, largura: 1, ordem: 7, funcao: 'COLETA', posicao: 2, rotulo: 'Oferta 2' },
+  { idLocal: 'v-cl3', tipo: 'VAGA', escopo: 'CELEBRACAO', linha: 3, coluna: 2, largura: 1, ordem: 8, funcao: 'COLETA', posicao: 3, rotulo: 'Oferta 3' }
 ];
 
 export interface LayoutEscala {
@@ -167,8 +170,12 @@ export interface LayoutEscala {
   nome: string;
   tipo: TipoEscala;
   colunas: ColunaEscala[];
+  /** Inativo: continua na lista de layouts, mas não é oferecido ao montar uma escala. */
   ativo: boolean;
   sistema: boolean;
+  descricao?: string | null;
+  /** No máximo um por modelo: o que a escala nova usa quando ninguém escolhe layout. */
+  padrao?: boolean;
 }
 
 // ---- Helpers do layout visual (vagas x blocos de texto)

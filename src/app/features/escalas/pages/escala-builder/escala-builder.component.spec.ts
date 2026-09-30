@@ -111,6 +111,7 @@ describe('EscalaBuilderComponent', () => {
 
   it('referência aparece no topo da grade semanal com o selo e não conta nas vagas', () => {
     component.form.controls.tipo.setValue('SEMANAL');
+    component.modoSemanal = 'TABELA';
     const real = { ...evento([{ id: 'a', funcao: 'MISSAL' }]), data: '2026-10-01' };
     const ref = { ...evento([{ id: 'b', funcao: 'MISSAL' }]), data: '2026-09-29', referencia: true };
     component.events = [real, ref];
@@ -157,6 +158,7 @@ describe('EscalaBuilderComponent', () => {
   it('semanal cheia (22 dias úteis de outubro): o template não chama usedIds nem slotFor a cada detecção', () => {
     component.form.setValue({ titulo: 'Semanal', tipo: 'SEMANAL', ano: 2026, mes: 10, observacao: '', layoutId: null });
     component.colunas = [...COLUNAS_PADRAO_SEMANAL];
+    component.modoSemanal = 'TABELA';
     component.events = semanaCheia();
     fixture.detectChanges();
     const usados = spyOn(component, 'usedIds').and.callThrough();
@@ -175,6 +177,16 @@ describe('EscalaBuilderComponent', () => {
     component.events = semanaCheia();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('app-volunteer-picker').length).toBe(0);
+  });
+
+  it('o seletor de layout não oferece inativos, mas mantém o já escolhido na escala', () => {
+    const l = (id: string, ativo: boolean) => ({ id, nome: id, tipo: 'MENSAL', colunas: [], ativo, sistema: false }) as any;
+    component.layouts = [l('ativo', true), l('inativo', false), { ...l('outro-modelo', true), tipo: 'SEMANAL' }];
+    component.form.controls.tipo.setValue('MENSAL');
+    component.form.controls.layoutId.setValue(null);
+    expect(component.layoutsFiltrados.map(x => x.id)).toEqual(['ativo']);
+    component.form.controls.layoutId.setValue('inativo');
+    expect(component.layoutsFiltrados.map(x => x.id)).toEqual(['ativo', 'inativo']);
   });
 
   it('alocar alguém atualiza a contagem na hora', () => {
