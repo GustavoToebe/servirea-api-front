@@ -5,11 +5,9 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { ColunaEscala, EscalaDetalhe, EscalaEvento, MESES, resolverTags, textosDoLayout, vagasDoLayout } from '../models/escala.model';
 import { FuncaoEscala } from '../../voluntarios/models/voluntario.model';
 
-const BLUE = '#1e4fa3';
+const BLUE = '#1e1b4b';
 const RED = '#c62828';
 const HEADER = '#b71c1c';
-const SEMANAL_VERMELHO = '#c00000';
-const SEMANAL_AZUL = '#0070c0';
 const AGNOMES = new Set(['neto', 'filho', 'junior', 'júnior', 'sobrinho']);
 
 /**
@@ -72,7 +70,7 @@ export class ExportService {
 
   private buildSheet(escala: EscalaDetalhe): HTMLElement {
     const host = document.createElement('div');
-    host.style.cssText = 'position:fixed;left:-12000px;top:0;width:1500px;background:#fff;padding:18px;font-family:Calibri,Arial,sans-serif;color:#000;';
+    host.style.cssText = "position:fixed;left:-12000px;top:0;width:1500px;background:#ffffff;padding:24px 28px;font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;color:#0f172a;";
     const month = MESES[escala.mes - 1].toUpperCase();
     const paroquia = (this.auth.tenantNome() || 'Paróquia').toUpperCase();
     const ctx = { titulo: escala.titulo, mesAno: `${MESES[escala.mes - 1]} ${escala.ano}`, paroquia };
@@ -92,24 +90,39 @@ export class ExportService {
       blocks += this.eventBlock(event, colunas as any, textosCel, ctx);
     }
     
-    const cab = `background:${SEMANAL_VERMELHO};color:#fff;font-weight:700;font-size:21px;border:1px solid #000;padding:0;`;
-    const txt = (t: string, alinhar = 'center') => `<div style="padding:4px 6px;line-height:28px;text-align:${alinhar};">${t}</div>`;
+    const cabTop = 'background:#1e1b4b;color:#ffffff;font-weight:900;font-size:15px;letter-spacing:0.08em;text-transform:uppercase;border:1px solid #312e81;padding:0;';
+    const cabCol = 'background:#312e81;color:#ffffff;font-weight:800;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;border:1px solid #4338ca;padding:0;';
+    const txt = (t: string, alinhar = 'center', py = '8px') => `<div style="padding:${py} 8px;line-height:22px;text-align:${alinhar};">${t}</div>`;
     
-    const colHeaders = colunas.map(c => `<th style="${cab}">${txt(this.esc(c.rotulo || ''))}</th>`).join('');
+    const colHeaders = colunas.map(c => `<th style="${cabCol}">${txt(this.esc(c.rotulo || ''))}</th>`).join('');
     
     host.innerHTML = `
-      <div style="margin:0 0 10px;">${cabecalho}</div>
-      <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
-        <tr>
-          <td style="${cab}">${txt(`ESCALA ${escala.tipo}`)}</td>
-          <td style="${cab}" colspan="${colunas.length}">${txt(this.esc(month))} ${escala.ano}</td>
-        </tr>
-        <tr>
-          <th style="${cab}">${txt('Dia/Horário')}</th>
-          ${colHeaders}
-        </tr>
-        ${blocks}
+      <div style="margin:0 0 14px;">${cabecalho}</div>
+      <table style="width:100%;border-collapse:collapse;table-layout:fixed;border:2px solid #1e1b4b;border-radius:10px;overflow:hidden;box-shadow:0 4px 10px rgba(0,0,0,0.05);">
+        <thead>
+          <tr>
+            <td style="${cabTop}width:190px;">${txt(`ESCALA ${escala.tipo}`, 'center', '10px')}</td>
+            <td style="${cabTop}" colspan="${colunas.length}">${txt(`${this.esc(month)} ${escala.ano}`, 'center', '10px')}</td>
+          </tr>
+          <tr>
+            <th style="${cabCol}width:190px;">${txt('Dia/Horário', 'center', '9px')}</th>
+            ${colHeaders}
+          </tr>
+        </thead>
+        <tbody>
+          ${blocks}
+        </tbody>
       </table>
+      <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;padding:10px 4px;font-size:12px;color:#64748b;border-top:1px solid #e2e8f0;">
+        <div style="font-weight:700;display:flex;align-items:center;gap:6px;">
+          <span style="color:#6366f1;">✟</span>
+          <span>${this.esc(paroquia)} • Pastoral de Coroinhas e Acólitos</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;color:#475569;">Chegar com 15 minutos de antecedência</span>
+          <span style="font-weight:600;color:#94a3b8;">Servirea — Gestão Paroquial</span>
+        </div>
+      </div>
     `;
     return host;
   }
@@ -118,15 +131,36 @@ export class ExportService {
   private cabecalhoDoLayout(escala: EscalaDetalhe, ctx: { titulo: string; mesAno: string; paroquia: string }): string {
     const textos = textosDoLayout(escala.colunas, 'DOCUMENTO').filter(t => t.tipo !== 'DATA');
     if (!textos.length) {
-      return `<div style="font-size:22px;font-weight:800;text-align:center;">${this.esc(ctx.paroquia)} - ESCALA ${MESES[escala.mes - 1].toUpperCase()} ${escala.ano}</div>`;
+      return `
+        <div style="text-align:center;padding:18px 24px;margin-bottom:14px;background:linear-gradient(135deg, #1e1b4b 0%, #2e1065 50%, #1e1b4b 100%);border-radius:14px;color:#ffffff;box-shadow:0 4px 14px rgba(30,27,75,0.15);">
+          <div style="display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:#c7d2fe;margin-bottom:6px;">
+            <span>✟</span>
+            <span>${this.esc(ctx.paroquia)}</span>
+            <span>✟</span>
+          </div>
+          <div style="font-size:26px;font-weight:900;letter-spacing:-0.01em;text-transform:uppercase;color:#ffffff;line-height:1.2;">
+            ${this.esc(ctx.paroquia)} - ESCALA ${MESES[escala.mes - 1].toUpperCase()} ${escala.ano}
+          </div>
+          <div style="display:inline-block;margin-top:10px;padding:4px 18px;border-radius:9999px;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.25);font-size:12px;font-weight:700;color:#f8fafc;letter-spacing:0.06em;text-transform:uppercase;">
+            Pastoral de Coroinhas e Acólitos • ${escala.tipo === 'SEMANAL' ? 'Missas Semanais (Dias Úteis)' : 'Missas Dominicais (Fins de Semana)'}
+          </div>
+        </div>
+      `;
     }
-    return textos.map(t => {
-      const conteudo = this.esc(resolverTags(t.conteudo, ctx));
-      const align = t.alinhamento === 'left' ? 'left' : t.alinhamento === 'right' ? 'right' : 'center';
-      if (t.tipo === 'TITULO') return `<div style="font-size:28px;font-weight:800;text-align:${align};line-height:1.2;">${conteudo || this.esc(ctx.titulo)}</div>`;
-      if (t.tipo === 'SUBTITULO') return `<div style="margin-bottom:4px;font-size:18px;font-weight:700;color:#444;text-align:${align};">${conteudo}</div>`;
-      return `<div style="margin-bottom:6px;font-size:15px;text-align:${align};white-space:pre-wrap;">${conteudo}</div>`;
-    }).join('');
+    return `
+      <div style="text-align:center;padding:16px 20px;margin-bottom:14px;background:#ffffff;border:2px solid #e0e7ff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+        <div style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:#6366f1;margin-bottom:6px;">
+          <span>✟</span> <span>${this.esc(ctx.paroquia)}</span>
+        </div>
+        ${textos.map(t => {
+          const conteudo = this.esc(resolverTags(t.conteudo, ctx));
+          const align = t.alinhamento === 'left' ? 'left' : t.alinhamento === 'right' ? 'right' : 'center';
+          if (t.tipo === 'TITULO') return `<div style="font-size:26px;font-weight:900;color:#1e1b4b;text-align:${align};line-height:1.2;margin-bottom:4px;">${conteudo || this.esc(ctx.titulo)}</div>`;
+          if (t.tipo === 'SUBTITULO') return `<div style="margin-bottom:6px;font-size:15px;font-weight:700;color:#475569;text-align:${align};text-transform:uppercase;letter-spacing:0.04em;">${conteudo}</div>`;
+          return `<div style="margin-top:6px;padding:8px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #6366f1;border-radius:8px;font-size:13px;color:#334155;text-align:${align};white-space:pre-wrap;font-weight:600;">${conteudo}</div>`;
+        }).join('')}
+      </div>
+    `;
   }
 
   /** Sem o layout copiado na escala, as colunas saem das vagas. Senão o PNG fica só com a data. */
@@ -144,35 +178,46 @@ export class ExportService {
   }
 
   private linhaSemanalEspaco(numCols: number): string {
-    const celula = `border:1px solid #000;padding:0;height:10px;line-height:0;font-size:0;background:${SEMANAL_AZUL};`;
+    const celula = 'border-bottom:1px solid #c7d2fe;border-top:1px solid #c7d2fe;padding:0;height:10px;line-height:0;font-size:0;background:#eef2ff;';
     return `<tr><td style="${celula}"></td>${Array(numCols).fill(`<td style="${celula}"></td>`).join('')}</tr>`;
   }
 
   private eventBlock(event: EscalaEvento, colunas: { funcao: string, posicao: number }[], textosCel: ColunaEscala[] = [], ctx: { titulo?: string; mesAno?: string; paroquia?: string } = {}): string {
-    const celula = 'border:1px solid #000;padding:3px 6px;font-size:21px;font-weight:700;height:30px;';
-    const extras = textosCel.map(t => `<div style="margin-top:2px;font-size:14px;font-weight:600;">${this.esc(resolverTags(t.conteudo, ctx))}</div>`).join('');
+    const extras = textosCel.map(t => `<div style="margin-top:3px;font-size:12px;font-weight:700;color:#4338ca;">${this.esc(resolverTags(t.conteudo, ctx))}</div>`).join('');
     const nomes = colunas.map(c => {
       const nome = event.vagas.find(v => v.funcao === c.funcao && v.posicao === c.posicao)?.voluntario?.nome_completo || '';
       return nomeCurto(nome);
     });
     
     const feast = event.celebracao && event.celebracao !== 'Missa'
-      ? `<div style="margin-top:4px;font-size:14px;font-weight:800;color:${HEADER};">${this.esc(event.celebracao)}</div>`
+      ? `<div style="margin-top:4px;"><span style="display:inline-block;padding:2px 6px;border-radius:4px;background:#ffe4e6;color:#9f1239;font-size:11px;font-weight:800;text-transform:uppercase;">${this.esc(event.celebracao)}</span></div>`
       : '';
       
+    const dow = new Date(`${event.data}T12:00:00`).getDay();
+    const isDom = dow === 0;
+    const isSab = dow === 6;
+    
+    const bgDia = isDom ? '#faf5ff' : isSab ? '#f0f9ff' : '#f8fafc';
+    const bordaDia = isDom ? '#9333ea' : isSab ? '#0284c7' : '#64748b';
+    const corSemana = isDom ? '#7e22ce' : isSab ? '#0369a1' : '#475569';
+    const bgHora = isDom ? '#f3e8ff' : isSab ? '#e0f2fe' : '#ede9fe';
+    const corHora = isDom ? '#6b21a8' : isSab ? '#075985' : '#4338ca';
+
     const dia = `
-        <td style="border:1px solid #000;padding:8px 10px;vertical-align:middle;background:#fff7f7;color:${SEMANAL_AZUL};">
-          <div style="font-size:20px;font-weight:800;line-height:1.2;">${this.esc(this.dataCompleta(event.data))}</div>
-          <div style="margin-top:2px;font-size:20px;font-weight:800;line-height:1.2;">${this.esc(this.dayLabel(event.data))}</div>
-          <div style="margin-top:4px;font-size:17px;font-weight:700;">${this.esc(event.horario.slice(0, 5))}hs</div>
+        <td style="border-bottom:1px solid #cbd5e1;border-right:1px solid #cbd5e1;padding:8px 10px;vertical-align:middle;background:${bgDia};border-left:4px solid ${bordaDia};width:190px;">
+          <div style="font-size:17px;font-weight:900;line-height:1.2;color:#0f172a;">${this.esc(this.dataCompleta(event.data))}</div>
+          <div style="margin-top:2px;font-size:13px;font-weight:800;line-height:1.2;color:${corSemana};">${this.esc(this.dayLabel(event.data))}</div>
+          <div style="margin-top:4px;"><span style="display:inline-block;padding:2px 8px;border-radius:6px;background:${bgHora};color:${corHora};font-size:12px;font-weight:800;">${this.esc(event.horario.slice(0, 5))}hs</span></div>
           ${feast}
           ${extras}
         </td>`;
         
+    const celulaNome = 'border-bottom:1px solid #e2e8f0;border-right:1px solid #e2e8f0;padding:8px 6px;font-size:16px;font-weight:700;color:#0f172a;text-align:center;vertical-align:middle;background:#ffffff;';
+
     return `
       <tr>
         ${dia}
-        ${nomes.map((n, i) => `<td style="${celula}text-align:center;">${this.esc(n)}</td>`).join('')}
+        ${nomes.map((n, i) => `<td style="${celulaNome}">${this.esc(n) || '<span style="color:#cbd5e1;font-weight:400;font-size:16px;">—</span>'}</td>`).join('')}
       </tr>
     `;
   }
