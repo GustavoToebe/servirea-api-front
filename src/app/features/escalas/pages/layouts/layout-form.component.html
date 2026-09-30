@@ -1,0 +1,748 @@
+<form [formGroup]="form" (ngSubmit)="salvar()" class="flex flex-col h-[calc(100vh-70px)] overflow-hidden bg-slate-100">
+
+  <!-- Barra de Ações Superior -->
+  <header class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 bg-white border-b border-slate-200 shadow-sm shrink-0 z-20">
+    <div class="flex flex-wrap items-center gap-3">
+      <a routerLink="/escalas/layouts" class="text-slate-400 hover:text-slate-700 text-sm font-semibold flex items-center gap-1">
+        <span class="text-base font-bold">←</span> Voltar
+      </a>
+      <div class="h-5 w-px bg-slate-200 hidden sm:block"></div>
+      <div>
+        <h1 class="text-lg font-black text-slate-800 leading-tight">
+          {{ id ? 'Editar Layout' : 'Novo Layout' }}
+        </h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <input
+          type="text"
+          formControlName="nome"
+          class="field py-1.5 px-3 text-sm w-56 sm:w-72 font-semibold"
+          placeholder="Nome (ex: Matriz de São José)"
+          [class.border-red-400]="form.get('nome')?.invalid && form.get('nome')?.touched">
+        <select formControlName="tipo" class="field py-1.5 px-3 text-sm w-44 font-semibold">
+          <option value="MENSAL">Cartões (Mensal)</option>
+          <option value="SEMANAL">Tabela (Semanal)</option>
+        </select>
+      </div>
+      <div class="hidden xl:flex items-center gap-2 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        {{ totalVagas() }} vaga(s) por celebração
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      @if (vagasDuplicadas()) {
+        <span class="text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-2.5 py-1 rounded-lg flex items-center gap-1">
+          ⚠️ Vagas duplicadas!
+        </span>
+      }
+      <button type="button" routerLink="/escalas/layouts" class="btn-secondary !py-1.5 !px-3 text-sm">
+        Cancelar
+      </button>
+      <button
+        type="submit"
+        class="btn-primary !py-1.5 !px-4 text-sm font-bold flex items-center gap-1.5"
+        [disabled]="form.invalid || vagasDuplicadas() || salvando">
+        @if (salvando) {
+          <span class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
+          Salvando...
+        } @else {
+          Salvar Layout
+        }
+      </button>
+    </div>
+  </header>
+
+  <!-- Alerta de Validação de Vagas -->
+  @if (vagasDuplicadas()) {
+    <div class="mx-6 mt-3 px-4 py-2.5 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between gap-3 text-red-800 text-xs font-medium shrink-0 shadow-sm">
+      <div class="flex items-center gap-2">
+        <span class="text-base font-black">⚠️</span>
+        <span>
+          <strong>Atenção:</strong> Existem vagas na celebração com a mesma <em>Função e Posição</em>.
+          Duas vagas no mesmo dia não podem ter o mesmo número (ex: use <strong>Vela 1</strong> e <strong>Vela 2</strong>).
+          Clique no bloco em destaque vermelho para alterar a posição no painel lateral.
+        </span>
+      </div>
+    </div>
+  }
+
+  <!-- Área Principal: Quadro (Centro) + Painel Lateral (Direita) -->
+  <div class="flex flex-1 overflow-hidden">
+
+    <!-- Quadro Branco / Folha do Documento -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 flex justify-center">
+      <div class="w-full max-w-4xl bg-white shadow-md border border-slate-200 rounded-2xl flex flex-col min-h-[600px] mb-12">
+
+        <!-- SEÇÃO 1: CABEÇALHO DO DOCUMENTO (Azul Suave) -->
+        <section class="p-5 md:p-6 border-b-2 border-indigo-100 bg-gradient-to-b from-indigo-50/40 to-transparent rounded-t-2xl">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-2 border-b border-indigo-100">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded text-[11px] font-black uppercase tracking-wider bg-indigo-600 text-white">
+                Cabeçalho do Documento
+              </span>
+              <span class="text-xs text-indigo-700 font-medium hidden sm:inline">
+                Impresso 1 vez, no topo da página (Título, Subtítulo, Quadro de Avisos)
+              </span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button
+                type="button"
+                class="text-xs font-bold px-2.5 py-1 rounded-lg border border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-50 transition-colors shadow-2xs"
+                (click)="addElemento('TITULO', 'DOCUMENTO')">
+                ＋ Título
+              </button>
+              <button
+                type="button"
+                class="text-xs font-bold px-2.5 py-1 rounded-lg border border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-50 transition-colors shadow-2xs"
+                (click)="addElemento('SUBTITULO', 'DOCUMENTO')">
+                ＋ Subtítulo
+              </button>
+              <button
+                type="button"
+                class="text-xs font-bold px-2.5 py-1 rounded-lg border border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-50 transition-colors shadow-2xs"
+                (click)="addElemento('TEXTO_LIVRE', 'DOCUMENTO')">
+                ＋ Aviso / Texto
+              </button>
+            </div>
+          </div>
+
+          <!-- Linhas do Cabeçalho -->
+          <div class="space-y-3">
+            @for (linha of linhasDocumento(); track linha.index) {
+              <div class="p-2.5 rounded-xl border border-indigo-200/80 bg-white/80 shadow-2xs transition-all">
+                <div class="flex items-center justify-between gap-2 mb-2 pb-1 border-b border-slate-100 text-[11px] text-slate-400 font-semibold">
+                  <span>Linha {{ linha.index + 1 }} do Cabeçalho</span>
+                  <div class="flex items-center gap-1">
+                    <button
+                      type="button"
+                      title="Subir linha"
+                      class="px-1.5 py-0.5 rounded text-slate-500 hover:bg-slate-100 disabled:opacity-30"
+                      [disabled]="linha.index === 0"
+                      (click)="moverLinha('DOCUMENTO', linha.index, -1)">
+                      ↑ Subir
+                    </button>
+                    <button
+                      type="button"
+                      title="Descer linha"
+                      class="px-1.5 py-0.5 rounded text-slate-500 hover:bg-slate-100 disabled:opacity-30"
+                      [disabled]="linha.index === linhasDocumento().length - 1"
+                      (click)="moverLinha('DOCUMENTO', linha.index, 1)">
+                      ↓ Descer
+                    </button>
+                    <button
+                      type="button"
+                      title="Adicionar texto nesta linha"
+                      class="px-1.5 py-0.5 rounded text-indigo-600 hover:bg-indigo-50 font-bold"
+                      (click)="addElemento('TEXTO_LIVRE', 'DOCUMENTO', linha.index)">
+                      ＋ Bloco
+                    </button>
+                    <button
+                      type="button"
+                      title="Excluir linha inteira"
+                      class="px-1.5 py-0.5 rounded text-red-500 hover:bg-red-50"
+                      (click)="removerLinha('DOCUMENTO', linha.index)">
+                      🗑 Excluir
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Blocos dentro da linha -->
+                <div class="flex flex-wrap gap-2.5 items-stretch">
+                  @for (el of linha.elementos; track el.idLocal) {
+                    <div
+                      [style.flex]="el.largura === 12 ? '1 1 100%' : (el.largura || 1)"
+                      class="relative border-2 rounded-xl p-3.5 cursor-pointer transition-all min-w-[140px]"
+                      [class.border-indigo-600]="selectedId() === el.idLocal"
+                      [class.bg-indigo-50]="selectedId() === el.idLocal"
+                      [class.shadow-sm]="selectedId() === el.idLocal"
+                      [class.border-slate-200]="selectedId() !== el.idLocal"
+                      [class.bg-white]="selectedId() !== el.idLocal"
+                      [class.hover:border-indigo-300]="selectedId() !== el.idLocal"
+                      (click)="selectElement(el)">
+
+                      @if (el.tipo === 'TITULO') {
+                        <div [class]="getAlignClass(el.alinhamento)" class="text-2xl font-black text-slate-900 tracking-tight">
+                          {{ el.conteudo || 'Título da Escala' }}
+                        </div>
+                        <div class="text-[10px] uppercase font-bold text-indigo-500 mt-1">Título Principal</div>
+                      }
+                      @if (el.tipo === 'SUBTITULO') {
+                        <div [class]="getAlignClass(el.alinhamento)" class="text-base font-bold text-slate-600">
+                          {{ el.conteudo || 'Subtítulo da Escala' }}
+                        </div>
+                        <div class="text-[10px] uppercase font-bold text-indigo-400 mt-0.5">Subtítulo</div>
+                      }
+                      @if (el.tipo === 'TEXTO_LIVRE') {
+                        <div [class]="getAlignClass(el.alinhamento)" class="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                          {{ el.conteudo || 'Digite orientações, avisos ou recados...' }}
+                        </div>
+                        <div class="text-[10px] uppercase font-bold text-slate-400 mt-1">Quadro de Avisos / Texto</div>
+                      }
+
+                      <!-- Mini barra de controle do bloco selecionado -->
+                      @if (selectedId() === el.idLocal) {
+                        <div class="absolute -top-3 right-2 flex items-center gap-1 bg-white border border-slate-300 rounded-full px-1.5 py-0.5 shadow-md z-10 text-xs">
+                          <button
+                            type="button"
+                            title="Mover para a esquerda"
+                            class="p-1 hover:text-indigo-600 font-bold"
+                            (click)="moverElemento(el, -1); $event.stopPropagation()">
+                            ←
+                          </button>
+                          <button
+                            type="button"
+                            title="Mover para a direita"
+                            class="p-1 hover:text-indigo-600 font-bold"
+                            (click)="moverElemento(el, 1); $event.stopPropagation()">
+                            →
+                          </button>
+                          <button
+                            type="button"
+                            title="Excluir bloco"
+                            class="p-1 text-red-500 hover:text-red-700 font-bold"
+                            (click)="removerElemento(el); $event.stopPropagation()">
+                            ✕
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            } @empty {
+              <div class="py-6 border-2 border-dashed border-indigo-200 rounded-xl flex flex-col items-center justify-center text-center p-4 bg-indigo-50/20">
+                <p class="text-xs font-semibold text-indigo-600">Nenhum bloco no cabeçalho ainda.</p>
+                <p class="text-[11px] text-slate-500 mt-0.5">Use os botões acima ou adicione uma receita pronta no painel da direita.</p>
+              </div>
+            }
+
+            <button
+              type="button"
+              class="w-full py-2 border-2 border-dashed border-indigo-200 hover:border-indigo-400 hover:bg-indigo-50/50 rounded-xl text-indigo-700 text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1"
+              (click)="addLinha('DOCUMENTO')">
+              <span>＋</span> Nova Linha no Cabeçalho
+            </button>
+          </div>
+        </section>
+
+        <!-- SEÇÃO 2: REPETE A CADA CELEBRAÇÃO / MISSA (Verde Esmeralda) -->
+        <section class="p-5 md:p-6 flex-1 bg-gradient-to-b from-emerald-50/30 to-white rounded-b-2xl">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-2 border-b border-emerald-100">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded text-[11px] font-black uppercase tracking-wider bg-emerald-600 text-white">
+                Repete a cada Celebração / Missa
+              </span>
+              <span class="text-xs text-emerald-800 font-medium hidden sm:inline">
+                A estrutura abaixo será multiplicada para todos os dias do mês
+              </span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button
+                type="button"
+                class="text-xs font-bold px-2.5 py-1 rounded-lg border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50 transition-colors shadow-2xs"
+                (click)="addElemento('DATA', 'CELEBRACAO')">
+                ＋ Data
+              </button>
+              <button
+                type="button"
+                class="text-xs font-bold px-2.5 py-1 rounded-lg border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50 transition-colors shadow-2xs"
+                (click)="addElemento('VAGA', 'CELEBRACAO')">
+                ＋ Vaga
+              </button>
+              <button
+                type="button"
+                class="text-xs font-bold px-2.5 py-1 rounded-lg border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50 transition-colors shadow-2xs"
+                (click)="addElemento('TEXTO_LIVRE', 'CELEBRACAO')">
+                ＋ Texto
+              </button>
+            </div>
+          </div>
+
+          <!-- Linhas da Celebração -->
+          <div class="space-y-3">
+            @for (linha of linhasCelebracao(); track linha.index) {
+              <div class="p-3 rounded-xl border border-emerald-200/80 bg-white shadow-2xs transition-all">
+                <div class="flex items-center justify-between gap-2 mb-2 pb-1 border-b border-slate-100 text-[11px] text-slate-400 font-semibold">
+                  <span class="text-emerald-700 font-bold">Linha {{ linha.index + 1 }} da Missa</span>
+                  <div class="flex items-center gap-1">
+                    <button
+                      type="button"
+                      title="Subir linha"
+                      class="px-1.5 py-0.5 rounded text-slate-500 hover:bg-slate-100 disabled:opacity-30"
+                      [disabled]="linha.index === 0"
+                      (click)="moverLinha('CELEBRACAO', linha.index, -1)">
+                      ↑ Subir
+                    </button>
+                    <button
+                      type="button"
+                      title="Descer linha"
+                      class="px-1.5 py-0.5 rounded text-slate-500 hover:bg-slate-100 disabled:opacity-30"
+                      [disabled]="linha.index === linhasCelebracao().length - 1"
+                      (click)="moverLinha('CELEBRACAO', linha.index, 1)">
+                      ↓ Descer
+                    </button>
+                    <button
+                      type="button"
+                      title="Adicionar vaga nesta linha"
+                      class="px-1.5 py-0.5 rounded text-amber-700 hover:bg-amber-50 font-bold"
+                      (click)="addElemento('VAGA', 'CELEBRACAO', linha.index)">
+                      ＋ Vaga
+                    </button>
+                    <button
+                      type="button"
+                      title="Adicionar data nesta linha"
+                      class="px-1.5 py-0.5 rounded text-emerald-700 hover:bg-emerald-50 font-bold"
+                      (click)="addElemento('DATA', 'CELEBRACAO', linha.index)">
+                      ＋ Data
+                    </button>
+                    <button
+                      type="button"
+                      title="Excluir linha inteira"
+                      class="px-1.5 py-0.5 rounded text-red-500 hover:bg-red-50"
+                      (click)="removerLinha('CELEBRACAO', linha.index)">
+                      🗑 Excluir
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Blocos dentro da linha -->
+                <div class="flex flex-wrap gap-2.5 items-stretch">
+                  @for (el of linha.elementos; track el.idLocal) {
+                    <div
+                      [style.flex]="el.largura === 12 ? '1 1 100%' : (el.largura || 1)"
+                      class="relative border-2 rounded-xl p-3 cursor-pointer transition-all min-w-[130px]"
+                      [class.border-red-500]="isDuplicada(el)"
+                      [class.bg-red-50]="isDuplicada(el)"
+                      [class.border-emerald-600]="selectedId() === el.idLocal && !isDuplicada(el)"
+                      [class.bg-emerald-50]="selectedId() === el.idLocal && !isDuplicada(el)"
+                      [class.shadow-sm]="selectedId() === el.idLocal"
+                      [class.border-slate-200]="selectedId() !== el.idLocal && !isDuplicada(el)"
+                      [class.bg-slate-50]="selectedId() !== el.idLocal && !isDuplicada(el)"
+                      [class.hover:border-emerald-300]="selectedId() !== el.idLocal && !isDuplicada(el)"
+                      (click)="selectElement(el)">
+
+                      @if (el.tipo === 'DATA') {
+                        <div class="flex items-center gap-2 text-emerald-800 font-bold text-sm">
+                          <span class="text-base">📅</span>
+                          <span>Data / Celebração (ex: Sáb 05/09 · 19:00)</span>
+                        </div>
+                        <div class="text-[10px] uppercase font-bold text-emerald-600 mt-1">Identificação da Missa</div>
+                      }
+                      @if (el.tipo === 'VAGA') {
+                        <div class="flex flex-col">
+                          <div class="flex items-center justify-between gap-1 text-[10px] font-black uppercase tracking-wider text-slate-500">
+                            <span class="px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">
+                              {{ el.funcao || 'FUNÇÃO' }}
+                            </span>
+                            <span class="text-slate-400">Posição {{ el.posicao }}</span>
+                          </div>
+                          <div class="text-sm font-extrabold text-slate-900 mt-1.5 truncate">
+                            {{ rotuloVaga(el) }}
+                          </div>
+                          <div class="text-[11px] text-slate-400 mt-1 font-medium italic">
+                            [Seletor de voluntário]
+                          </div>
+                          @if (isDuplicada(el)) {
+                            <div class="mt-1 text-[10px] font-bold text-red-600">
+                              ⚠️ Posição duplicada!
+                            </div>
+                          }
+                        </div>
+                      }
+                      @if (el.tipo === 'TEXTO_LIVRE') {
+                        <div [class]="getAlignClass(el.alinhamento)" class="text-xs text-slate-700">
+                          {{ el.conteudo || 'Texto livre...' }}
+                        </div>
+                        <div class="text-[10px] uppercase font-bold text-slate-400 mt-1">Texto</div>
+                      }
+
+                      <!-- Mini barra de controle do bloco selecionado -->
+                      @if (selectedId() === el.idLocal) {
+                        <div class="absolute -top-3 right-2 flex items-center gap-1 bg-white border border-slate-300 rounded-full px-1.5 py-0.5 shadow-md z-10 text-xs">
+                          <button
+                            type="button"
+                            title="Mover para a esquerda"
+                            class="p-1 hover:text-emerald-600 font-bold"
+                            (click)="moverElemento(el, -1); $event.stopPropagation()">
+                            ←
+                          </button>
+                          <button
+                            type="button"
+                            title="Mover para a direita"
+                            class="p-1 hover:text-emerald-600 font-bold"
+                            (click)="moverElemento(el, 1); $event.stopPropagation()">
+                            →
+                          </button>
+                          <button
+                            type="button"
+                            title="Excluir bloco"
+                            class="p-1 text-red-500 hover:text-red-700 font-bold"
+                            (click)="removerElemento(el); $event.stopPropagation()">
+                            ✕
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            } @empty {
+              <div class="py-8 border-2 border-dashed border-emerald-200 rounded-xl flex flex-col items-center justify-center text-center p-4 bg-emerald-50/20">
+                <p class="text-xs font-semibold text-emerald-700">Nenhuma vaga adicionada ainda.</p>
+                <p class="text-[11px] text-slate-500 mt-0.5">Clique em "＋ Vaga" ou escolha uma receita pronta no painel da direita.</p>
+              </div>
+            }
+
+            <button
+              type="button"
+              class="w-full py-2 border-2 border-dashed border-emerald-200 hover:border-emerald-400 hover:bg-emerald-50/50 rounded-xl text-emerald-700 text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1"
+              (click)="addLinha('CELEBRACAO')">
+              <span>＋</span> Nova Linha na Celebração
+            </button>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- Painel Lateral: Elementos, Propriedades e Receitas -->
+    <aside class="w-80 lg:w-96 bg-white border-l border-slate-200 flex flex-col shadow-lg z-10 shrink-0">
+
+      <!-- Abas do Painel -->
+      <nav class="flex border-b border-slate-200 bg-slate-50 text-xs font-bold text-slate-600">
+        <button
+          type="button"
+          class="flex-1 py-3 px-2 border-b-2 text-center transition-all flex items-center justify-center gap-1"
+          [class.border-indigo-600]="abaLateral() === 'elementos'"
+          [class.text-indigo-700]="abaLateral() === 'elementos'"
+          [class.bg-white]="abaLateral() === 'elementos'"
+          [class.border-transparent]="abaLateral() !== 'elementos'"
+          (click)="abaLateral.set('elementos')">
+          <span>＋</span> Elementos
+        </button>
+        <button
+          type="button"
+          class="flex-1 py-3 px-2 border-b-2 text-center transition-all flex items-center justify-center gap-1 relative"
+          [class.border-indigo-600]="abaLateral() === 'propriedades'"
+          [class.text-indigo-700]="abaLateral() === 'propriedades'"
+          [class.bg-white]="abaLateral() === 'propriedades'"
+          [class.border-transparent]="abaLateral() !== 'propriedades'"
+          (click)="abaLateral.set('propriedades')">
+          <span>⚙</span> Propriedades
+          @if (selectedElement()) {
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          }
+        </button>
+        <button
+          type="button"
+          class="flex-1 py-3 px-2 border-b-2 text-center transition-all flex items-center justify-center gap-1"
+          [class.border-indigo-600]="abaLateral() === 'receitas'"
+          [class.text-indigo-700]="abaLateral() === 'receitas'"
+          [class.bg-white]="abaLateral() === 'receitas'"
+          [class.border-transparent]="abaLateral() !== 'receitas'"
+          (click)="abaLateral.set('receitas')">
+          <span>💡</span> Receitas
+        </button>
+      </nav>
+
+      <!-- Conteúdo da Aba: ELEMENTOS -->
+      @if (abaLateral() === 'elementos') {
+        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+          <div>
+            <h2 class="text-xs font-black uppercase text-indigo-900 tracking-wider mb-2">Para o Cabeçalho (Topo)</h2>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                class="p-2.5 rounded-xl border border-indigo-200 bg-indigo-50/50 hover:bg-indigo-100/60 text-left transition-all"
+                (click)="addElemento('TITULO', 'DOCUMENTO')">
+                <div class="font-extrabold text-xs text-indigo-900 leading-tight">Título Principal</div>
+                <div class="text-[10px] text-indigo-600 mt-0.5">Nome da paróquia/escala</div>
+              </button>
+              <button
+                type="button"
+                class="p-2.5 rounded-xl border border-indigo-200 bg-indigo-50/50 hover:bg-indigo-100/60 text-left transition-all"
+                (click)="addElemento('SUBTITULO', 'DOCUMENTO')">
+                <div class="font-extrabold text-xs text-indigo-900 leading-tight">Subtítulo</div>
+                <div class="text-[10px] text-indigo-600 mt-0.5">Mês, ano ou grupo</div>
+              </button>
+              <button
+                type="button"
+                class="col-span-2 p-2.5 rounded-xl border border-indigo-200 bg-indigo-50/50 hover:bg-indigo-100/60 text-left transition-all"
+                (click)="addElemento('TEXTO_LIVRE', 'DOCUMENTO')">
+                <div class="font-extrabold text-xs text-indigo-900 leading-tight">Quadro de Avisos / Recado</div>
+                <div class="text-[10px] text-indigo-600 mt-0.5">Recado importante para os voluntários</div>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <h2 class="text-xs font-black uppercase text-emerald-900 tracking-wider mb-2">Para Cada Celebração (Missa)</h2>
+            <div class="space-y-2">
+              <button
+                type="button"
+                class="w-full p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100/60 text-left transition-all flex items-center justify-between"
+                (click)="addElemento('DATA', 'CELEBRACAO')">
+                <div>
+                  <div class="font-extrabold text-xs text-emerald-900">Data / Celebração</div>
+                  <div class="text-[10px] text-emerald-700">Mostra o dia, horário e nome da festa</div>
+                </div>
+                <span class="text-emerald-600 text-sm">📅</span>
+              </button>
+
+              <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <div class="text-[11px] font-bold text-slate-700 mb-2">Adicionar Vaga por Função:</div>
+                <div class="grid grid-cols-2 gap-1.5">
+                  @for (func of funcoesOpcoes; track func) {
+                    <button
+                      type="button"
+                      class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:border-emerald-400 hover:text-emerald-700 text-xs font-semibold text-slate-700 text-left truncate transition-all flex items-center justify-between"
+                      (click)="addElemento('VAGA', 'CELEBRACAO', undefined, func)">
+                      <span>{{ funcoesLabel[func] }}</span>
+                      <span class="text-[10px] text-slate-400">＋</span>
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl text-xs text-indigo-900 leading-relaxed">
+            <span class="font-bold">💡 Dica rápida:</span> Clique em qualquer caixinha do quadro à esquerda para abrir e editar suas propriedades (função, largura, rótulo e posição).
+          </div>
+        </div>
+      }
+
+      <!-- Conteúdo da Aba: PROPRIEDADES -->
+      @if (abaLateral() === 'propriedades') {
+        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+          @if (selectedElement(); as sel) {
+            <div class="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div>
+                <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Propriedades</span>
+                <h3 class="text-sm font-black text-slate-800">
+                  {{ sel.tipo === 'VAGA' ? rotuloVaga(sel) : (sel.tipo || 'Elemento') }}
+                </h3>
+              </div>
+              <button
+                type="button"
+                class="text-xs text-slate-400 hover:text-slate-700 px-2 py-1 rounded"
+                (click)="fecharPropriedades()">
+                Fechar ✕
+              </button>
+            </div>
+
+            <!-- Propriedades Específicas de VAGA -->
+            @if (sel.tipo === 'VAGA') {
+              <div class="p-3.5 bg-amber-50/60 border border-amber-200 rounded-xl space-y-3">
+                <div>
+                  <label class="label text-xs text-amber-950 font-bold">Função Real *</label>
+                  <select
+                    class="field text-sm"
+                    [ngModel]="sel.funcao"
+                    [ngModelOptions]="{standalone: true}"
+                    (ngModelChange)="updateProp('funcao', $event)">
+                    @for (f of funcoesOpcoes; track f) {
+                      <option [value]="f">{{ funcoesLabel[f] }}</option>
+                    }
+                  </select>
+                  <p class="text-[10px] text-amber-800 mt-1">
+                    Dita quem o sistema permite escalar nesta vaga (regras de voluntários).
+                  </p>
+                </div>
+
+                <div>
+                  <label class="label text-xs text-amber-950 font-bold">Posição *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="20"
+                    class="field text-sm"
+                    [ngModel]="sel.posicao"
+                    [ngModelOptions]="{standalone: true}"
+                    (ngModelChange)="updateProp('posicao', $event)">
+                  <p class="text-[10px] text-amber-800 mt-1">
+                    Diferencia vagas iguais no mesmo dia (ex: <strong>Vela 1</strong> e <strong>Vela 2</strong>). Não podem repetir!
+                  </p>
+                </div>
+
+                <div>
+                  <label class="label text-xs text-amber-950 font-bold">Rótulo de Exibição</label>
+                  <input
+                    type="text"
+                    class="field text-sm"
+                    placeholder="Ex: Acólito Missal, Círios..."
+                    [ngModel]="sel.rotulo"
+                    [ngModelOptions]="{standalone: true}"
+                    (ngModelChange)="updateProp('rotulo', $event)">
+                  <p class="text-[10px] text-amber-800 mt-1">
+                    Texto que aparece como título da vaga no cartão ou tabela.
+                  </p>
+                </div>
+              </div>
+            }
+
+            <!-- Propriedades de Texto / Título / Subtítulo / Data -->
+            @if (sel.tipo !== 'VAGA' && sel.tipo !== 'DATA') {
+              <div class="space-y-3">
+                <div>
+                  <label class="label text-xs">Texto do Bloco</label>
+                  <textarea
+                    rows="3"
+                    class="field text-sm"
+                    placeholder="Digite o texto..."
+                    [ngModel]="sel.conteudo"
+                    [ngModelOptions]="{standalone: true}"
+                    (ngModelChange)="updateProp('conteudo', $event)"></textarea>
+                  <div class="mt-1.5 flex flex-wrap gap-1">
+                    <span class="text-[10px] font-bold text-slate-500 w-full mb-0.5">Inserir tag dinâmica:</span>
+                    <button
+                      type="button"
+                      class="text-[10px] px-2 py-0.5 rounded bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold hover:bg-indigo-100"
+                      (click)="inserirTag('#TITULO_ESCALA#')">
+                      #TITULO_ESCALA#
+                    </button>
+                    <button
+                      type="button"
+                      class="text-[10px] px-2 py-0.5 rounded bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold hover:bg-indigo-100"
+                      (click)="inserirTag('#MES_ANO#')">
+                      #MES_ANO#
+                    </button>
+                    <button
+                      type="button"
+                      class="text-[10px] px-2 py-0.5 rounded bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold hover:bg-indigo-100"
+                      (click)="inserirTag('#PAROQUIA#')">
+                      #PAROQUIA#
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="label text-xs">Alinhamento</label>
+                  <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+                    <button
+                      type="button"
+                      class="flex-1 py-1 text-xs font-bold rounded"
+                      [class.bg-white]="sel.alinhamento === 'left'"
+                      [class.shadow-2xs]="sel.alinhamento === 'left'"
+                      (click)="updateProp('alinhamento', 'left')">
+                      Esquerda
+                    </button>
+                    <button
+                      type="button"
+                      class="flex-1 py-1 text-xs font-bold rounded"
+                      [class.bg-white]="sel.alinhamento === 'center'"
+                      [class.shadow-2xs]="sel.alinhamento === 'center'"
+                      (click)="updateProp('alinhamento', 'center')">
+                      Centro
+                    </button>
+                    <button
+                      type="button"
+                      class="flex-1 py-1 text-xs font-bold rounded"
+                      [class.bg-white]="sel.alinhamento === 'right'"
+                      [class.shadow-2xs]="sel.alinhamento === 'right'"
+                      (click)="updateProp('alinhamento', 'right')">
+                      Direita
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- Largura do Bloco na Linha -->
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+              <label class="label text-xs font-bold">Largura na Linha</label>
+              <select
+                class="field text-sm"
+                [ngModel]="sel.largura"
+                [ngModelOptions]="{standalone: true}"
+                (ngModelChange)="updateProp('largura', $event)">
+                <option [value]="1">Normal (1 fração)</option>
+                <option [value]="2">Duplo (2 frações)</option>
+                <option [value]="3">Triplo (3 frações)</option>
+                <option [value]="12">Linha Inteira (100%)</option>
+              </select>
+              <p class="text-[10px] text-slate-500">
+                Blocos na mesma linha dividem o espaço proporcionalmente à largura escolhida.
+              </p>
+            </div>
+
+            <!-- Ações do Bloco -->
+            <div class="pt-2 border-t border-slate-200 flex flex-col gap-2">
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  class="flex-1 btn-secondary !py-1.5 text-xs font-bold"
+                  (click)="moverElemento(sel, -1)">
+                  ← Mover Esquerda
+                </button>
+                <button
+                  type="button"
+                  class="flex-1 btn-secondary !py-1.5 text-xs font-bold"
+                  (click)="moverElemento(sel, 1)">
+                  Mover Direita →
+                </button>
+              </div>
+              <button
+                type="button"
+                class="btn-secondary !py-1.5 text-xs font-bold text-slate-700"
+                (click)="duplicarElemento(sel)">
+                📄 Duplicar Bloco
+              </button>
+              <button
+                type="button"
+                class="btn-secondary !py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 hover:border-red-200"
+                (click)="removerElemento(sel)">
+                🗑 Excluir este Bloco
+              </button>
+            </div>
+
+          } @else {
+            <div class="py-12 flex flex-col items-center justify-center text-center text-slate-400">
+              <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-2xl mb-3">
+                👆
+              </div>
+              <p class="text-xs font-bold text-slate-700">Nenhum bloco selecionado</p>
+              <p class="text-[11px] text-slate-500 mt-1 max-w-[200px]">
+                Clique em qualquer bloco do quadro à esquerda para editar seus dados e largura aqui.
+              </p>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Conteúdo da Aba: RECEITAS PRONTAS -->
+      @if (abaLateral() === 'receitas') {
+        <div class="flex-1 overflow-y-auto p-4 space-y-3">
+          <div class="text-xs text-slate-600 leading-relaxed pb-2 border-b border-slate-100">
+            <strong>Modelos recomendados:</strong> Escolha uma receita para carregar uma estrutura completa e pronta para uso.
+          </div>
+
+          @for (rec of receitas; track rec.id) {
+            <div class="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 hover:shadow-2xs transition-all space-y-2">
+              <div class="flex items-center justify-between">
+                <h4 class="font-extrabold text-xs text-slate-800">{{ rec.nome }}</h4>
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded"
+                      [class.bg-purple-100]="rec.tipo === 'MENSAL'"
+                      [class.text-purple-700]="rec.tipo === 'MENSAL'"
+                      [class.bg-sky-100]="rec.tipo === 'SEMANAL'"
+                      [class.text-sky-700]="rec.tipo === 'SEMANAL'">
+                  {{ rec.tipo === 'MENSAL' ? 'Mensal' : 'Semanal' }}
+                </span>
+              </div>
+              <p class="text-[11px] text-slate-600 leading-relaxed">{{ rec.descricao }}</p>
+              <button
+                type="button"
+                class="w-full btn-secondary !py-1 text-xs font-bold hover:!bg-indigo-50 hover:!border-indigo-300 hover:!text-indigo-700"
+                (click)="confirmarAplicarReceita(rec.id)">
+                Aplicar este Modelo
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+    </aside>
+
+  </div>
+</form>

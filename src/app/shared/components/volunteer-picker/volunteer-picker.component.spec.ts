@@ -1,0 +1,198 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Voluntario } from '../../../features/voluntarios/models/voluntario.model';
+import { DialogoService } from '../../services/dialogo.service';
+import { VolunteerPickerComponent } from './volunteer-picker.component';
+
+function voluntario(parcial: Partial<Voluntario> & { id: string; nome_completo: string }): Voluntario {
+  return {
+    data_nascimento: null,
+    tipo: 'COROINHA',
+    ativo: true,
+    foto_path: null,
+    etapa_catequese: null,
+    eucaristia_ano: null,
+    crisma_ano: null,
+    rua: null,
+    numero: null,
+    bairro: null,
+    telefone: null,
+    celular: null,
+    email: null,
+    horario_estudo: null,
+    observacoes: null,
+    autoriza_whatsapp: true,
+    funcoes_habilitadas: [],
+    ...parcial
+  };
+}
+
+describe('VolunteerPickerComponent', () => {
+  let fixture: ComponentFixture<VolunteerPickerComponent>;
+  let component: VolunteerPickerComponent;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [VolunteerPickerComponent]
+    }).compileComponents();
+    fixture = TestBed.createComponent(VolunteerPickerComponent);
+    component = fixture.componentInstance;
+    component.volunteers = [
+      voluntario({ id: '1', nome_completo: 'Ana Souza', tipo: 'COROINHA' }),
+      voluntario({ id: '2', nome_completo: 'Bruno Lima', tipo: 'ACOLITO' }),
+      voluntario({ id: '3', nome_completo: 'Carla Dias', tipo: 'AMBOS', ativo: false }),
+      voluntario({ id: '4', nome_completo: 'João da Silva', tipo: 'COROINHA' })
+    ];
+    fixture.detectChanges();
+  });
+
+  it('mostra só ativos e filtra por nome sem acento', () => {
+    expect(component.filtered().map(v => v.id)).toEqual(['1', '2', '4']);
+    component.search = 'JOAO';
+    expect(component.filtered().map(v => v.id)).toEqual(['4']);
+  });
+
+  it('os filtros de tipo são coroinha, acólito e ambos', () => {
+    expect(component.tipos.map(t => t.label)).toEqual(['Coroinha', 'Acólito', 'Acólito / Coroinha']);
+  });
+
+  it('digitar no filtro mantém o mesmo campo focado', () => {
+    component.toggleOpen();
+    fixture.detectChanges();
+    const campo = document.body.querySelector('input[placeholder="Filtrar"]') as HTMLInputElement;
+    campo.focus();
+    component.buscar('an');
+    expect(document.body.querySelector('input[placeholder="Filtrar"]')).toBe(campo);
+    expect(document.activeElement).toBe(campo);
+    expect(component.lista.map(v => v.id)).toEqual(['1']);
+    fixture.destroy();
+  });
+
+  it('filtra por tipo e o segundo clique limpa o filtro', () => {
+    component.setTipo('ACOLITO');
+    expect(component.filtered().map(v => v.id)).toEqual(['2']);
+    component.setTipo('ACOLITO');
+    expect(component.filtered().map(v => v.id)).toEqual(['1', '2', '4']);
+  });
+
+  it('emite o id escolhido e fecha o painel', () => {
+    const emit = spyOn(component.selectedIdChange, 'emit');
+    component.open = true;
+    component.choose(component.volunteers[0]);
+    expect(emit).toHaveBeenCalledWith('1');
+    expect(component.open).toBeFalse();
+    expect(component.selectedName).toBe('Ana Souza');
+  });
+
+  it('não escolhe alguém já usado em outra vaga', () => {
+    const emit = spyOn(component.selectedIdChange, 'emit');
+    fixture.componentRef.setInput('excludeIds', ['1']);
+    fixture.detectChanges();
+    component.choose(component.volunteers[0]);
+    expect(emit).not.toHaveBeenCalled();
+  });
+
+  it('clicar de novo no selecionado limpa a vaga', () => {
+    const emit = spyOn(component.selectedIdChange, 'emit');
+    component.selectedId = '1';
+    component.choose(component.volunteers[0]);
+    expect(emit).toHaveBeenCalledWith(null);
+  });
+
+  it('clear emite null sem abrir o painel', () => {
+    const emit = spyOn(component.selectedIdChange, 'emit');
+    const event = new MouseEvent('click');
+    spyOn(event, 'stopPropagation');
+    component.clear(event);
+    expect(emit).toHaveBeenCalledWith(null);
+    expect(event.stopPropagation).toHaveBeenCalled();
+  });
+
+  it('painel é fixo junto ao botão (não é cortado pelo cartão) e abre para cima sem espaço embaixo', () => {
+    const botao = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    spyOn(botao, 'getBoundingClientRect').and.returnValue(
+      { top: 100, bottom: 140, left: 30, width: 200 } as DOMRect);
+    component.toggleOpen();
+    expect(component.painel).toEqual({ left: 30, width: 200, top: 144, bottom: null });
+
+    component.open = false;
+    (botao.getBoundingClientRect as jasmine.Spy).and.returnValue(
+      { top: window.innerHeight - 50, bottom: window.innerHeight - 10, left: 30, width: 200 } as DOMRect);
+    component.toggleOpen();
+    expect(component.painel.top).toBeNull();
+    expect(component.painel.bottom).toBe(54);
+  });
+
+  it('num cartão com backdrop-filter e overflow-hidden o painel vai para o body, embaixo do botão', () => {
+    const cartao = document.createElement('div');
+    cartao.style.cssText = 'backdrop-filter: blur(4px); overflow: hidden; position: absolute; left: 300px; top: 150px; width: 400px; height: 60px; padding: 10px;';
+    document.body.appendChild(cartao);
+    try {
+      cartao.appendChild(fixture.nativeElement);
+      component.toggleOpen();
+      fixture.detectChanges();
+      const painelEl = document.body.querySelector(':scope > div.fixed') as HTMLElement;
+      expect(painelEl).not.toBeNull();
+      expect(cartao.contains(painelEl)).toBeFalse();
+      const botao = (fixture.nativeElement.querySelector('button') as HTMLButtonElement).getBoundingClientRect();
+      const painel = painelEl.getBoundingClientRect();
+      expect(Math.abs(painel.left - botao.left)).toBeLessThan(1);
+      expect(Math.abs(painel.top - (botao.bottom + 4))).toBeLessThan(1);
+
+      // Clique dentro do painel (que está fora do host) não fecha; escolher fecha e remove.
+      component.onDocumentClick({ target: painelEl } as unknown as MouseEvent);
+      expect(component.open).toBeTrue();
+      component.choose(component.volunteers[0]);
+      fixture.detectChanges();
+      expect(document.body.contains(painelEl)).toBeFalse();
+    } finally {
+      cartao.remove();
+    }
+  });
+
+  it('fechado não registra listener global; abrir registra e fechar remove as mesmas funções', () => {
+    const add = spyOn(document, 'addEventListener').and.callThrough();
+    const remove = spyOn(document, 'removeEventListener').and.callThrough();
+    const outros = [TestBed.createComponent(VolunteerPickerComponent), TestBed.createComponent(VolunteerPickerComponent)];
+    outros.forEach(f => f.detectChanges());
+    fixture.detectChanges();
+    const tipos = () => add.calls.allArgs().map(a => a[0]);
+    expect(tipos()).not.toContain('scroll');
+    expect(tipos()).not.toContain('mousedown');
+
+    component.toggleOpen();
+    expect(tipos()).toContain('scroll');
+    expect(tipos()).toContain('mousedown');
+    const handlerRolar = add.calls.allArgs().find(a => a[0] === 'scroll')![1];
+    const handlerClique = add.calls.allArgs().find(a => a[0] === 'mousedown')![1];
+
+    component.toggleOpen();
+    expect(remove.calls.allArgs().some(a => a[0] === 'scroll' && a[1] === handlerRolar)).toBeTrue();
+    expect(remove.calls.allArgs().some(a => a[0] === 'mousedown' && a[1] === handlerClique)).toBeTrue();
+    outros.forEach(f => f.destroy());
+  });
+
+  it('com marcadores, indisponível vai para o fim e pede confirmação ao escolher', async () => {
+    fixture.componentRef.setInput('marcadores', { '1': { indisponivel: true }, '2': { vezesNoMes: 2 } });
+    fixture.detectChanges();
+    expect(component.lista.map(v => v.id)).toEqual(['2', '4', '1']);
+
+    const confirmar = spyOn(TestBed.inject(DialogoService), 'confirmar').and.resolveTo(false);
+    const emit = spyOn(component.selectedIdChange, 'emit');
+    await component.choose(component.volunteers[0]);
+    expect(confirmar.calls.first().args[0].mensagem).toContain('Ana Souza avisou que não pode');
+    expect(emit).not.toHaveBeenCalled();
+
+    confirmar.and.resolveTo(true);
+    await component.choose(component.volunteers[0]);
+    expect(emit).toHaveBeenCalledWith('1');
+  });
+
+  it('vaga preenchida e vazia têm aparência diferente', () => {
+    const botao = () => fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    expect(botao().classList).toContain('picker-vazio');
+    fixture.componentRef.setInput('selectedId', '1');
+    fixture.detectChanges();
+    expect(botao().classList).toContain('picker-preenchido');
+    expect(botao().classList).not.toContain('picker-vazio');
+  });
+});

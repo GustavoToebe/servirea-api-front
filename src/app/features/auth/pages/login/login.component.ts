@@ -1,0 +1,118 @@
+import { OlhoSenhaComponent } from '../../../../shared/components/olho-senha/olho-senha.component';
+
+import { Component } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../../../core/auth/auth.service';
+import { TenantResumo } from '../../../../core/auth/auth.models';
+
+@Component({
+    selector: 'app-login',
+    imports: [ReactiveFormsModule, RouterLink, OlhoSenhaComponent],
+    template: `
+    <div class="parish relative grid min-h-screen place-items-center overflow-hidden bg-app p-4">
+      <div class="relative w-full max-w-md rounded-3xl border border-white/70 bg-white p-8 shadow-[0_24px_60px_rgba(47,28,106,0.12)]">
+        <div class="mb-8 text-center">
+          <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-blue text-xl font-black text-white">SJ</div>
+          <h1 class="text-2xl font-extrabold tracking-tight text-brand-ink">Escalas da Paróquia</h1>
+          <p class="mt-2 text-sm text-slate-500">Acesso da coordenação</p>
+        </div>
+    
+        @if (!tenants.length) {
+          <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
+            <div>
+              <label class="label">E-mail</label>
+              <input class="field" type="email" formControlName="email" autocomplete="username">
+            </div>
+            <div>
+              <label class="label">Senha</label>
+              <div class="relative"><input #campoSenha class="field pr-11" type="password" formControlName="senha" autocomplete="current-password"><app-olho-senha [campo]="campoSenha" /></div>
+            </div>
+            @if (error) {
+              <div class="rounded-xl bg-red-50 p-3 text-sm text-red-700">{{ error }}</div>
+            }
+            <button class="btn-primary w-full" type="submit" [disabled]="loading || form.invalid">
+              {{ loading ? 'Entrando...' : 'Entrar' }}
+            </button>
+            <p class="text-center text-sm">
+              <a routerLink="/reset-password" class="font-semibold text-brand-blue">Esqueci minha senha</a>
+            </p>
+          </form>
+
+          <div class="mt-4 pt-4 border-t border-slate-100 text-center">
+            <button type="button" class="text-xs font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 py-2.5 px-3 rounded-xl w-full transition-all shadow-2xs flex items-center justify-center gap-1.5" (click)="entrarDemonstracao()">
+              <span>🚀</span> Entrar em Modo de Teste (Ver Telas e Layouts)
+            </button>
+          </div>
+        }
+    
+        @if (tenants.length) {
+          <div class="space-y-3">
+            <p class="text-sm text-slate-600">Escolha a paróquia:</p>
+            @for (t of tenants; track t) {
+              <button type="button" class="btn-secondary w-full" [disabled]="loading" (click)="escolher(t)">
+                {{ t.nome }}
+              </button>
+            }
+            @if (error) {
+              <div class="rounded-xl bg-red-50 p-3 text-sm text-red-700">{{ error }}</div>
+            }
+          </div>
+        }
+    
+        <p class="mt-6 text-center text-sm">
+          <a routerLink="/inscricao" class="font-semibold text-brand-blue">Inscrever coroinha ou acólito</a>
+        </p>
+      </div>
+    </div>
+    `
+})
+export class LoginComponent {
+  loading = false;
+  error = '';
+  tenants: TenantResumo[] = [];
+  tokenSelecao = '';
+  form = this.fb.nonNullable.group({
+    email: ['', [Validators.required, Validators.email]],
+    senha: ['', [Validators.required, Validators.minLength(6)]]
+  });
+
+  constructor(private fb: FormBuilder, private auth: AuthService, private router: Router) {}
+
+  async submit() {
+    if (this.form.invalid) return;
+    this.loading = true;
+    this.error = '';
+    try {
+      const resposta = await this.auth.login(this.form.controls.email.value, this.form.controls.senha.value);
+      if (resposta.precisaSelecionarTenant) {
+        this.tokenSelecao = resposta.tokenSelecaoTenant || '';
+        this.tenants = resposta.tenantsDisponiveis || [];
+        return;
+      }
+      await this.router.navigate(['/dashboard']);
+    } catch (e: unknown) {
+      this.error = e instanceof Error ? e.message : 'Não foi possível entrar.';
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  async escolher(tenant: TenantResumo) {
+    this.loading = true;
+    this.error = '';
+    try {
+      await this.auth.selecionarTenant(this.tokenSelecao, tenant.id);
+      await this.router.navigate(['/dashboard']);
+    } catch (e: unknown) {
+      this.error = e instanceof Error ? e.message : 'Não foi possível escolher a paróquia.';
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  entrarDemonstracao() {
+    this.auth.entrar('demo-preview-token', { id: 'demo-tenant', nome: 'Paróquia São José', slug: 'paroquia-sao-jose' });
+    void this.router.navigate(['/escalas/layouts']);
+  }
+}

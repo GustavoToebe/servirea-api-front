@@ -1,0 +1,363 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #673de6;
+  --brand-hover: #5025d1;
+  --brand-navy: #2f1c6a;
+  --app-bg: #f4f5ff;
+  --ink: #131b2e;
+  --muted: #64748b;
+  --card: rgba(255, 255, 255, 0.86);
+  --line: #e7e4f5;
+  --field-line: #ddd8f0;
+  font-family: "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: var(--app-bg);
+}
+
+html, body { min-height: 100%; }
+body { margin: 0; background: var(--app-bg); color: var(--ink); }
+* { box-sizing: border-box; }
+button, input, select, textarea { font: inherit; }
+
+@layer components {
+  .card {
+    @apply rounded-2xl border shadow-card;
+    background: var(--card);
+    border-color: var(--line);
+    backdrop-filter: blur(12px);
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 font-semibold text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+    background: var(--brand);
+  }
+  .btn-primary:hover { background: var(--brand-hover); }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border bg-white px-5 py-2.5 font-semibold text-slate-700 transition hover:bg-app disabled:cursor-not-allowed disabled:opacity-50;
+    border-color: var(--field-line);
+  }
+  .btn-danger { @apply inline-flex items-center justify-center gap-2 rounded-full bg-red-600 px-5 py-2.5 font-semibold text-white transition hover:bg-red-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50; }
+  .field {
+    @apply w-full rounded-xl border bg-white px-3 py-2.5 outline-none transition disabled:bg-slate-100;
+    border-color: var(--field-line);
+  }
+  .field:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 15%, transparent);
+  }
+  /* Campo que falta ou está errado fica vermelho depois de tentar salvar (26/09/2026). */
+  .field.ng-invalid.ng-touched {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+  }
+  .label { @apply mb-1.5 block text-sm font-semibold text-slate-700; }
+  /* Formulário padrão (PLANO-009): seções com título + linha fina, campos em 2 colunas a partir de md. */
+  .secao-form { @apply space-y-4; }
+  .secao-titulo {
+    @apply pb-2 text-base font-black;
+    color: var(--ink);
+    border-bottom: 1px solid var(--line);
+  }
+  .grade-form { @apply grid gap-4 md:grid-cols-2; }
+  .badge { @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold; }
+  .chip {
+    @apply rounded-full border px-3 py-1.5 text-sm font-bold transition;
+    border-color: var(--field-line);
+    background: var(--card);
+    color: var(--ink);
+  }
+  .chip-on { background: var(--brand); border-color: var(--brand); color: #fff; }
+
+  .tabela {
+    @apply w-full overflow-hidden rounded-xl border;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--card);
+    border-color: var(--line);
+  }
+  /* Proporção do SIN+ (PLANO-009): cabeçalho de 45 px, linhas de pelo menos 55 px. */
+  .tabela thead th {
+    @apply text-xs font-bold tracking-wider uppercase text-left;
+    background: var(--brand-navy);
+    color: white;
+    height: 45px;
+    padding: 0 1rem;
+  }
+  .tabela tbody td {
+    @apply text-sm;
+    height: 55px;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .tabela tr.clicavel { cursor: pointer; }
+  .tabela tr.clicavel:focus-visible td { outline: 2px solid var(--brand); outline-offset: -2px; }
+  /* Tabela com rolagem própria: o cabeçalho fica parado. */
+  .tabela-rolagem {
+    overflow: auto;
+    max-height: calc(100vh - 280px);
+    border-radius: 0.75rem;
+  }
+  .tabela-rolagem .tabela thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .tabela tbody tr:nth-child(even) {
+    background: color-mix(in srgb, var(--brand) 3%, transparent);
+  }
+  .tabela tr.marcada td {
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: inset 3px 0 0 var(--brand);
+  }
+  .menu-solido, .menu-solido button {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .menu-solido button:hover:not(:disabled) {
+    background: #f3f4f6 !important;
+    color: #000 !important;
+  }
+  .tabela tbody tr:hover td {
+    background: color-mix(in srgb, var(--brand) 6%, transparent);
+  }
+  .tabela-check {
+    @apply h-4 w-4 cursor-pointer accent-[var(--brand)];
+  }
+  .tabela thead .tabela-check {
+    accent-color: #fff;
+  }
+  /* Seletor de vaga (PLANO-008): preenchida em destaque, vazia tracejada. */
+  .picker-preenchido {
+    background: color-mix(in srgb, var(--brand) 8%, var(--card));
+    border-color: color-mix(in srgb, var(--brand) 35%, transparent);
+    color: var(--ink);
+  }
+  .picker-vazio {
+    background: var(--card);
+    border-style: dashed;
+    border-color: var(--field-line);
+  }
+}
+
+html.dark .parish .text-slate-900,
+html.dark .parish .text-slate-800,
+html.dark .parish .text-brand-ink { color: var(--ink); }
+html.dark .parish .text-slate-700,
+html.dark .parish .text-slate-600,
+html.dark .parish .text-slate-500,
+html.dark .parish .text-slate-400 { color: var(--muted); }
+html.dark .parish .bg-white,
+html.dark .parish .bg-white\/95,
+html.dark .parish .bg-white\/90,
+html.dark .parish .bg-white\/85,
+html.dark .parish .bg-white\/80 { background-color: rgba(15, 15, 20, 0.88); }
+html.dark .parish .bg-slate-50,
+html.dark .parish .bg-slate-100,
+html.dark .parish .bg-\[\#F4F5FF\] { background-color: rgba(255, 255, 255, 0.06); }
+html.dark .parish .border-slate-100,
+html.dark .parish .border-slate-200,
+html.dark .parish .divide-slate-100 > * { border-color: rgba(255, 255, 255, 0.08); }
+html.dark .parish .hover\:bg-slate-50:hover { background-color: rgba(255, 255, 255, 0.05); }
+html.dark .parish .bg-violet-50,
+html.dark .parish .bg-violet-100 { background-color: rgba(167, 139, 250, 0.16); }
+html.dark .parish .hover\:bg-violet-50:hover { background-color: rgba(167, 139, 250, 0.24); }
+html.dark .parish .bg-red-50 { background-color: rgba(248, 113, 113, 0.16); }
+html.dark .parish .bg-emerald-50 { background-color: rgba(52, 211, 153, 0.16); }
+html.dark .parish .bg-amber-50 { background-color: rgba(251, 191, 36, 0.16); }
+html.dark .parish .border-\[\#E7E4F5\] { border-color: var(--line); }
+html.dark .parish .text-red-700 { color: #fca5a5; }
+html.dark .parish .text-emerald-700,
+html.dark .parish .text-emerald-800 { color: #6ee7b7; }
+html.dark .parish .text-amber-600,
+html.dark .parish .text-amber-700,
+html.dark .parish .text-amber-800 { color: #fcd34d; }
+html.dark .parish .text-violet-700,
+html.dark .parish .text-violet-800 { color: #c4b5fd; }
+html.dark .parish .btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink);
+  border-color: var(--field-line);
+}
+html.dark .parish .field {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
+}
+html.dark .parish .label { color: var(--muted); }
+
+html.dark .parish .tabela {
+  background: var(--card);
+  border-color: var(--line);
+}
+html.dark .parish .tabela tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.03);
+}
+html.dark .parish .tabela tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.06);
+}
+html.dark .parish .tabela tr.marcada td {
+  background: #fff !important;
+  color: #000 !important;
+}
+html.dark .parish .tabela tbody td {
+  border-bottom-color: var(--line);
+}
+
+html.dark .bo { color: #f5f5f5; background: #101010; }
+
+/* Backoffice do operador: preto com detalhes em vermelho. */
+.bo { color-scheme: dark; color: #f5f5f5; background: #101010; }
+.bo-top {
+  height: 56px;
+  background: #050505;
+  border-bottom: 2px solid #e10600;
+}
+.bo-rail {
+  width: 64px;
+  background: #050505;
+  border-right: 1px solid #1c1c1c;
+}
+.bo-rail a {
+  color: #a3a3a3;
+}
+.bo-rail a:hover { color: #fff; background: #161616; }
+.bo-rail a.active {
+  color: #fff;
+  background: #1a1a1a;
+  box-shadow: inset 3px 0 0 #e10600;
+}
+.bo-main {
+  margin-left: 64px;
+  padding: 84px 28px 64px;
+  min-height: 100vh;
+  background: #101010;
+}
+.bo-title { font-size: 1.65rem; font-weight: 700; letter-spacing: -0.02em; }
+.bo-card { background: #141414; border: 1px solid #262626; border-radius: 12px; }
+.bo-label { display: block; margin-bottom: 6px; font-size: 0.8rem; font-weight: 600; color: #d4d4d4; }
+.bo-field {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #3a3a3a;
+  background: #0e0e0e;
+  color: #f5f5f5;
+  padding: 10px 12px;
+  outline: none;
+}
+.bo-field:focus { border-color: #e10600; box-shadow: 0 0 0 3px rgba(225, 6, 0, 0.22); }
+.bo-field::placeholder { color: #737373; }
+.bo-btn, .bo-btn-ghost, .bo-btn-line {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.bo-btn { background: #e10600; color: #fff; }
+.bo-btn:hover { background: #ff1f1a; }
+.bo-btn:disabled, .bo-btn-ghost:disabled { opacity: .5; cursor: not-allowed; }
+.bo-btn-ghost { background: #3a3a3a; color: #f5f5f5; }
+.bo-btn-ghost:hover { background: #4a4a4a; }
+.bo-btn-line { background: transparent; color: #ffb4b0; border: 1px solid #e10600; }
+.bo-btn-line:hover { background: rgba(225, 6, 0, 0.12); }
+.bo-link { color: #ff4d47; font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.bo-link:hover { color: #ff8a86; }
+.bo-table { width: 100%; border-collapse: collapse; }
+.bo-table th {
+  background: #2a2a2a;
+  color: #e5e5e5;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-align: left;
+  text-transform: uppercase;
+  padding: 12px 16px;
+}
+.bo-table td {
+  background: #141414;
+  border-bottom: 1px solid #222;
+  padding: 14px 16px;
+  vertical-align: middle;
+}
+.bo-table tbody tr:hover td { background: #1b1b1b; }
+.bo-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #2a2a2a;
+  color: #fff;
+  font-weight: 800;
+}
+.bo-ok { color: #3ddc97; font-weight: 700; }
+.bo-warn { color: #f5c451; font-weight: 700; }
+.bo-bad { color: #ff5a54; font-weight: 700; }
+.bo-mute { color: #8a8a8a; font-weight: 700; }
+.bo-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: #3a3a3a;
+  transition: background .15s ease;
+}
+.bo-switch.on { background: #e10600; }
+.bo-switch span {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #fff;
+  transition: transform .15s ease;
+}
+.bo-switch.on span { transform: translateX(20px); }
+@media (max-width: 1023px) {
+  .bo-main { margin-left: 0; padding: 76px 16px 48px; }
+}
+
+
+/* Campos de data (27/09/2026): o painel abre no body, fora do .parish, por isso usa as variáveis do tema. */
+.cal-flutuante {
+  position: fixed; z-index: 60; padding: 12px;
+  background: #fff; border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: 0 18px 40px rgba(19, 27, 46, 0.18); color: var(--ink);
+}
+html.dark .cal-flutuante { background: #1a1826; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6); }
+.campo-icone, .campo-x {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--muted); border-radius: 8px; padding: 4px;
+}
+.campo-icone { right: 10px; }
+.campo-icone:hover:not(:disabled), .campo-x:hover { color: var(--brand); }
+.campo-x { font-size: 11px; }
+.cal-nav { width: 30px; height: 30px; border-radius: 10px; color: var(--ink); font-size: 18px; line-height: 1; }
+.cal-nav:hover { background: color-mix(in srgb, var(--brand) 12%, transparent); }
+.cal-dia { border-radius: 10px; padding: 6px 0; color: var(--ink); }
+.cal-dia:hover:not(:disabled) { background: color-mix(in srgb, var(--brand) 12%, transparent); }
+.cal-dia.fora { color: var(--muted); opacity: .55; }
+.cal-dia.hoje { box-shadow: inset 0 0 0 1px var(--brand); }
+.cal-dia.faixa { background: color-mix(in srgb, var(--brand) 16%, transparent); border-radius: 0; }
+.cal-dia.escolhido { background: var(--brand); color: #fff; font-weight: 700; opacity: 1; }
+.cal-dia:disabled { opacity: .3; cursor: not-allowed; }
+.cal-link { color: var(--brand); font-size: 13px; font-weight: 700; }
+.cal-link:hover { color: var(--brand-hover); }
+.cal-link:disabled { opacity: .4; cursor: not-allowed; }
+/* Obrigatório vazio depois de tentar salvar: o ng-invalid fica no componente, não no input. */
+app-campo-data.ng-invalid.ng-touched .field,
+app-campo-competencia.ng-invalid.ng-touched .field {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+}
+html.dark .cal-flutuante .field { background: rgba(255, 255, 255, 0.04); color: var(--ink); }
