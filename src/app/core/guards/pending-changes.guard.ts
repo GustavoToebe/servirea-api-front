@@ -6,7 +6,7 @@ export interface HasPendingChanges {
   hasPendingChanges(): boolean;
 }
 
-/** Sair com alteração pendente pergunta no diálogo do Servire (antes era o `confirm` do navegador). */
+/** Sair com alteração pendente pergunta no diálogo do Servirea (antes era o `confirm` do navegador). */
 export const pendingChangesGuard: CanDeactivateFn<HasPendingChanges> = (component) => {
   if (!component.hasPendingChanges()) return true;
   return inject(DialogoService).confirmar({

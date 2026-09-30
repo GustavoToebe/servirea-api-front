@@ -1,6 +1,6 @@
 # AGENTS.md — servire-api-front
 
-Front Angular do **Servire** (gestão paroquial: pessoas/voluntários, escalas de missa,
+Front Angular do **Servirea** (gestão paroquial: pessoas/voluntários, escalas de missa,
 inscrição pública). A API é o irmão **`servire-api-back`** (outro git); regras de negócio,
 multi-tenancy e contrato ficam lá (`AGENTS.md` e `README.md` do back). Idioma da interface,
 do código e dos commits: **português**.
@@ -63,7 +63,7 @@ Rodar junto com as APIs e a Central no PC: README do `central-api-back`, seção
 - `app-duplicidades-dialog`: todo cadastro novo de pessoa ou aprovação de inscrição passa por ele para checar duplicidades.
 - Campo de senha sempre com o olho: `<div class="relative"><input #s type="password" class="field pr-11"><app-olho-senha [campo]="s" /></div>`.
 
-## Padrão de telas (estrutura do SIN+, cores do Servire)
+## Padrão de telas (estrutura do SIN+, cores do Servirea)
 Tela nova copia uma tela existente desse padrão antes de inventar controle novo. Componentes em `shared/components/`.
 - **Lista** (ex.: `pessoas-list`, `layouts-list`): `app-cabecalho-pagina` (ação principal em `[acoes]`) + `app-barra-filtros`
   + `.tabela-rolagem > table.tabela` + `app-estado-lista` embaixo da tabela. Linha com `clicavel`, `tabindex="0"`,

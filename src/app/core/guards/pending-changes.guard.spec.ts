@@ -18,7 +18,7 @@ describe('pendingChangesGuard', () => {
     expect(confirmar).not.toHaveBeenCalled();
   });
 
-  it('pergunta no diálogo do Servire, não no confirm do navegador', async () => {
+  it('pergunta no diálogo do Servirea, não no confirm do navegador', async () => {
     const nativo = spyOn(window, 'confirm');
     const dialogo = TestBed.inject(DialogoService);
     const resposta = executar(true) as Promise<boolean>;
