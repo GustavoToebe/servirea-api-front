@@ -1,0 +1,16 @@
+{
+  "produto": "Servirea",
+  "componente": "frontend",
+  "repositorio": "servirea-api-front",
+  "fontes": {
+    "instrucoes": "AGENTS.md",
+    "indice": "docs/README.md",
+    "execucao": "README.md"
+  },
+  "publicacao": "Verificar release implantada; este arquivo descreve somente o checkout local.",
+  "comandos": [
+    "npm test",
+    "npm run build:prod",
+    "python scripts/verificar-docs.py"
+  ]
+}

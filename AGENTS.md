@@ -117,3 +117,9 @@ Detalhe, tabelas e valores em `docs/design-system.md`. Leia antes de mexer em te
 ## Cuidados pessoais
 
 Formulário de pessoa só mostra e envia cuidados com PESSOA_CUIDADOS_ALTERAR. Editor geral omite esses campos; backend mantém os anteriores. Campos da resposta dependem de PESSOA_CUIDADOS_LER.
+
+## Fontes e estado verificável
+
+- [Estado local](docs/estado-projeto.json) e [índice](docs/README.md). Histórico/plano não define a versão implantada.
+- Executar `python scripts/verificar-docs.py` ao mudar docs, schema ou migrations; atualizar o estado junto.
+- Nesta tarefa, usar `melhoria/ecossistema-sem-ia`, conforme pedido do usuário. Publicação depende do fluxo e autorização vigentes.
