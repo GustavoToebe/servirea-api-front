@@ -128,4 +128,4 @@ Formulário de pessoa só mostra e envia cuidados com PESSOA_CUIDADOS_ALTERAR. E
 
 Pessoas/inscrições/eventos usam contratos de [listas paginadas](docs/listas-paginadas.md). Seleção de pessoas é por página; busca reinicia em zero e descarta respostas antigas. Não usar o cache integral de fichas para contar ou mostrar a lista paginada.
 
-- Consumo de pessoas/voluntários/usuários: docs/cotas-plano.md, seção independente em Minha conta. Não apresentar fotos/documentos/envios como cotas aplicadas.
+- Consumo de pessoas/voluntários/usuários: docs/cotas-plano.md, seção independente em Minha conta. Fotos vinculadas/anexos retidos têm cota (V057); consumo em bytes convertido para MB. Inventário pendente exige conferência com PAROQUIA_ALTERAR. Envios/importação ainda não aplicados.

@@ -13,4 +13,11 @@ describe('MinhaContaService consumo local', () => {
     expect(req.request.method).toBe('GET'); expect(req.request.body).toBeNull();
     req.flush({itens:[]}); http.verify();
   });
+
+  it('confere lote no servidor sem aceitar caminhos ou tamanhos do cliente', () => {
+    TestBed.configureTestingModule({providers:[provideHttpClient(),provideHttpClientTesting()]});
+    const http=TestBed.inject(HttpTestingController);TestBed.inject(MinhaContaService).conferirArmazenamento().subscribe();
+    const req=http.expectOne(`${environment.apiUrl}/minha-conta/armazenamento/conferir?inicio=0`);
+    expect(req.request.method).toBe('POST');expect(req.request.body).toEqual({});req.flush({conferidos:0,falhas:0,pendentes:0});http.verify();
+  });
 });

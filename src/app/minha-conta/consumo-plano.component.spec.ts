@@ -1,3 +1,4 @@
+import { SessaoAtual } from '../core/layout/sessao-atual';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError, Subject } from 'rxjs';
 import { ConsumoPlanoComponent } from './consumo-plano.component';
@@ -7,14 +8,14 @@ describe('Consumo do plano', () => {
   const dados: ConsumoPlano = { planoNome:null, versaoDireitos:null, direitosConfirmadosEm:null, consultadoEm:'2026-10-01T00:00:00Z', itens:[{codigo:'pessoas',nome:'Pessoas cadastradas',usado:5,limite:5,disponivel:0,estado:'ATINGIDO'}] };
   let api: jasmine.SpyObj<MinhaContaService>;
   beforeEach(() => {
-    api=jasmine.createSpyObj('MinhaContaService',['consumo']); api.consumo.and.returnValue(of(dados));
-    TestBed.configureTestingModule({imports:[ConsumoPlanoComponent],providers:[{provide:MinhaContaService,useValue:api}]});
+    api=jasmine.createSpyObj('MinhaContaService',['consumo','conferirArmazenamento']); api.consumo.and.returnValue(of(dados));
+    TestBed.configureTestingModule({imports:[ConsumoPlanoComponent],providers:[{provide:MinhaContaService,useValue:api},{provide:SessaoAtual,useValue:{permissoes:() => ['PAROQUIA_ALTERAR']}}]});
   });
   it('mostra limite atingido e informa as cotas ainda não aplicadas', () => {
     const f=TestBed.createComponent(ConsumoPlanoComponent); f.detectChanges();
     expect(f.nativeElement.textContent).toContain('5 / 5');
     expect(f.nativeElement.textContent).toContain('Limite atingido');
-    expect(f.nativeElement.textContent).toContain('ainda não têm cotas');
+    expect(f.nativeElement.textContent).toContain('cotas de envios ainda não');
   });
   it('falha não vira consumo zero nem mantém dados antigos', () => {
     const f=TestBed.createComponent(ConsumoPlanoComponent); f.detectChanges();
@@ -27,5 +28,20 @@ describe('Consumo do plano', () => {
     api.consumo.and.returnValue(of({...dados,itens:[]})); f.componentInstance.buscar(); antigo.next(dados);
     expect(f.componentInstance.dados()?.itens).toEqual([]);
     f.destroy(); expect(antigo.observed).toBeFalse();
+  });
+
+  it('mostra MB e pendência sem apresentar espaço livre falso', () => {
+    api.consumo.and.returnValue(of({...dados,itens:[{codigo:'armazenamento_mb',nome:'Armazenamento',usado:1048576,limite:2097152,disponivel:null,estado:'INVENTARIO_PENDENTE',unidade:'bytes',pendentes:2}]}));
+    const f=TestBed.createComponent(ConsumoPlanoComponent);f.detectChanges();
+    expect(f.nativeElement.textContent).toContain('1 MB conhecidos / 2 MB');
+    expect(f.nativeElement.textContent).toContain('consumo é parcial');
+    api.conferirArmazenamento.and.returnValue(of({conferidos:1,falhas:0,pendentes:1}));
+    f.componentInstance.conferir();f.detectChanges();expect(f.nativeElement.textContent).toContain('1 conferidas');
+    expect(api.consumo).toHaveBeenCalledTimes(2);
+  });
+  it('leitor não pode disparar conferência de metadados', () => {
+    TestBed.overrideProvider(SessaoAtual,{useValue:{permissoes:() => []}});
+    const f=TestBed.createComponent(ConsumoPlanoComponent);f.detectChanges();f.componentInstance.conferir();
+    expect(api.conferirArmazenamento).not.toHaveBeenCalled();
   });
 });

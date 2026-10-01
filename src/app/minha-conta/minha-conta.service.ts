@@ -72,9 +72,10 @@ export class MinhaContaService {
   }
 
   consumo(): Observable<ConsumoPlano> {return this.http.get<ConsumoPlano>(`${this.api}/minha-conta/consumo`);}
+  conferirArmazenamento(inicio=0): Observable<{conferidos:number; falhas:number; pendentes:number; proximoInicio?:number}> {return this.http.post<{conferidos:number; falhas:number; pendentes:number; proximoInicio?:number}>(`${this.api}/minha-conta/armazenamento/conferir`,{}, {params:{inicio}});}
 }
 
 export interface ConsumoPlano {
   planoNome: string | null; versaoDireitos: number | null; direitosConfirmadosEm: string | null; consultadoEm: string;
-  itens: {codigo: string; nome: string; usado: number; limite: number | null; disponivel: number | null; estado: 'SEM_LIMITE_CONFIGURADO' | 'EXCEDIDO' | 'ATINGIDO' | 'ATENCAO' | 'DISPONIVEL'}[];
+  itens: {codigo: string; nome: string; usado: number; limite: number | null; disponivel: number | null; unidade?:string; pendentes?:number; estado: 'SEM_LIMITE_CONFIGURADO' | 'EXCEDIDO' | 'ATINGIDO' | 'ATENCAO' | 'DISPONIVEL' | 'INVENTARIO_PENDENTE'}[];
 }

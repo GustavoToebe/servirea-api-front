@@ -1,3 +1,4 @@
+import { SessaoAtual } from '../core/layout/sessao-atual';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -42,7 +43,7 @@ describe('MinhaContaModalComponent', () => {
     servico.consumo.and.returnValue(of({planoNome: null, versaoDireitos: null, direitosConfirmadosEm: null, consultadoEm: '', itens: []}));
     await TestBed.configureTestingModule({
       imports: [MinhaContaModalComponent],
-      providers: [
+      providers: [{provide:SessaoAtual,useValue:{permissoes:() => []}},
         { provide: MinhaContaService, useValue: servico },
         { provide: Router, useValue: { navigate: jasmine.createSpy('navigate') } }
       ]
