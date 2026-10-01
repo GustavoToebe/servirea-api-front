@@ -64,6 +64,67 @@ describe('ExportService', () => {
     const conteudo = await (arquivo as unknown as Blob).text();
     expect(conteudo.startsWith('%PDF-')).toBeTrue();
     expect(conteudo).toContain('/Image');
+    // Escala curta: a página tem de continuar em paisagem (297 mm = 841,89 pt de largura), senão a direita sai cortada.
+    const caixa = /\/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]/.exec(conteudo);
+    expect(caixa).not.toBeNull();
+    expect(Number(caixa![1])).toBeGreaterThan(Number(caixa![2]) - 1);
+    expect(Number(caixa![1])).toBeCloseTo(841.89, 0);
+  });
+
+  it('a coluna do dia (domingo) usa a cor principal do tema, não roxo nem azul fixos', async () => {
+    document.documentElement.style.setProperty('--brand', '#0F766E');
+    document.documentElement.style.setProperty('--brand-navy', '#0B3B38');
+    let folha = '';
+    const appendOriginal = document.body.appendChild.bind(document.body);
+    spyOn(document.body, 'appendChild').and.callFake(<T extends Node>(no: T): T => {
+      const el = no as unknown as HTMLElement;
+      if (!folha && el.tagName === 'DIV') folha = el.innerHTML;
+      return appendOriginal(no);
+    });
+    spyOn(HTMLAnchorElement.prototype, 'click').and.stub();
+    try {
+      await service.exportPng(escala); // 04/10/2026 é domingo
+    } finally {
+      document.documentElement.style.removeProperty('--brand');
+      document.documentElement.style.removeProperty('--brand-navy');
+    }
+    expect(folha).toContain('border-left:4px solid #0F766E');
+    for (const fixa of ['#9333ea', '#7e22ce', '#0284c7', '#0369a1', '#faf5ff', '#f0f9ff']) expect(folha).not.toContain(fixa);
+  });
+
+  it('em retrato, o PDF sai em página A4 em pé (210 mm = 595 pt de largura)', async () => {
+    let arquivo: Blob | null = null;
+    spyOn(URL, 'createObjectURL').and.callFake((bl: Blob | MediaSource) => { arquivo = bl as Blob; return 'blob:teste'; });
+    spyOn(URL, 'revokeObjectURL');
+    const baixar = function (this: HTMLAnchorElement) { return true; };
+    spyOn(HTMLAnchorElement.prototype, 'dispatchEvent').and.callFake(baixar);
+    spyOn(HTMLAnchorElement.prototype, 'click').and.callFake(baixar as unknown as () => void);
+
+    await service.exportPdf(escala, 'RETRATO');
+    await new Promise(pronto => setTimeout(pronto, 50));
+
+    const conteudo = await (arquivo as unknown as Blob).text();
+    const caixa = /\/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]/.exec(conteudo);
+    expect(caixa).not.toBeNull();
+    expect(Number(caixa![1])).toBeCloseTo(595.28, 0);
+    expect(Number(caixa![2])).toBeGreaterThan(Number(caixa![1]));
+  });
+
+  it('em retrato a folha da imagem é mais estreita que em paisagem', async () => {
+    const larguras: number[] = [];
+    const appendOriginal = document.body.appendChild.bind(document.body);
+    spyOn(document.body, 'appendChild').and.callFake(<T extends Node>(no: T): T => {
+      const el = no as unknown as HTMLElement;
+      if (el.tagName === 'DIV' && el.style.position === 'fixed' && el.style.left === '-12000px') larguras.push(parseInt(el.style.width, 10));
+      return appendOriginal(no);
+    });
+    spyOn(HTMLAnchorElement.prototype, 'click').and.stub();
+
+    await service.exportPng(escala, 'PAISAGEM');
+    await service.exportPng(escala, 'RETRATO');
+
+    expect(larguras.length).toBe(2);
+    expect(larguras[1]).toBeLessThan(larguras[0]);
   });
 
   it('gera o PNG e usa o nome da paróquia da sessão no título, com o texto escapado', async () => {

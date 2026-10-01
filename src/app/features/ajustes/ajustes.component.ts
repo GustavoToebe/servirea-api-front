@@ -8,7 +8,7 @@ import { FONTES, PALETAS, ThemeService } from '../../core/theme/theme.service';
     selector: 'app-ajustes',
     imports: [RouterLink],
     template: `
-    <div class="mx-auto max-w-2xl space-y-6">
+    <div class="mx-auto max-w-3xl space-y-6">
       <div>
         <div class="text-xs font-extrabold uppercase tracking-wider text-brand-blue">Preferências</div>
         <h1 class="text-2xl font-black text-slate-900">Ajustes visuais</h1>
@@ -17,18 +17,23 @@ import { FONTES, PALETAS, ThemeService } from '../../core/theme/theme.service';
 
       <section class="space-y-3">
         <h2 class="text-lg font-black">Tema de cores</h2>
-        @for (paleta of paletas; track paleta.id) {
-          <button type="button" class="card flex w-full items-center gap-4 p-4 text-left" (click)="tema.escolherPaleta(paleta.id)">
-            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-black text-white" [style.background]="paleta.brand">{{ paleta.nome.slice(0, 1) }}</span>
-            <span class="min-w-0 flex-1">
-              <span class="block font-extrabold">{{ paleta.nome }}</span>
-              <span class="block text-sm text-slate-500">{{ paleta.descricao }}</span>
-            </span>
-            @if (tema.paleta() === paleta.id) {
-              <span class="flex h-7 w-7 items-center justify-center rounded-full text-sm font-black text-white" [style.background]="paleta.brand">✓</span>
-            }
-          </button>
-        }
+        <div class="grid gap-3 sm:grid-cols-2">
+          @for (paleta of paletas; track paleta.id) {
+            <button type="button" data-paleta [attr.data-paleta-id]="paleta.id" class="card flex w-full items-center gap-4 border-2 p-4 text-left transition"
+              [style.border-color]="tema.paleta() === paleta.id ? paleta.brand : 'transparent'"
+              [style.background]="tema.paleta() === paleta.id ? 'color-mix(in srgb, ' + paleta.brand + ' 7%, var(--card))' : ''"
+              [attr.aria-pressed]="tema.paleta() === paleta.id" (click)="tema.escolherPaleta(paleta.id)">
+              <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-black text-white" [style.background]="paleta.brand">{{ paleta.nome.slice(0, 1) }}</span>
+              <span class="min-w-0 flex-1">
+                <span class="block font-extrabold">{{ paleta.nome }}</span>
+                <span class="block text-sm text-slate-500">{{ paleta.descricao }}</span>
+              </span>
+              @if (tema.paleta() === paleta.id) {
+                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-black text-white" [style.background]="paleta.brand" aria-label="Tema em uso">✓</span>
+              }
+            </button>
+          }
+        </div>
       </section>
 
       <section class="card p-5">

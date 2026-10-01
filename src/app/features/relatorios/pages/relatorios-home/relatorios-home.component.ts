@@ -1,3 +1,5 @@
+import { OrientacaoToggleComponent } from '../../../../shared/components/orientacao-toggle/orientacao-toggle.component';
+import { Orientacao, lerOrientacao } from '../../../../shared/export/orientacao';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CabecalhoPaginaComponent } from '../../../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
@@ -19,7 +21,7 @@ interface Ranking {
 
 @Component({
     selector: 'app-relatorios-home',
-    imports: [FormsModule, CabecalhoPaginaComponent],
+    imports: [FormsModule, CabecalhoPaginaComponent, OrientacaoToggleComponent],
     template: `
     <div class="space-y-6">
       <app-cabecalho-pagina titulo="Relatórios e frequência" subtitulo="Presenças já lançadas nas escalas finalizadas, e o PDF ou PNG para a sacristia." />
@@ -111,9 +113,12 @@ interface Ranking {
       </section>
 
       <section class="card p-6">
-        <div class="mb-5">
-          <h2 class="text-lg font-black">Para imprimir</h2>
-          <p class="text-sm text-slate-500">O PDF e o PNG saem no formato da planilha, com os dias separados.</p>
+        <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-black">Para imprimir</h2>
+            <p class="text-sm text-slate-500">O PDF e o PNG saem no formato da planilha, com os dias separados.</p>
+          </div>
+          <app-orientacao-toggle chave="escala" [(valor)]="orientacao" />
         </div>
         @if (loading) {
           <div class="py-8 text-center text-slate-500">Carregando...</div>
@@ -213,13 +218,15 @@ export class RelatoriosHomeComponent implements OnInit {
     void this.load();
   }
 
+  orientacao: Orientacao = lerOrientacao('escala', 'PAISAGEM');
+
   async pdf(e: EscalaDetalhe) {
-    try { await this.exporter.exportPdf(e); }
+    try { await this.exporter.exportPdf(e, this.orientacao); }
     catch (err: unknown) { this.error = err instanceof Error ? err.message : 'Erro ao gerar PDF.'; }
   }
 
   async png(e: EscalaDetalhe) {
-    try { await this.exporter.exportPng(e); }
+    try { await this.exporter.exportPng(e, this.orientacao); }
     catch (err: unknown) { this.error = err instanceof Error ? err.message : 'Erro ao gerar PNG.'; }
   }
 }

@@ -1,9 +1,11 @@
 import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { OrientacaoToggleComponent } from '../../../shared/components/orientacao-toggle/orientacao-toggle.component';
+import { Orientacao, lerOrientacao } from '../../../shared/export/orientacao';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ParoquiaApiService } from '../../acesso/paroquia-api.service';
-import { ItemAssinatura, ListaAssinaturaService, ORDENAR_POR, Ordem, OrdenarPor } from '../services/lista-assinatura.service';
+import { ItemAssinatura, ListaAssinaturaService, ORDENAR_POR, Ordem, OrdenarPor, ordenar } from '../services/lista-assinatura.service';
 
 /**
  * Modal da lista de assinatura (27/09/2026): muda só o título (e o subtítulo), a ordem e o formato.
@@ -11,11 +13,11 @@ import { ItemAssinatura, ListaAssinaturaService, ORDENAR_POR, Ordem, OrdenarPor 
  */
 @Component({
   selector: 'app-lista-assinatura-dialog',
-  imports: [FormsModule, ModalComponent],
+  imports: [FormsModule, ModalComponent, OrientacaoToggleComponent],
   template: `
-    <app-modal [aberto]="open" titulo="🖨 Lista de assinatura" rotulo="Gerar lista de assinatura" [fecharNoFundo]="!gerando" (fechar)="fecharSeLivre()">
+    <app-modal [aberto]="open" titulo="🖨 Lista de assinatura" rotulo="Gerar lista de assinatura" [fecharNoFundo]="!gerando" (fechar)="fecharSeLivre()" tamanho="lg">
       <p class="text-sm text-slate-500">{{ itens.length }} pessoa(s) selecionada(s).</p>
-      <div class="mt-5 grid gap-4 sm:grid-cols-2">
+      <div class="mt-4 grid gap-4 sm:grid-cols-2">
         <div class="sm:col-span-2"><label class="label" for="la-titulo">Título *</label>
           <input id="la-titulo" class="field" [(ngModel)]="titulo" maxlength="120"></div>
         <div class="sm:col-span-2"><label class="label" for="la-subtitulo">Subtítulo</label>
@@ -29,7 +31,52 @@ import { ItemAssinatura, ListaAssinaturaService, ORDENAR_POR, Ordem, OrdenarPor 
             <option ngValue="ASC">Crescente</option>
             <option ngValue="DESC">Decrescente</option>
           </select></div>
+        <div class="sm:col-span-2"><span class="label">Orientação da folha</span>
+          <div><app-orientacao-toggle chave="lista-assinatura" [(valor)]="orientacao" /></div></div>
       </div>
+
+      <!-- Prévia Visual da Folha A4 -->
+      <div class="mt-4 rounded-xl border border-[var(--line)] bg-slate-50/70 p-4 space-y-2.5 shadow-2xs">
+        <div class="text-[11px] font-black uppercase tracking-wider text-brand-blue flex items-center justify-between">
+          <span>📄 Prévia da Folha de Impressão</span>
+          <span class="text-slate-400 font-semibold normal-case text-[11px]">Formato A4</span>
+        </div>
+        <div class="bg-white border-2 border-[var(--brand-navy)] rounded-xl overflow-hidden shadow-xs">
+          <!-- Mini Banner -->
+          <div class="p-3 bg-[var(--brand-navy)] text-white text-center">
+            <div class="text-[10px] font-black tracking-widest text-white/70 uppercase">SERVIREA • GESTÃO PAROQUIAL</div>
+            <div class="text-base font-black uppercase mt-0.5">{{ titulo || 'Lista de Assinatura' }}</div>
+            @if (subtitulo) {
+              <div class="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-white/15 border border-white/25 text-[10px] font-bold uppercase text-slate-100">{{ subtitulo }}</div>
+            }
+          </div>
+          <!-- Tabela Miniatura -->
+          <table class="w-full text-xs">
+            <thead>
+              <tr class="bg-[var(--brand-navy)] text-white text-[11px] font-black uppercase">
+                <th class="p-2 text-left w-1/2 border-r border-white/15">Nome</th>
+                <th class="p-2 text-left">Assinatura / Responsável</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of itensOrdenados.slice(0, 5); track p.nome; let i = $index) {
+                <tr class="border-b border-slate-200 even:bg-slate-50/60">
+                  <td class="p-2 border-r border-slate-200 font-bold text-slate-800">{{ i + 1 }}. {{ p.nome }}</td>
+                  <td class="p-2"><div class="border-b border-dashed border-slate-300 w-full h-3"></div></td>
+                </tr>
+              }
+              @if (itens.length > 5) {
+                <tr>
+                  <td colspan="2" class="p-2 text-center text-slate-400 font-semibold text-[11px] bg-slate-50">
+                    ... e mais {{ itens.length - 5 }} pessoa(s) no documento final
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       @if (erro) { <p class="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{{ erro }}</p> }
       <div rodape class="flex flex-wrap items-center justify-between gap-2">
         <button type="button" class="btn-secondary" (click)="fechar.emit()">Cancelar</button>
@@ -55,8 +102,13 @@ export class ListaAssinaturaDialogComponent implements OnChanges {
   subtitulo = '';
   ordenarPor: OrdenarPor = 'NOME';
   ordem: Ordem = 'ASC';
+  orientacao: Orientacao = lerOrientacao('lista-assinatura', 'RETRATO');
   gerando = false;
   erro = '';
+
+  get itensOrdenados(): ItemAssinatura[] {
+    return ordenar(this.itens, this.ordenarPor, this.ordem);
+  }
 
   ngOnChanges(): void {
     if (!this.open) return;
@@ -87,7 +139,7 @@ export class ListaAssinaturaDialogComponent implements OnChanges {
     }
     this.gerando = true;
     this.erro = '';
-    const opcoes = { titulo: this.titulo.trim(), subtitulo: this.subtitulo.trim(), ordenarPor: this.ordenarPor, ordem: this.ordem };
+    const opcoes = { titulo: this.titulo.trim(), subtitulo: this.subtitulo.trim(), ordenarPor: this.ordenarPor, ordem: this.ordem, orientacao: this.orientacao };
     try {
       if (formato === 'PDF') await this.servico.gerarPdf(this.itens, opcoes);
       else await this.servico.gerarImagem(this.itens, opcoes);

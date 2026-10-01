@@ -1,3 +1,5 @@
+import { OrientacaoToggleComponent } from '../../../../shared/components/orientacao-toggle/orientacao-toggle.component';
+import { Orientacao, lerOrientacao } from '../../../../shared/export/orientacao';
 import { CommonModule } from '@angular/common';
 import { CampoCompetenciaComponent } from '../../../../shared/components/datas/campo-competencia.component';
 import { Component, OnInit, inject } from '@angular/core';
@@ -13,7 +15,7 @@ import { BarraFiltrosComponent, FiltroAtivo } from '../../../../shared/component
 
 @Component({
     selector: 'app-escalas-list',
-    imports: [CommonModule, FormsModule, RouterLink, CampoCompetenciaComponent, BarraFiltrosComponent, ReplicarDialogComponent, CabecalhoPaginaComponent],
+    imports: [CommonModule, FormsModule, RouterLink, OrientacaoToggleComponent, CampoCompetenciaComponent, BarraFiltrosComponent, ReplicarDialogComponent, CabecalhoPaginaComponent],
     template: `
     <div class="space-y-6">
       <app-cabecalho-pagina titulo="Escalas litúrgicas" subtitulo="As escalas do mês, com as vagas preenchidas e as que ainda estão livres.">
@@ -57,6 +59,10 @@ import { BarraFiltrosComponent, FiltroAtivo } from '../../../../shared/component
       }
 
       @if (escalas.length) {
+      <div class="flex flex-wrap items-center justify-end gap-2 text-sm text-slate-500">
+        <span>Orientação do PDF e da imagem</span>
+        <app-orientacao-toggle chave="escala" [(valor)]="orientacao" />
+      </div>
       <div class="grid gap-4">
         @for (e of escalas; track e.id) {
           <article class="card p-5" [attr.data-escala]="e.id">
@@ -225,13 +231,15 @@ export class EscalasListComponent implements OnInit {
     }
   }
 
+  orientacao: Orientacao = lerOrientacao('escala', 'PAISAGEM');
+
   async exportPdf(e: EscalaDetalhe) {
-    try { await this.exporter.exportPdf(e); }
+    try { await this.exporter.exportPdf(e, this.orientacao); }
     catch (err: unknown) { this.error = err instanceof Error ? err.message : 'Erro ao exportar PDF.'; }
   }
 
   async exportPng(e: EscalaDetalhe) {
-    try { await this.exporter.exportPng(e); }
+    try { await this.exporter.exportPng(e, this.orientacao); }
     catch (err: unknown) { this.error = err instanceof Error ? err.message : 'Erro ao exportar PNG.'; }
   }
 }

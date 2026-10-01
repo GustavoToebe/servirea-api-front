@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { coresDaFolha } from '../../../shared/export/cores-folha';
+import { Orientacao } from '../../../shared/export/orientacao';
 
 /** Uma linha da lista: só o necessário para ordenar e imprimir o nome. */
 export interface ItemAssinatura {
@@ -18,6 +20,8 @@ export interface OpcoesListaAssinatura {
   subtitulo: string;
   ordenarPor: OrdenarPor;
   ordem: Ordem;
+  /** Sem valor, retrato (como sempre foi). */
+  orientacao?: Orientacao;
 }
 
 export const ORDENAR_POR: { valor: OrdenarPor; rotulo: string }[] = [
@@ -29,6 +33,8 @@ export const ORDENAR_POR: { valor: OrdenarPor; rotulo: string }[] = [
 
 /** Linhas por folha A4 no PDF (cabeçalho + 22 linhas altas, com espaço para assinar). */
 export const LINHAS_POR_FOLHA = 22;
+/** Em paisagem a folha A4 é mais baixa: menos linhas por página. */
+export const LINHAS_POR_FOLHA_PAISAGEM = 11;
 
 /**
  * Ordena a lista. Sem o dado (número, nascimento, tipo), a pessoa vai para o fim nos dois sentidos, e o
@@ -68,15 +74,25 @@ export class ListaAssinaturaService {
 
   async gerarPdf(itens: ItemAssinatura[], opcoes: OpcoesListaAssinatura) {
     const linhas = ordenar(itens, opcoes.ordenarPor, opcoes.ordem);
-    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-    const folhas = Math.max(1, Math.ceil(linhas.length / LINHAS_POR_FOLHA));
+    const paisagem = opcoes.orientacao === 'PAISAGEM';
+    const porFolha = paisagem ? LINHAS_POR_FOLHA_PAISAGEM : LINHAS_POR_FOLHA;
+    const [larguraPagina, alturaPagina] = paisagem ? [297, 210] : [210, 297];
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: paisagem ? 'landscape' : 'portrait' });
+    const folhas = Math.max(1, Math.ceil(linhas.length / porFolha));
+    const margem = 10;
     for (let f = 0; f < folhas; f++) {
-      const canvas = await this.desenhar(linhas.slice(f * LINHAS_POR_FOLHA, (f + 1) * LINHAS_POR_FOLHA), opcoes,
-        folhas > 1 ? `Folha ${f + 1} de ${folhas}` : '', f * LINHAS_POR_FOLHA);
+      const canvas = await this.desenhar(linhas.slice(f * porFolha, (f + 1) * porFolha), opcoes,
+        folhas > 1 ? `Folha ${f + 1} de ${folhas}` : '', f * porFolha);
       if (f > 0) doc.addPage();
-      const margem = 10;
-      const largura = 210 - margem * 2;
-      doc.addImage(canvas.toDataURL('image/png'), 'PNG', margem, margem, largura, canvas.height * largura / canvas.width);
+      // Cabe na página inteira: se a imagem ficar mais alta que a folha, encolhe em vez de cortar.
+      let largura = larguraPagina - margem * 2;
+      let altura = canvas.height * largura / canvas.width;
+      const alturaMaxima = alturaPagina - margem * 2;
+      if (altura > alturaMaxima) {
+        altura = alturaMaxima;
+        largura = canvas.width * altura / canvas.height;
+      }
+      doc.addImage(canvas.toDataURL('image/png'), 'PNG', (larguraPagina - largura) / 2, margem, largura, altura);
     }
     doc.save(this.nomeArquivo(opcoes.titulo, 'pdf'));
   }
@@ -92,11 +108,17 @@ export class ListaAssinaturaService {
   private async desenhar(linhas: ItemAssinatura[], opcoes: OpcoesListaAssinatura, rodape: string,
                          inicio: number): Promise<HTMLCanvasElement> {
     const folha = this.montarFolha(linhas, opcoes, rodape, inicio);
+    // Mesmo ajuste do ExportService: o preflight do Tailwind põe `img { display: block }` e o html2canvas mede a
+    // linha de base do texto com uma imagem em linha, então todo texto saía mais baixo.
+    const baseDoTexto = document.createElement('style');
+    baseDoTexto.textContent = 'img { display: inline !important; vertical-align: baseline !important; }';
+    document.head.appendChild(baseDoTexto);
     document.body.appendChild(folha);
     try {
       return await html2canvas(folha, { scale: 2, backgroundColor: '#ffffff' });
     } finally {
       folha.remove();
+      baseDoTexto.remove();
     }
   }
 
@@ -106,29 +128,52 @@ export class ListaAssinaturaService {
    */
   montarFolha(linhas: ItemAssinatura[], opcoes: OpcoesListaAssinatura, rodape: string, inicio = 0): HTMLElement {
     const folha = document.createElement('div');
-    folha.style.cssText = 'position:fixed;left:-12000px;top:0;width:760px;background:#fff;padding:16px;'
-      + 'font-family:Calibri,Arial,sans-serif;color:#111;';
-    const borda = 'border:1px solid #222;';
-    const celula = 'height:40px;padding:0 12px;vertical-align:middle;line-height:1.25;';
-    const corpo = linhas.map((l, i) => `
-      <tr>
-        <td style="${borda}${celula}font-size:19px;">${inicio + i + 1}. ${this.esc(l.nome)}</td>
-        <td style="${borda}${celula}"></td>
-      </tr>`).join('');
+    const c = coresDaFolha();
+    const largura = opcoes.orientacao === 'PAISAGEM' ? 1100 : 760;
+    folha.style.cssText = `position:fixed;left:-12000px;top:0;width:${largura}px;background:#ffffff;padding:20px 24px;`
+      + "font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;color:#0f172a;";
+    const borda = 'border-bottom:1px solid #e2e8f0;';
+    const celula = 'height:42px;padding:0 14px;vertical-align:middle;line-height:1.25;';
+    const corpo = linhas.map((l, i) => {
+      const bg = i % 2 === 0 ? '#ffffff' : '#fcfcfd';
+      return `
+      <tr style="background:${bg};">
+        <td style="${borda}border-right:1px solid #e2e8f0;${celula}font-size:16px;font-weight:700;color:#0f172a;">${inicio + i + 1}. ${this.esc(l.nome)}</td>
+        <td style="${borda}${celula}"><div style="border-bottom:1px dashed #cbd5e1;margin-top:18px;width:100%;"></div></td>
+      </tr>`;
+    }).join('');
+
     folha.innerHTML = `
-      <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+      <div style="text-align:center;padding:16px 20px;margin-bottom:14px;background:linear-gradient(135deg, ${c.navy} 0%, ${c.meio} 50%, ${c.navy} 100%);border-radius:12px;color:#ffffff;box-shadow:0 3px 10px rgba(30,27,75,0.12);">
+        <div style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:${c.tom(0.78)};margin-bottom:4px;">
+          <span>SERVIREA • GESTÃO PAROQUIAL</span>
+        </div>
+        <div style="font-size:24px;font-weight:900;letter-spacing:-0.01em;text-transform:uppercase;color:#ffffff;line-height:1.2;">
+          ${this.esc(opcoes.titulo)}
+        </div>
+        ${opcoes.subtitulo ? `
+          <div style="display:inline-block;margin-top:6px;padding:3px 14px;border-radius:9999px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);font-size:12px;font-weight:700;color:#f8fafc;letter-spacing:0.04em;text-transform:uppercase;">
+            ${this.esc(opcoes.subtitulo)}
+          </div>` : ''}
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;table-layout:fixed;border:2px solid ${c.navy};border-radius:10px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.03);">
         <colgroup><col style="width:48%"><col style="width:52%"></colgroup>
-        <tr><td colspan="2" style="${borda}text-align:center;padding:14px 10px 26px;">
-          <div style="font-size:28px;font-weight:800;">${this.esc(opcoes.titulo)}</div>
-          ${opcoes.subtitulo ? `<div style="margin-top:6px;font-size:19px;font-weight:800;">${this.esc(opcoes.subtitulo)}</div>` : ''}
-        </td></tr>
-        <tr>
-          <th style="${borda}padding:10px;font-size:21px;font-weight:700;vertical-align:middle;">Nome</th>
-          <th style="${borda}padding:10px;font-size:21px;font-weight:700;vertical-align:middle;">Assinatura / Responsável</th>
-        </tr>
-        ${corpo}
+        <thead>
+          <tr style="background:${c.navy};color:#ffffff;">
+            <th style="padding:10px 14px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;vertical-align:middle;text-align:left;border-right:1px solid ${c.brand};">Nome</th>
+            <th style="padding:10px 14px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;vertical-align:middle;text-align:left;">Assinatura / Responsável</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${corpo}
+        </tbody>
       </table>
-      ${rodape ? `<div style="margin-top:6px;text-align:right;font-size:12px;color:#555;">${this.esc(rodape)}</div>` : ''}
+
+      <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#64748b;padding:0 4px;">
+        <span style="font-weight:600;">Pastoral de Coroinhas e Acólitos • Servirea</span>
+        ${rodape ? `<span style="font-weight:700;color:#475569;">${this.esc(rodape)}</span>` : ''}
+      </div>
     `;
     return folha;
   }
