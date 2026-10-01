@@ -96,8 +96,8 @@ describe('EventoFichaComponent', () => {
     api = jasmine.createSpyObj('EventosApiService', ['buscar', 'criar', 'atualizar', 'publicar', 'cancelar', 'inscrever', 'removerInscricao', 'enviarFoto', 'definirCapa', 'excluirFoto']);
     api.buscar.and.resolveTo(evento);
     dialogo = jasmine.createSpyObj('DialogoService', ['confirmar']);
-    const pessoas = jasmine.createSpyObj('PessoasService', ['listar']);
-    pessoas.listar.and.resolveTo([{ id: 'p1', nomeCompleto: 'Ana Souza', sequencial: 7 }]);
+    const pessoas = jasmine.createSpyObj('PessoasService', ['listar','opcoes']);
+    pessoas.opcoes.and.resolveTo([{id:'p1',nomeCompleto:'Ana Souza',sequencial:7,voluntario:true,responsavel:false}]);
     const layouts = jasmine.createSpyObj('LayoutsApiService', ['listar']);
     layouts.listar.and.resolveTo([]);
     TestBed.configureTestingModule({
@@ -148,6 +148,14 @@ describe('EventoFichaComponent', () => {
     await criar(null);
     fixture.componentInstance.form.patchValue({ mapaUrl: 'javascript:alert(1)' });
     expect(fixture.componentInstance.form.controls.mapaUrl.invalid).toBeTrue();
+  });
+
+  it('busca candidatos no servidor sem baixar fichas ao abrir o evento', async () => {
+    await criar('e1');
+    const pessoas=TestBed.inject(PessoasService) as jasmine.SpyObj<PessoasService>;
+    expect(pessoas.listar).not.toHaveBeenCalled();expect(pessoas.opcoes).not.toHaveBeenCalled();
+    const opcoes=await fixture.componentInstance.buscarPessoas('Ana');
+    expect(pessoas.opcoes).toHaveBeenCalledWith('Ana');expect(opcoes[0].rotulo).toBe('Ana Souza');
   });
 
   it('rascunho: oferece Publicar e diz que precisa publicar para inscrever', async () => {

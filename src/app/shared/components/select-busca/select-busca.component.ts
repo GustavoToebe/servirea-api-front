@@ -39,8 +39,10 @@ function semAcento(s: string): string {
       <div #painel class="fixed z-50 overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--card)] shadow-lg" role="listbox"
            [style.left.px]="pos.left" [style.width.px]="pos.width" [style.top.px]="pos.top" [style.bottom.px]="pos.bottom">
         <div class="border-b border-[var(--line)] p-2">
-          <input #campo class="field !py-1.5" placeholder="Buscar…" [value]="termo" (input)="filtrar(campo.value)" (keydown)="teclado($event)" data-busca-opcao>
+          <input #campo class="field !py-1.5" placeholder="Buscar…" [value]="termo" (input)="buscarTermo(campo.value)" (keydown)="teclado($event)" data-busca-opcao>
         </div>
+        @if (carregando) { <p class="p-3 text-sm text-[var(--muted)]" role="status">Buscando…</p> }
+        @if (erroBusca) { <p class="p-3 text-sm text-red-600" role="alert">{{ erroBusca }}</p> }
         <ul class="max-h-60 overflow-y-auto py-1">
           @for (o of visiveis; track o.valor; let i = $index) {
             <li role="option" class="cursor-pointer px-3 py-1.5 text-sm" [attr.aria-selected]="o.valor === valor"
@@ -60,6 +62,13 @@ function semAcento(s: string): string {
 })
 export class SelectBuscaComponent implements ControlValueAccessor, OnChanges, OnDestroy {
   @Input() opcoes: OpcaoSelectBusca[] = [];
+  /** Sem callback mantém filtro local. Com callback busca limitada no servidor. */
+  @Input() buscar?: (termo: string) => Promise<OpcaoSelectBusca[]>;
+  carregando = false;
+  erroBusca = '';
+  private pedido = 0;
+  private espera: ReturnType<typeof setTimeout> | null = null;
+  private escolhida: OpcaoSelectBusca | null = null;
   @Input() placeholder = 'Selecione';
   @Input() limpavel = true;
 
@@ -95,10 +104,11 @@ export class SelectBuscaComponent implements ControlValueAccessor, OnChanges, On
   ngOnChanges(): void {
     this.normalizadas = this.opcoes.map(o => ({ o, chave: semAcento(`${o.rotulo} ${o.detalhe ?? ''}`) }));
     this.sincronizarRotulo();
-    this.filtrar(this.termo);
+    if (!this.buscar) this.filtrar(this.termo);
   }
 
   ngOnDestroy(): void {
+    this.cancelarBusca();
     this.pararDeEscutar();
     this.painelNoBody?.remove();
   }
@@ -111,7 +121,8 @@ export class SelectBuscaComponent implements ControlValueAccessor, OnChanges, On
   abrir() {
     if (this.desabilitado) return;
     this.aberto = true;
-    this.filtrar('');
+    if (this.buscar) {this.termo=''; void this.buscarRemoto('');}
+    else this.filtrar('');
     const i = this.visiveis.findIndex(o => o.valor === this.valor);
     this.destaque = i >= 0 ? i : 0;
     this.posicionar();
@@ -122,6 +133,7 @@ export class SelectBuscaComponent implements ControlValueAccessor, OnChanges, On
   fechar() {
     if (!this.aberto) return;
     this.aberto = false;
+    this.cancelarBusca();
     this.pararDeEscutar();
     this.onTouched();
     this.cdr.markForCheck();
@@ -136,6 +148,28 @@ export class SelectBuscaComponent implements ControlValueAccessor, OnChanges, On
     this.destaque = 0;
   }
 
+  buscarTermo(texto: string): void {
+    if (!this.buscar) {this.filtrar(texto);return;}
+    this.cancelarBusca();this.termo=texto;this.visiveis=[];this.carregando=true;this.erroBusca='';
+    this.espera=setTimeout(() => {this.espera=null;void this.buscarRemoto(texto);},300);
+  }
+
+  private cancelarBusca(): void {
+    this.pedido++;if(this.espera)clearTimeout(this.espera);this.espera=null;this.carregando=false;
+  }
+
+  private async buscarRemoto(termo: string): Promise<void> {
+    const pedido=++this.pedido;this.carregando=true;this.erroBusca='';this.visiveis=[];this.destaque=0;
+    this.cdr.markForCheck();
+    try {
+      const opcoes=await this.buscar!(termo);
+      if(pedido!==this.pedido || !this.aberto)return;
+      this.visiveis=opcoes.slice(0,MAX_VISIVEIS);this.maisQueOLimite=opcoes.length>=30;
+    } catch(erro) {
+      if(pedido===this.pedido)this.erroBusca=erro instanceof Error ? erro.message : 'Não foi possível buscar as opções.';
+    } finally {if(pedido===this.pedido){this.carregando=false;this.cdr.markForCheck();}}
+  }
+
   teclado(e: KeyboardEvent) {
     if (e.key === 'ArrowDown') { e.preventDefault(); this.destaque = Math.min(this.destaque + 1, this.visiveis.length - 1); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); this.destaque = Math.max(this.destaque - 1, 0); }
@@ -144,6 +178,7 @@ export class SelectBuscaComponent implements ControlValueAccessor, OnChanges, On
   }
 
   escolher(o: OpcaoSelectBusca) {
+    this.escolhida = o;
     this.valor = o.valor;
     this.rotuloAtual = o.rotulo;
     this.onChange(o.valor);
@@ -169,7 +204,7 @@ export class SelectBuscaComponent implements ControlValueAccessor, OnChanges, On
   setDisabledState(d: boolean): void { this.desabilitado = d; this.cdr.markForCheck(); }
 
   private sincronizarRotulo() {
-    this.rotuloAtual = this.opcoes.find(o => o.valor === this.valor)?.rotulo ?? '';
+    this.rotuloAtual = this.opcoes.find(o => o.valor === this.valor)?.rotulo ?? (this.escolhida?.valor===this.valor ? this.escolhida.rotulo : '');
   }
 
   private posicionar() {

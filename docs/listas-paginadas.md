@@ -19,3 +19,10 @@ As rotas antigas sem paginação permanecem por compatibilidade com seletores e 
 ## Verificação
 
 Testes HTTP cobrem limite, filtro, permissão, tenant, ausência de cuidados e páginas sem repetição em conjunto estático. Eventos verifica ordenação antes do limite, contagem correta e assinatura de foto sem transação ativa. Testes de interface cobrem navegação/filtros/seleção. Não há ensaio de carga de grande volume concluído.
+
+
+## Seletores remotos — 01/10/2026
+
+Vínculos de responsáveis/dependentes e inscrição em eventos usam /pessoas/opcoes com limite 30 e papel quando aplicável. Não carregam fichas integrais ao abrir a tela. Campo com callback buscar consulta ao abrir e espera 300 ms após digitação; invalida respostas antigas ao digitar, fechar ou destruir. Mostra carregamento/erro, permite teclado e preserva o rótulo selecionado mesmo quando fora do resultado atual. Vínculos já salvos recebem os nomes da ficha consultada individualmente; nomes escolhidos também alimentam a conferência de duplicidade.
+
+SelectBusca sem callback mantém o filtro local para listas pequenas. A API integral permanece por compatibilidade externa. Seletores de escala/voluntários têm necessidades de elegibilidade próprias e permanecem sob revisão de volume.

@@ -69,6 +69,13 @@ describe('PessoasService', () => {
 
   afterEach(() => http.verify());
 
+  it('busca opções limitadas com papel e nome sem carregar fichas', async () => {
+    const resposta=service.opcoes('  Ana  ','RESPONSAVEL');
+    const req=http.expectOne(r => r.url===`${environment.apiUrl}/pessoas/opcoes`);
+    expect(req.request.params.get('nome')).toBe('Ana');expect(req.request.params.get('papel')).toBe('RESPONSAVEL');
+    expect(req.request.params.get('limite')).toBe('30');req.flush([]);expect(await resposta).toEqual([]);
+  });
+
   it('lista com papel e nome', async () => {
     const promise = service.listar('VOLUNTARIO', '  Ana  ');
     const req = http.expectOne(r => r.url === `${environment.apiUrl}/pessoas`);

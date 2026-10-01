@@ -1,7 +1,7 @@
 import { SessaoAtual } from '../../../core/layout/sessao-atual';
 import { CommonModule } from '@angular/common';
 import { CuidadosComponent } from '../../../shared/components/cuidados/cuidados.component';
-import { Component, ElementRef, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, OnInit, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HasPendingChanges } from '../../../core/guards/pending-changes.guard';
@@ -23,6 +23,7 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
 
 @Component({
     selector: 'app-pessoa-form',
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [CuidadosComponent, CommonModule, ReactiveFormsModule, RouterLink, MascaraDirective, CampoDataComponent, DuplicidadesDialogComponent, CabecalhoPaginaComponent, SelectBuscaComponent, RodapeFormComponent],
     template: `
     <app-duplicidades-dialog [open]="dialogOpen" [itens]="duplicidades" (fechar)="dialogOpen = false" (continuar)="confirmarSave()"></app-duplicidades-dialog>
@@ -163,6 +164,7 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
                     <div class="md:col-span-2">
                       <label class="label">{{ lado === 'responsaveis' ? 'Responsável' : 'Dependente' }}</label>
                       <app-select-busca formControlName="pessoaId" [attr.data-relacao]="lado"
+                        [buscar]="lado === 'responsaveis' ? buscarResponsaveis : buscarDependentes"
                         [opcoes]="lado === 'responsaveis' ? opcoesResponsaveis : opcoesDependentes"
                         [placeholder]="lado === 'responsaveis' ? 'Cadastrar novo responsável nesta ficha' : 'Escolha um voluntário'" />
                     </div>
@@ -310,7 +312,8 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
   papeis = new Set<PessoaPapel>(['VOLUNTARIO']);
   /** Papéis que a pessoa já tinha — a API não deixa remover. */
   papeisOriginais = new Set<PessoaPapel>();
-  pessoasCadastradas: Pessoa[] = [];
+  private readonly nomesRelacionados = new Map<string,string>();
+  private readonly cdr = inject(ChangeDetectorRef);
   /** Opções dos campos de responsável e dependente (com o número no detalhe), calculadas quando as pessoas chegam. */
   opcoesResponsaveis: OpcaoSelectBusca[] = [];
   opcoesDependentes: OpcaoSelectBusca[] = [];
@@ -375,10 +378,6 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
   async ngOnInit() {
     this.id = this.route.snapshot.paramMap.get('id');
     try {
-      this.pessoasCadastradas = (await this.pessoas.listar()).filter(p => p.id !== this.id);
-      const opcao = (p: Pessoa): OpcaoSelectBusca => ({ valor: p.id, rotulo: p.nomeCompleto, detalhe: p.sequencial ? `nº ${p.sequencial}` : undefined });
-      this.opcoesResponsaveis = this.candidatos('responsaveis').map(opcao);
-      this.opcoesDependentes = this.candidatos('dependentes').map(opcao);
       if (this.id) {
         const p = await this.pessoas.buscar(this.id);
         this.patch(p);
@@ -390,6 +389,7 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
       this.error = err instanceof Error ? err.message : 'Erro ao carregar.';
     } finally {
       this.loading = false;
+      this.cdr.markForCheck();
     }
   }
 
@@ -412,9 +412,14 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
   }
 
   /** Responsáveis só entre quem já tem o papel; dependentes só entre voluntários. */
-  candidatos(lado: 'responsaveis' | 'dependentes'): Pessoa[] {
-    const papel: PessoaPapel = lado === 'responsaveis' ? 'RESPONSAVEL' : 'VOLUNTARIO';
-    return this.pessoasCadastradas.filter(p => p.papeis.includes(papel));
+  readonly buscarResponsaveis = (termo: string) => this.buscarRelacoes(termo,'RESPONSAVEL');
+  readonly buscarDependentes = (termo: string) => this.buscarRelacoes(termo,'VOLUNTARIO');
+  private async buscarRelacoes(termo: string,papel: PessoaPapel): Promise<OpcaoSelectBusca[]> {
+    const pessoas=await this.pessoas.opcoes(termo,papel);
+    return pessoas.filter(p => p.id!==this.id).map(p => {
+      this.nomesRelacionados.set(p.id,p.nomeCompleto);
+      return {valor:p.id,rotulo:p.nomeCompleto,detalhe:p.sequencial ? `nº ${p.sequencial}` : undefined};
+    });
   }
 
   addEmail() { this.emails.push(this.emailGroup(false)); this.form.markAsDirty(); }
@@ -450,6 +455,7 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
     this.erroFoto = '';
     this.photoFile = file;
     this.photoPreview = await readPhotoPreview(file);
+    this.cdr.markForCheck();
     this.form.markAsDirty();
   }
 
@@ -459,6 +465,7 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
     if (!cepValido(valor)) return;
     this.avisoCep = 'Buscando endereço…';
     const endereco = await this.cepService.buscar(valor);
+    this.cdr.markForCheck();
     if (!endereco) {
       this.avisoCep = 'CEP não encontrado. Preencha o endereço.';
       return;
@@ -522,8 +529,8 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
         const pId = g.get('pessoaId')?.value;
         const pNome = g.get('nomeNovo')?.value;
         if (pId) {
-          const respEncontrado = this.pessoasCadastradas.find(p => p.id === pId);
-          if (respEncontrado) dupReq.nomesResponsaveis.push(respEncontrado.nomeCompleto);
+          const nome = this.nomesRelacionados.get(pId);
+          if (nome) dupReq.nomesResponsaveis.push(nome);
         } else if (pNome) {
           dupReq.nomesResponsaveis.push(pNome);
         }
@@ -536,6 +543,7 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
         this.duplicidades = duplicidades;
         this.dialogOpen = true;
         this.saving = false;
+        this.cdr.markForCheck();
         return;
       }
     } catch (e) {
@@ -561,6 +569,7 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
       this.error = err instanceof Error ? err.message : 'Não foi possível salvar.';
     } finally {
       this.saving = false;
+      this.cdr.markForCheck();
     }
   }
 
@@ -628,6 +637,13 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
       this.telefones.push(this.fb.group({ tipo: [t.tipo], numero: [formatarTelefone(t.numero), Validar.telefone], principal: [t.principal] }));
     }
     if (!this.telefones.length) this.addTelefone();
+    const opcao=(r:Relacao):OpcaoSelectBusca => {
+      const nome=r.nomeCompleto || r.pessoaId;
+      this.nomesRelacionados.set(r.pessoaId,nome);
+      return {valor:r.pessoaId,rotulo:nome};
+    };
+    this.opcoesResponsaveis=(p.responsaveis || []).map(opcao);
+    this.opcoesDependentes=(p.dependentes || []).map(opcao);
     this.responsaveis.clear();
     for (const r of p.responsaveis || []) this.responsaveis.push(this.relacaoGroup(r));
     this.dependentes.clear();

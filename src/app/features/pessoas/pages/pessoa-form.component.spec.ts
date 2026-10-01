@@ -11,8 +11,9 @@ describe('PessoaFormComponent (máscaras, validação e CEP)', () => {
   let pessoas: jasmine.SpyObj<PessoasService>;
 
   function montar(id: string | null) {
-    pessoas = jasmine.createSpyObj<PessoasService>('PessoasService', ['listar', 'buscar', 'criar', 'atualizar', 'duplicidades']);
+    pessoas = jasmine.createSpyObj<PessoasService>('PessoasService', ['listar', 'opcoes', 'buscar', 'criar', 'atualizar', 'duplicidades']);
     pessoas.listar.and.resolveTo([]);
+    pessoas.opcoes.and.resolveTo([]);
     TestBed.configureTestingModule({
       imports: [PessoaFormComponent],
       providers: [
@@ -191,7 +192,7 @@ describe('PessoaFormComponent (máscaras, validação e CEP)', () => {
 
   it('salva com o responsável escolhido pelo campo com busca', async () => {
     const fixture = montar(null);
-    pessoas.listar.and.resolveTo([{ id: 'm1', nomeCompleto: 'Maria Souza', sequencial: 12, papeis: ['RESPONSAVEL'] } as unknown as Pessoa]);
+    pessoas.opcoes.and.resolveTo([{ id:'m1',nomeCompleto:'Maria Souza',sequencial:12,voluntario:false,responsavel:true }]);
     pessoas.duplicidades = jasmine.createSpy().and.resolveTo([]);
     pessoas.criar.and.resolveTo({ id: 'p1' } as Pessoa);
     await fixture.componentInstance.ngOnInit();
@@ -202,12 +203,17 @@ describe('PessoaFormComponent (máscaras, validação e CEP)', () => {
 
     (fixture.nativeElement.querySelector('[data-relacao="responsaveis"] [data-select-busca]') as HTMLButtonElement).click();
     fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
     (document.body.querySelector('[data-opcao="m1"]') as HTMLElement).click();
     fixture.detectChanges();
 
     await fixture.componentInstance.save();
     const corpo = pessoas.criar.calls.mostRecent().args[0] as { responsaveis: { pessoaId?: string }[] };
     expect(corpo.responsaveis[0].pessoaId).toBe('m1');
+    expect(pessoas.listar).not.toHaveBeenCalled();
+    expect(pessoas.opcoes).toHaveBeenCalledWith('', 'RESPONSAVEL');
+    expect(pessoas.duplicidades.calls.mostRecent().args[0].nomesResponsaveis).toEqual(['Maria Souza']);
   });
   it('editor geral não envia dados de cuidados, mesmo com valor colocado no formulário', async () => {
     const fixture=montar(null);

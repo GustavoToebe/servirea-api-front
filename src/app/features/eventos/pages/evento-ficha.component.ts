@@ -260,7 +260,7 @@ export const OPCOES_LEMBRETE = [
               <div class="mb-4 flex flex-col gap-2 md:flex-row md:items-end" data-bloco="inscrever">
                 <div class="flex-1">
                   <label class="label">Pessoa</label>
-                  <app-select-busca [opcoes]="opcoesPessoas()" placeholder="Escolha uma pessoa cadastrada" [(ngModel)]="pessoaEscolhida" [ngModelOptions]="{ standalone: true }" />
+                  <app-select-busca [buscar]="buscarPessoas" placeholder="Escolha uma pessoa cadastrada" [(ngModel)]="pessoaEscolhida" [ngModelOptions]="{ standalone: true }" />
                 </div>
                 <button type="button" class="btn-primary" data-acao="inscrever" [disabled]="!pessoaEscolhida || ocupado()" (click)="inscrever()">Inscrever</button>
               </div>
@@ -336,7 +336,8 @@ export class EventoFichaComponent implements OnInit {
   readonly ocupado = signal(false);
   readonly erro = signal<string | null>(null);
   readonly avisoCep = signal('');
-  readonly opcoesPessoas = signal<OpcaoSelectBusca[]>([]);
+  readonly buscarPessoas = async (termo: string): Promise<OpcaoSelectBusca[]> =>
+    (await this.pessoas.opcoes(termo)).map(p => ({valor:p.id,rotulo:p.nomeCompleto,detalhe:p.sequencial ? '#' + p.sequencial : undefined}));
   readonly layoutsWhats = signal<Layout[]>([]);
   readonly layoutsEmail = signal<Layout[]>([]);
   readonly lembreteDias = signal<number[]>([1]);
@@ -409,7 +410,7 @@ export class EventoFichaComponent implements OnInit {
     } finally {
       this.carregando.set(false);
     }
-    if (this.pode('EVENTO_INSCREVER')) void this.carregarPessoas();
+
   }
 
   private async carregarLayouts(): Promise<void> {
@@ -426,14 +427,7 @@ export class EventoFichaComponent implements OnInit {
     }
   }
 
-  private async carregarPessoas(): Promise<void> {
-    try {
-      const lista = await this.pessoas.listar();
-      this.opcoesPessoas.set(lista.map(p => ({ valor: p.id, rotulo: p.nomeCompleto, detalhe: p.sequencial ? '#' + p.sequencial : undefined })));
-    } catch {
-      this.opcoesPessoas.set([]);
-    }
-  }
+
 
   private aplicar(e: EventoDetalhe): void {
     this.evento.set(e);

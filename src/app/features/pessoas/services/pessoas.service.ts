@@ -8,6 +8,8 @@ import { CacheDeListas } from '../../../core/api/cache-de-listas.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { Pessoa, PessoaPapel, PessoaRequest, DuplicidadeRequest, Duplicidade } from '../models/pessoa.model';
 
+export interface PessoaOpcao {id:string;sequencial:number|null;nomeCompleto:string;voluntario:boolean;responsavel:boolean;}
+
 @Injectable({ providedIn: 'root' })
 export class PessoasService {
   private readonly base = `${environment.apiUrl}/pessoas`;
@@ -18,6 +20,14 @@ export class PessoasService {
     return this.cache.ler<Pessoa[]>('pessoas', this.auth.tenantId());
   }
 
+
+  async opcoes(nome = '', papel?: PessoaPapel): Promise<PessoaOpcao[]> {
+    let params=new HttpParams().set('limite',30);
+    if(nome.trim())params=params.set('nome',nome.trim());
+    if(papel)params=params.set('papel',papel);
+    try {return await firstValueFrom(this.http.get<PessoaOpcao[]>(`${this.base}/opcoes`,{params}));}
+    catch(erro){throw new Error(mensagemApi(erro,'Não foi possível buscar pessoas.'));}
+  }
 
   async pagina(filtro: { papel?: PessoaPapel; nome?: string; tipo?: string; ativo?: boolean }, pagina = 0): Promise<PaginaLista<Pessoa>> {
     let params=new HttpParams().set('pagina',pagina).set('tamanho',30);
