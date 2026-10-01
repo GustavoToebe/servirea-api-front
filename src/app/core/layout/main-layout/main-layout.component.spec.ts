@@ -78,7 +78,9 @@ describe('MainLayoutComponent', () => {
     expect(texto('[data-menu="lateral"]')).toContain('Escalas');
     expect(texto('[data-menu="lateral"]')).not.toContain('Relatórios');
     expect(texto('[data-menu="conta"]')).toContain('Paróquia');
-    expect(texto('[data-menu="conta"]')).toContain('Meu perfil');
+    (fixture.nativeElement.querySelector('[data-menu="conta"]') as HTMLButtonElement)?.click();
+    fixture.detectChanges();
+    expect(texto('#perfil-dropdown')).toContain('Meu perfil');
     expect(texto('[data-menu="conta"]')).not.toContain('Perfis');
     expect(texto('[data-menu="conta"]')).not.toContain('Usuários');
     expect(texto('[data-menu="barra"]')).toContain('Pessoas');
@@ -132,7 +134,9 @@ describe('MainLayoutComponent', () => {
     expect(texto('[data-menu="barra"]')).not.toContain('Escalas');
     expect(texto('[data-menu="barra"]')).not.toContain('Relatórios');
     expect(texto('[data-menu="conta"]')).not.toContain('Paróquia');
-    expect(texto('[data-menu="conta"]')).toContain('Meu perfil');
+    (fixture.nativeElement.querySelector('[data-menu="conta"]') as HTMLButtonElement)?.click();
+    fixture.detectChanges();
+    expect(texto('#perfil-dropdown')).toContain('Meu perfil');
     expect(texto('[data-menu="barra"]')).toContain('Mais');
   });
 

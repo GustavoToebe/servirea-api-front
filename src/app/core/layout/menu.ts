@@ -1,24 +1,25 @@
 export interface ItemMenu {
   label: string;
   url: string;
-  /** Código do catálogo, ou vários (basta um). Vazio = sempre visível. */
+  /** CÃ³digo do catÃ¡logo, ou vÃ¡rios (basta um). Vazio = sempre visÃ­vel. */
   permissao: string | readonly string[] | null;
 }
 
 export const BARRA: ItemMenu[] = [
-  { label: 'Início', url: '/dashboard', permissao: null },
+  { label: 'InÃ­cio', url: '/dashboard', permissao: null },
   { label: 'Escalas', url: '/escalas', permissao: ['ESCALA', 'VAGA'] },
   { label: 'Pessoas', url: '/pessoas', permissao: 'PESSOA' },
-  { label: 'Relatórios', url: '/relatorios', permissao: 'AUDITORIA' },
-  { label: 'Ajustes', url: '/ajustes', permissao: null }
+  { label: 'RelatÃ³rios', url: '/relatorios', permissao: 'AUDITORIA' },
+  { label: 'Ajustes', url: '/ajustes', permissao: null },
+  { label: 'Layouts', url: '/layouts', permissao: 'LAYOUT' },
+  { label: 'Comunicados', url: '/comunicados', permissao: 'COMUNICADO' },
+  { label: 'ParÃ³quia', url: '/paroquia', permissao: 'PAROQUIA' },
+  { label: 'Perfis', url: '/perfis', permissao: 'PERFIL' },
+  { label: 'UsuÃ¡rios', url: '/usuarios', permissao: 'USUARIO' }
 ];
 
 export const CONTA: ItemMenu[] = [
-  { label: 'Layouts', url: '/layouts', permissao: 'LAYOUT' },
-  { label: 'Comunicados', url: '/comunicados', permissao: 'COMUNICADO' },
-  { label: 'Paróquia', url: '/paroquia', permissao: 'PAROQUIA' },
-  { label: 'Perfis', url: '/perfis', permissao: 'PERFIL' },
-  { label: 'Usuários', url: '/usuarios', permissao: 'USUARIO' },
+  { label: 'Minha conta', url: '/minha-conta', permissao: 'PAROQUIA' },
   { label: 'Meu perfil', url: '/meu-perfil', permissao: null }
 ];
 
