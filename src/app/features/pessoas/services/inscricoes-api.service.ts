@@ -1,3 +1,4 @@
+import { PaginaLista } from '../../../core/api/pagina-lista';
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -9,6 +10,13 @@ import { Duplicidade } from '../models/pessoa.model';
 @Injectable({ providedIn: 'root' })
 export class InscricoesApiService {
   constructor(private http: HttpClient) {}
+
+
+  async pagina(status: StatusInscricao,pagina=0): Promise<PaginaLista<Inscricao>> {
+    const params=new HttpParams().set('status',status).set('pagina',pagina).set('tamanho',30);
+    try { return await firstValueFrom(this.http.get<PaginaLista<Inscricao>>(`${environment.apiUrl}/inscricoes/pagina`,{params})); }
+    catch (erro) { throw new Error(mensagemApi(erro,'Não foi possível carregar a página de inscrições.')); }
+  }
 
   async listar(status?: StatusInscricao): Promise<Inscricao[]> {
     let params = new HttpParams();

@@ -1,3 +1,4 @@
+import { PaginaLista } from '../../core/api/pagina-lista';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
@@ -13,6 +14,10 @@ export class EventosApiService {
 
   listar(): Promise<EventoResumo[]> {
     return this.chamar(this.http.get<EventoResumo[]>(this.base), 'Não foi possível carregar os eventos.');
+  }
+
+  pagina(pagina = 0): Promise<PaginaLista<EventoResumo>> {
+    return this.chamar(this.http.get<PaginaLista<EventoResumo>>(`${this.base}/pagina`, {params:{pagina,tamanho:30}}), 'Não foi possível carregar os eventos.');
   }
 
   buscar(id: string): Promise<EventoDetalhe> {

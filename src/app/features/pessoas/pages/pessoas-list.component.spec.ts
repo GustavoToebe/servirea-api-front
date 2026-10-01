@@ -14,12 +14,12 @@ describe('PessoasListComponent (lista de assinatura)', () => {
   function pessoa(id: string, nome: string, tipo: 'COROINHA' | 'ACOLITO' | null, papeis: string[] = ['VOLUNTARIO']): Pessoa {
     return {
       id, nomeCompleto: nome, sequencial: Number(id), dataNascimento: null, papeis, responsaveis: [],
-      voluntario: tipo ? { tipo, funcoesHabilitadas: [] } : null
+      voluntario: tipo ? { tipo, ativo: true, funcoesHabilitadas: [] } : null
     } as unknown as Pessoa;
   }
 
   async function montar(permissoes: string[] = []) {
-    const pessoas = jasmine.createSpyObj<PessoasService>('PessoasService', ['listar', 'emCache']);
+    const pessoas = jasmine.createSpyObj<PessoasService>('PessoasService', ['listar', 'emCache', 'pagina', 'resumo']);
     pessoas.emCache.and.returnValue(null);
     pessoas.listar.and.resolveTo([
       pessoa('1', 'Ana', 'COROINHA'),
@@ -27,13 +27,19 @@ describe('PessoasListComponent (lista de assinatura)', () => {
       pessoa('3', 'Carla', 'COROINHA'),
       pessoa('4', 'Dirce', null, ['RESPONSAVEL'])
     ]);
+    pessoas.pagina.and.callFake(async filtro => {
+      const itens=await pessoas.listar(filtro.papel,filtro.nome);
+      return {itens,pagina:0,tamanho:30,total:itens.length,paginas:1};
+    });
+    pessoas.resumo.and.resolveTo({pessoas:4,ativos:0,inativos:0,pendentes:0});
     const voluntarios = jasmine.createSpyObj<VoluntariosApiService>('VoluntariosApiService', ['contagens', 'listar', 'setAtivo', 'emCache']);
     voluntarios.contagens.and.resolveTo({ ativos: 0, inativos: 0 });
     voluntarios.emCache.and.returnValue(null);
     voluntarios.listar.and.resolveTo([]);
     voluntarios.setAtivo.and.resolveTo();
-    const inscricoes = jasmine.createSpyObj<InscricoesApiService>('InscricoesApiService', ['listar']);
+    const inscricoes = jasmine.createSpyObj<InscricoesApiService>('InscricoesApiService', ['listar', 'pagina']);
     inscricoes.listar.and.resolveTo([]);
+    inscricoes.pagina.and.resolveTo({itens:[],pagina:0,tamanho:30,total:0,paginas:0});
     TestBed.configureTestingModule({
       imports: [PessoasListComponent],
       providers: [
@@ -152,23 +158,21 @@ describe('PessoasListComponent (lista de assinatura)', () => {
 
   it('Inativar só aparece com PESSOA_ATIVAR_INATIVAR e chama a API', async () => {
     const semPermissao = await montar();
-    semPermissao.componentInstance.aba = 'ativos';
-    semPermissao.componentInstance.rows = [voluntarioLista('v1', true)];
+    await semPermissao.componentInstance.setAba('ativos');
     semPermissao.detectChanges();
     expect((semPermissao.nativeElement as HTMLElement).textContent).not.toContain('Inativar');
     TestBed.resetTestingModule();
 
     const fixture = await montar(['PESSOA_ATIVAR_INATIVAR']);
     const tela = fixture.componentInstance;
-    tela.aba = 'ativos';
-    tela.rows = [voluntarioLista('v1', true)];
+    await tela.setAba('ativos');
     fixture.detectChanges();
     const botao = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button'))
       .find(b => b.textContent?.trim() === 'Inativar');
     expect(botao).toBeTruthy();
     botao!.click();
     await fixture.whenStable();
-    expect(TestBed.inject(VoluntariosApiService).setAtivo).toHaveBeenCalledWith('v1', false);
+    expect(TestBed.inject(VoluntariosApiService).setAtivo).toHaveBeenCalledWith('1', false);
   });
 
   it('Criar comunicado exige marcados e COMUNICADO_ENVIAR, e abre o assistente com os ids marcados', async () => {
@@ -187,6 +191,25 @@ describe('PessoasListComponent (lista de assinatura)', () => {
     expect(tela.comunicadoAberto).toBeTrue();
     expect(tela.idsComunicado).toEqual(['1', '3']);
   });
+  it('trocar de página pede só a página seguinte e limpa a seleção anterior', async () => {
+    const fixture=await montar();const tela=fixture.componentInstance;
+    tela.paginas=2;tela.alternar('1');
+    const api=TestBed.inject(PessoasService) as jasmine.SpyObj<PessoasService>;
+    api.pagina.and.resolveTo({itens:[pessoa('5','Nova','COROINHA')],pagina:1,tamanho:30,total:35,paginas:2});
+    await tela.mudarPagina(1);
+    expect(api.pagina.calls.mostRecent().args[1]).toBe(1);
+    expect(tela.pessoas.map(p => p.id)).toEqual(['5']);
+    expect(tela.quantidadeMarcada).toBe(0);
+    expect(tela.total).toBe(35);
+  });
+  it('mudar filtro reinicia a página e envia filtro ao servidor', async () => {
+    const fixture=await montar();const tela=fixture.componentInstance;
+    tela.pagina=1;tela.tipo='COROINHA';await tela.load();
+    const api=TestBed.inject(PessoasService) as jasmine.SpyObj<PessoasService>;
+    expect(api.pagina.calls.mostRecent().args[0].tipo).toBe('COROINHA');
+    expect(api.pagina.calls.mostRecent().args[1]).toBe(0);
+  });
+
 });
 
 function voluntarioLista(id: string, ativo: boolean): VoluntarioLista {

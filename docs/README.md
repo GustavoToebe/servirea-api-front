@@ -17,3 +17,5 @@ O dump `DOCUMENTACAO-COMPLETA-PARA-IA.md` descrevia o front falando direto com o
 
 - [estado-projeto.json](estado-projeto.json): componente, comandos e migration local quando houver. Não confirma publicação.
 - Histórico explica decisões antigas; contrato e código atuais definem o comportamento vigente.
+
+- [Listas paginadas](listas-paginadas.md): contratos, ordenação, seleção por página e compatibilidade.

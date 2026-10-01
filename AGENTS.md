@@ -13,7 +13,7 @@ removido; na dúvida, vale o código e este arquivo. O índice dos documentos es
 
 ## Stack e comandos
 Angular 21 (standalone, control flow `@if/@for`), Tailwind 3, Karma + Jasmine, jsPDF 4 +
-html2canvas (exportação da escala). API em `environment.apiUrl` (dev: `http://localhost:8080`; produção: `https://app.servirea.com.br/api`, mesma origem). Listas de pessoas e escalas guardam a última resposta da paróquia e mostram na hora ao voltar; o logout limpa.
+html2canvas (exportação da escala). API em `environment.apiUrl` (dev: `http://localhost:8080`; produção: `https://app.servirea.com.br/api`, mesma origem). A lista de pessoas usa páginas de 30 registros e resumo agregado; seletores legados e escalas ainda guardam respostas por paróquia, limpas no logout.
 
 ```powershell
 npm ci                 # depois de pull que mexeu no package.json
@@ -123,3 +123,7 @@ Formulário de pessoa só mostra e envia cuidados com PESSOA_CUIDADOS_ALTERAR. E
 - [Estado local](docs/estado-projeto.json) e [índice](docs/README.md). Histórico/plano não define a versão implantada.
 - Executar `python scripts/verificar-docs.py` ao mudar docs, schema ou migrations; atualizar o estado junto.
 - Nesta tarefa, usar `melhoria/ecossistema-sem-ia`, conforme pedido do usuário. Publicação depende do fluxo e autorização vigentes.
+
+## Paginação
+
+Pessoas/inscrições/eventos usam contratos de [listas paginadas](docs/listas-paginadas.md). Seleção de pessoas é por página; busca reinicia em zero e descarta respostas antigas. Não usar o cache integral de fichas para contar ou mostrar a lista paginada.

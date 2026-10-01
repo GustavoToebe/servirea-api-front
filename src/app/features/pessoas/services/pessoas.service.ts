@@ -1,3 +1,4 @@
+import { PaginaLista } from '../../../core/api/pagina-lista';
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -15,6 +16,18 @@ export class PessoasService {
 
   emCache(): Pessoa[] | null {
     return this.cache.ler<Pessoa[]>('pessoas', this.auth.tenantId());
+  }
+
+
+  async pagina(filtro: { papel?: PessoaPapel; nome?: string; tipo?: string; ativo?: boolean }, pagina = 0): Promise<PaginaLista<Pessoa>> {
+    let params=new HttpParams().set('pagina',pagina).set('tamanho',30);
+    for (const [chave,valor] of Object.entries(filtro)) if (valor !== undefined && valor !== '') params=params.set(chave,String(valor));
+    try { return await firstValueFrom(this.http.get<PaginaLista<Pessoa>>(`${this.base}/pagina`,{params})); }
+    catch (erro) { throw new Error(mensagemApi(erro,'Não foi possível carregar a página de pessoas.')); }
+  }
+  async resumo(): Promise<{pessoas:number;ativos:number;inativos:number;pendentes:number}> {
+    try { return await firstValueFrom(this.http.get<{pessoas:number;ativos:number;inativos:number;pendentes:number}>(`${this.base}/resumo`)); }
+    catch (erro) { throw new Error(mensagemApi(erro,'Não foi possível carregar as contagens.')); }
   }
 
   async listar(papel?: PessoaPapel, nome?: string): Promise<Pessoa[]> {

@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { CONDICAO_LABEL, CondicaoEspecial } from '../../../shared/components/cuidados/condicoes';
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -24,6 +24,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
 
 @Component({
     selector: 'app-pessoas-list',
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [CommonModule, FormsModule, RouterLink, ConfirmDialogComponent, ListaAssinaturaDialogComponent, BarraFiltrosComponent, DuplicidadesDialogComponent, ComunicadoDialogComponent, CabecalhoPaginaComponent, EstadoListaComponent],
     template: `
 
@@ -59,7 +60,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
           [filtrosAtivos]="filtrosAtivosLista" (removerFiltro)="removerFiltro($event)" (removerTodos)="removerTodosFiltros()">
           <div class="flex flex-col gap-1">
             <label class="label">Tipo</label>
-            <select class="field" [(ngModel)]="tipo">
+            <select class="field" [(ngModel)]="tipo" (ngModelChange)="load()">
               <option value="">Todos</option>
               <option value="COROINHA">Coroinhas</option>
               <option value="ACOLITO">Acólitos</option>
@@ -238,6 +239,13 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
       }
     </div>
 
+    <nav aria-label="Páginas da lista" class="flex flex-wrap items-center justify-between gap-3 my-4">
+      <p class="text-sm text-slate-500">{{ total }} registro(s) · Página {{ pagina + 1 }} de {{ paginas || 1 }}. A seleção vale para esta página.</p>
+      <div class="flex gap-2">
+        <button class="btn-secondary" type="button" [disabled]="loading || pagina === 0" (click)="mudarPagina(-1)">Anterior</button>
+        <button class="btn-secondary" type="button" [disabled]="loading || pagina + 1 >= paginas" (click)="mudarPagina(1)">Próxima</button>
+      </div>
+    </nav>
     <app-duplicidades-dialog [open]="dialogOpen" [itens]="duplicidades" acao="aprovar" (fechar)="dialogOpen = false" (continuar)="doApprove(approveTargetDialog?.id!)" />
     <app-lista-assinatura-dialog [open]="listaAberta" [itens]="itensLista" (fechar)="listaAberta = false" />
     <app-comunicado-dialog [open]="comunicadoAberto" [pessoaIds]="idsComunicado" (fechar)="comunicadoAberto = false"
@@ -253,7 +261,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
     </app-confirm-dialog>
 `
 })
-export class PessoasListComponent implements OnInit {
+export class PessoasListComponent implements OnInit, OnDestroy {
   CONDICAO_LABEL = CONDICAO_LABEL;
 
   temCuidado(p: { condicoes?: CondicaoEspecial[], cuidados?: string | null }): boolean {
@@ -270,6 +278,9 @@ export class PessoasListComponent implements OnInit {
   aba: Aba = 'todas';
   historico: Extract<StatusInscricao, 'APROVADA' | 'REJEITADA'> = 'APROVADA';
   nome = '';
+  pagina = 0;
+  paginas = 0;
+  total = 0;
   pessoas: Pessoa[] = [];
   rows: VoluntarioLista[] = [];
   inscricoes: Inscricao[] = [];
@@ -300,7 +311,8 @@ export class PessoasListComponent implements OnInit {
     private inscricoesApi: InscricoesApiService,
     private route: ActivatedRoute,
     private router: Router,
-    private sessao: SessaoAtual
+    private sessao: SessaoAtual,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -313,6 +325,7 @@ export class PessoasListComponent implements OnInit {
     if ((aba === 'ativos' || aba === 'inativos') && this.tipo === 'RESPONSAVEL') {
       this.tipo = '';
     }
+    this.pedido++;
     this.aba = aba;
     await this.router.navigate([], { queryParams: { aba }, queryParamsHandling: 'merge' });
     await this.load();
@@ -338,69 +351,49 @@ export class PessoasListComponent implements OnInit {
   /** Busca que vai à API: espera 300 ms depois da última tecla e descarta respostas antigas. */
   buscaDigitada(termo: string) {
     this.nome = termo;
+    this.pedido++;
     if (this.espera) clearTimeout(this.espera);
     this.espera = setTimeout(() => { this.espera = null; void this.load(); }, 300);
   }
 
-  async load() {
+  async load(reiniciar = true) {
     const pedido = ++this.pedido;
-    const mostrouCache = this.mostrarCache();
-    if (!mostrouCache) this.loading = true;
-    this.error = '';
+    if (reiniciar) this.pagina = 0;
+    this.loading = true; this.error = ''; this.cdr.markForCheck();
+    const aba = this.aba;
     try {
-      const daAba = this.aba === 'ativos' || this.aba === 'inativos'
-        ? this.voluntarios.listar({ ativo: this.aba === 'ativos', nome: this.nome })
-        : this.aba === 'aguardando' || this.aba === 'historico'
-          ? this.inscricoesApi.listar(this.aba === 'aguardando' ? 'PENDENTE' : this.historico)
-          : Promise.resolve(null);
-      const [todas, contagens, pendentes, extra] = await Promise.all([
-        this.pessoasApi.listar(undefined, this.aba === 'todas' ? this.nome : undefined),
-        this.voluntarios.contagens(),
-        this.inscricoesApi.listar('PENDENTE'),
-        daAba
-      ]);
+      const daAba = aba === 'aguardando' || aba === 'historico'
+        ? this.inscricoesApi.pagina(aba === 'aguardando' ? 'PENDENTE' : this.historico, this.pagina)
+        : this.pessoasApi.pagina({ nome: this.nome,
+            papel: aba === 'ativos' || aba === 'inativos' ? 'VOLUNTARIO' : this.tipo === 'RESPONSAVEL' ? 'RESPONSAVEL' : undefined,
+            tipo: this.tipo && this.tipo !== 'RESPONSAVEL' ? this.tipo : undefined,
+            ativo: aba === 'ativos' ? true : aba === 'inativos' ? false : undefined }, this.pagina);
+      const [resumo, pagina] = await Promise.all([this.pessoasApi.resumo(), daAba]);
       if (pedido !== this.pedido) return;
-      this.counts = {
-        pessoas: todas.length,
-        ativos: contagens.ativos,
-        inativos: contagens.inativos,
-        pendentes: pendentes.length
-      };
-      this.selecao.limpar();
-      this.pessoas = [];
-      this.rows = [];
-      this.inscricoes = [];
-      if (this.aba === 'todas') {
-        this.pessoas = todas;
-      } else if (this.aba === 'ativos' || this.aba === 'inativos') {
-        this.rows = extra as VoluntarioLista[];
-      } else {
-        this.inscricoes = extra as Inscricao[];
-      }
+      this.counts = resumo; this.total = pagina.total; this.paginas = pagina.paginas;
+      this.selecao.limpar(); this.pessoas = []; this.rows = []; this.inscricoes = [];
+      if (aba === 'aguardando' || aba === 'historico') this.inscricoes = pagina.itens as Inscricao[];
+      else if (aba === 'todas') this.pessoas = pagina.itens as Pessoa[];
+      else this.rows = (pagina.itens as Pessoa[]).filter(p => !!p.voluntario).map(p => {
+        const v=p.voluntario!;
+        return { id:p.id,nomeCompleto:p.nomeCompleto,nome_completo:p.nomeCompleto,tipo:v.tipo,ativo:v.ativo ?? false,
+          fotoPath:v.fotoPath ?? null,etapaCatequese:v.etapaCatequese ?? null,eucaristiaAno:v.eucaristiaAno ?? null,
+          crismaAno:v.crismaAno ?? null,horarioEstudo:v.horarioEstudo ?? null,autorizaWhatsapp:v.autorizaWhatsapp,
+          funcoesHabilitadas:v.funcoesHabilitadas,mandatoInicio:v.mandatoInicio,mandatoFim:v.mandatoFim,
+          dataNascimento:p.dataNascimento,condicoes:p.condicoes,cuidados:p.cuidados };
+      });
     } catch (err) {
-      this.error = err instanceof Error ? err.message : 'Erro ao carregar.';
+      if (pedido === this.pedido) this.error = err instanceof Error ? err.message : 'Erro ao carregar.';
     } finally {
-      if (pedido === this.pedido) this.loading = false;
+      if (pedido === this.pedido) { this.loading = false; this.cdr.markForCheck(); }
     }
   }
-
-  /** Mostra a última lista desta paróquia na hora; a busca de verdade substitui em seguida. */
-  private mostrarCache(): boolean {
-    if (this.nome.trim()) return false;
-    if (this.aba === 'todas') {
-      const cache = this.pessoasApi.emCache();
-      if (!cache) return false;
-      this.pessoas = cache;
-    } else if (this.aba === 'ativos' || this.aba === 'inativos') {
-      const cache = this.voluntarios.emCache(this.aba === 'ativos');
-      if (!cache) return false;
-      this.rows = cache;
-    } else {
-      return false;
-    }
-    this.loading = false;
-    return true;
+  async mudarPagina(delta: number) {
+    const destino=this.pagina+delta;
+    if (this.loading || destino<0 || destino>=this.paginas) return;
+    this.pagina=destino; await this.load(false);
   }
+  ngOnDestroy(): void { this.pedido++; if (this.espera) clearTimeout(this.espera); }
 
   principalNome(i: Inscricao): string {
     const p = i.responsaveis.find(r => r.principal) || i.responsaveis[0];
@@ -485,6 +478,7 @@ export class PessoasListComponent implements OnInit {
       await this.load();
     } catch (err) {
       this.error = err instanceof Error ? err.message : 'Não foi possível alterar o status.';
+      this.cdr.markForCheck();
     }
   }
 
@@ -525,7 +519,7 @@ export class PessoasListComponent implements OnInit {
 
   removerFiltro(chave: string) {
     if (chave === 'nome') { this.nome = ''; this.load(); }
-    if (chave === 'tipo') { this.tipo = ''; }
+    if (chave === 'tipo') { this.tipo = ''; void this.load(); }
   }
 
   removerTodosFiltros() {
@@ -564,6 +558,7 @@ export class PessoasListComponent implements OnInit {
         this.dialogOpen = true;
         this.approveTargetDialog = this.approveTarget;
         this.approveTarget = null;
+        this.cdr.markForCheck();
         return;
       }
     } catch (err) {
@@ -584,6 +579,7 @@ export class PessoasListComponent implements OnInit {
       await this.load();
     } catch (err) {
       this.error = err instanceof Error ? err.message : 'Falha ao aprovar.';
+      this.cdr.markForCheck();
     }
   }
 
@@ -597,6 +593,7 @@ export class PessoasListComponent implements OnInit {
       await this.load();
     } catch (err) {
       this.error = err instanceof Error ? err.message : 'Falha ao rejeitar.';
+      this.cdr.markForCheck();
     }
   }
 }

@@ -14,17 +14,23 @@ describe('PessoasListComponent (linha clicável e busca)', () => {
   let pessoas: jasmine.SpyObj<PessoasService>;
 
   function configurar() {
-    pessoas = jasmine.createSpyObj<PessoasService>('PessoasService', ['listar', 'emCache']);
+    pessoas = jasmine.createSpyObj<PessoasService>('PessoasService', ['listar', 'emCache', 'pagina', 'resumo']);
     pessoas.emCache.and.returnValue(null);
     pessoas.listar.and.resolveTo([
       { id: 'p1', nomeCompleto: 'Ana', papeis: ['VOLUNTARIO'], responsaveis: [], dependentes: [], emails: [], telefones: [],
         voluntario: { tipo: 'COROINHA' } } as unknown as Pessoa
     ]);
+    pessoas.pagina.and.callFake(async filtro => {
+      const itens=await pessoas.listar(filtro.papel,filtro.nome);
+      return {itens,pagina:0,tamanho:30,total:itens.length,paginas:1};
+    });
+    pessoas.resumo.and.resolveTo({pessoas:4,ativos:0,inativos:0,pendentes:0});
     const voluntarios = jasmine.createSpyObj<VoluntariosApiService>('VoluntariosApiService', ['contagens', 'listar', 'emCache']);
     voluntarios.contagens.and.resolveTo({ ativos: 0, inativos: 0 });
     voluntarios.emCache.and.returnValue(null);
-    const inscricoes = jasmine.createSpyObj<InscricoesApiService>('InscricoesApiService', ['listar']);
+    const inscricoes = jasmine.createSpyObj<InscricoesApiService>('InscricoesApiService', ['listar', 'pagina']);
     inscricoes.listar.and.resolveTo([]);
+    inscricoes.pagina.and.resolveTo({itens:[],pagina:0,tamanho:30,total:0,paginas:0});
     TestBed.configureTestingModule({
       imports: [PessoasListComponent],
       providers: [

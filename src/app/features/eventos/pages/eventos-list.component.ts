@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CabecalhoPaginaComponent } from '../../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
@@ -33,7 +33,7 @@ import { EventoResumo, SITUACAO_EVENTO, rotuloQuando } from '../eventos.models';
               }
             </div>
           } @else {
-            <div class="card p-8 text-center text-sm text-[var(--muted)]" data-estado="vazio">Nenhum evento à frente.</div>
+            <div class="card p-8 text-center text-sm text-[var(--muted)]" data-estado="vazio">Nenhum próximo evento nesta página.</div>
           }
         </section>
         @if (passados().length) {
@@ -46,6 +46,11 @@ import { EventoResumo, SITUACAO_EVENTO, rotuloQuando } from '../eventos.models';
             </div>
           </section>
         }
+        <nav class="flex items-center justify-between gap-3" aria-label="Páginas de eventos">
+          <button class="btn-secondary" [disabled]="carregando() || pagina() === 0" (click)="mudarPagina(-1)">Anterior</button>
+          <span class="text-sm text-[var(--muted)]">{{ total() }} eventos · Página {{ pagina()+1 }} de {{ paginas() || 1 }}</span>
+          <button class="btn-secondary" [disabled]="carregando() || pagina()+1 >= paginas()" (click)="mudarPagina(1)">Próxima</button>
+        </nav>
       }
     </div>
 
@@ -71,7 +76,7 @@ import { EventoResumo, SITUACAO_EVENTO, rotuloQuando } from '../eventos.models';
     </ng-template>
   `
 })
-export class EventosListComponent implements OnInit {
+export class EventosListComponent implements OnInit, OnDestroy {
   private api = inject(EventosApiService);
   private sessao = inject(SessaoAtual);
 
@@ -84,13 +89,29 @@ export class EventosListComponent implements OnInit {
   readonly passados = computed(() => (this.eventos() ?? [])
     .filter(e => e.situacao === 'ENCERRADO' || e.situacao === 'CANCELADO'));
 
-  async ngOnInit(): Promise<void> {
+  readonly pagina = signal(0);
+  readonly paginas = signal(0);
+  readonly total = signal(0);
+  readonly carregando = signal(false);
+  private pedido = 0;
+  async ngOnInit(): Promise<void> { await this.carregar(); }
+  async carregar(): Promise<void> {
+    const pedido=++this.pedido;
+    this.carregando.set(true);this.erro.set(null);
     try {
-      this.eventos.set(await this.api.listar());
-    } catch (e) {
-      this.erro.set((e as Error).message);
-    }
+      const resposta=await this.api.pagina(this.pagina());
+      if(pedido!==this.pedido)return;
+      this.eventos.set(resposta.itens);this.paginas.set(resposta.paginas);this.total.set(resposta.total);
+    } catch(e) {
+      if(pedido===this.pedido)this.erro.set((e as Error).message);
+    } finally {if(pedido===this.pedido)this.carregando.set(false);}
   }
+  async mudarPagina(delta:number): Promise<void> {
+    const destino=this.pagina()+delta;
+    if(this.carregando() || destino<0 || destino>=this.paginas())return;
+    this.pagina.set(destino);await this.carregar();
+  }
+  ngOnDestroy(): void {this.pedido++;}
 
   readonly quando = rotuloQuando;
 

@@ -34,14 +34,16 @@ describe('EventosListComponent', () => {
   let fixture: ComponentFixture<EventosListComponent>;
 
   async function criar(permissoes: string[], lista: EventoResumo[] | Error): Promise<void> {
-    api = jasmine.createSpyObj('EventosApiService', ['listar']);
+    api = jasmine.createSpyObj('EventosApiService', ['listar', 'pagina']);
     lista instanceof Error ? api.listar.and.rejectWith(lista) : api.listar.and.resolveTo(lista);
+    api.pagina.and.callFake(async () => {const itens=await api.listar();return {itens,pagina:0,tamanho:30,total:itens.length,paginas:1};});
     TestBed.configureTestingModule({
       imports: [EventosListComponent],
       providers: [provideRouter([]), { provide: EventosApiService, useValue: api }, { provide: SessaoAtual, useValue: sessao(permissoes) }]
     });
     fixture = TestBed.createComponent(EventosListComponent);
-    await fixture.componentInstance.ngOnInit();
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
   }
 
@@ -68,6 +70,15 @@ describe('EventosListComponent', () => {
     TestBed.resetTestingModule();
     await criar(TUDO, []);
     expect(fixture.nativeElement.querySelector('[data-acao="novo"]')).not.toBeNull();
+  });
+
+  it('navega por páginas sem baixar toda a lista', async () => {
+    await criar(TUDO, []);
+    const tela=fixture.componentInstance;tela.paginas.set(2);
+    await fixture.whenStable();
+    api.pagina.and.resolveTo({itens:[resumo('novo','PUBLICADO','2026-12-01T10:00:00')],pagina:1,tamanho:30,total:31,paginas:2});
+    await tela.mudarPagina(1);
+    expect(api.pagina).toHaveBeenCalledWith(1);expect(tela.total()).toBe(31);expect(tela.eventos()?.[0].id).toBe('novo');
   });
 
   it('erro da API aparece na tela', async () => {
