@@ -4,6 +4,7 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ModalComponent } from '../shared/components/modal/modal.component';
 import { mensagemApi } from '../core/api/api-error';
 import { MinhaContaCobranca, MinhaContaDados, MinhaContaService, SituacaoComercial } from './minha-conta.service';
+import { ConsumoPlanoComponent } from './consumo-plano.component';
 
 type Aba = 'cadastro' | 'plano' | 'financeiro';
 
@@ -31,7 +32,7 @@ const PERIODICIDADE: Record<string, string> = {
 /** Dados da contratação da paróquia, vindos da Central pelo GET /minha-conta. Aberto pelo menu do perfil. */
 @Component({
   selector: 'app-minha-conta-modal',
-  imports: [ModalComponent, CurrencyPipe, DatePipe],
+  imports: [ModalComponent, CurrencyPipe, DatePipe, ConsumoPlanoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-modal [aberto]="true" (fechar)="fechar()" titulo="Minha conta" tamanho="lg">
@@ -163,6 +164,7 @@ const PERIODICIDADE: Record<string, string> = {
         </div>
       }
 
+      <app-consumo-plano />
       <div rodape class="flex justify-end">
         <button type="button" class="btn-secondary" (click)="fechar()">Fechar</button>
       </div>

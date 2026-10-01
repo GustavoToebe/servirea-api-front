@@ -70,4 +70,11 @@ export class MinhaContaService {
   buscar(): Observable<MinhaContaDados> {
     return this.http.get<MinhaContaDados>(`${this.api}/minha-conta`);
   }
+
+  consumo(): Observable<ConsumoPlano> {return this.http.get<ConsumoPlano>(`${this.api}/minha-conta/consumo`);}
+}
+
+export interface ConsumoPlano {
+  planoNome: string | null; versaoDireitos: number | null; direitosConfirmadosEm: string | null; consultadoEm: string;
+  itens: {codigo: string; nome: string; usado: number; limite: number | null; disponivel: number | null; estado: 'SEM_LIMITE_CONFIGURADO' | 'EXCEDIDO' | 'ATINGIDO' | 'ATENCAO' | 'DISPONIVEL'}[];
 }

@@ -38,7 +38,8 @@ describe('MinhaContaModalComponent', () => {
   let servico: jasmine.SpyObj<MinhaContaService>;
 
   beforeEach(async () => {
-    servico = jasmine.createSpyObj('MinhaContaService', ['buscar']);
+    servico = jasmine.createSpyObj('MinhaContaService', ['buscar', 'consumo']);
+    servico.consumo.and.returnValue(of({planoNome: null, versaoDireitos: null, direitosConfirmadosEm: null, consultadoEm: '', itens: []}));
     await TestBed.configureTestingModule({
       imports: [MinhaContaModalComponent],
       providers: [
