@@ -26,23 +26,23 @@ class Vazio {}
 describe('montarMenu', () => {
   it('esconde o que o secretário não pode e mantém início, escalas e a conta', () => {
     const menu = montarMenu(['PESSOA', 'PAROQUIA', 'ESCALA', 'VAGA', 'INSCRICAO']);
-    expect(menu.barra.map(item => item.label)).toEqual(['Início', 'Escalas', 'Pessoas', 'Paróquia']);
+    expect(menu.barra.map(item => item.label)).toEqual(['Início', 'Escalas', 'Pessoas', 'Paróquia', 'Ajuda']);
     expect(menu.conta.map(item => item.label)).toEqual(['Ajustes', 'Meu perfil']);
   });
 
   it('mostra relatórios, perfis e usuários para quem tem o código', () => {
     const menu = montarMenu(['AUDITORIA', 'PERFIL', 'USUARIO', 'PAROQUIA', 'PESSOA', 'ESCALA']);
-    expect(menu.barra.map(item => item.label)).toEqual(['Início', 'Escalas', 'Pessoas', 'Relatórios', 'Paróquia', 'Perfis', 'Usuários']);
+    expect(menu.barra.map(item => item.label)).toEqual(['Início', 'Escalas', 'Pessoas', 'Relatórios', 'Paróquia', 'Perfis', 'Usuários', 'Ajuda']);
   });
 
   it('mostra Layouts e Comunicados para quem tem o código', () => {
     const menu = montarMenu(['LAYOUT', 'COMUNICADO']);
-    expect(menu.barra.map(item => item.label)).toEqual(['Início', 'Layouts', 'Comunicados']);
+    expect(menu.barra.map(item => item.label)).toEqual(['Início', 'Layouts', 'Comunicados', 'Ajuda']);
   });
 
   it('sem permissão some tudo que o catálogo trava', () => {
     const menu = montarMenu([]);
-    expect(menu.barra.map(item => item.label)).toEqual(['Início']);
+    expect(menu.barra.map(item => item.label)).toEqual(['Início', 'Ajuda']);
     expect(menu.conta.map(item => item.label)).toEqual(['Ajustes', 'Meu perfil']);
   });
 });

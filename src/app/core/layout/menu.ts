@@ -16,7 +16,8 @@ export const BARRA: ItemMenu[] = [
   { label: 'Eventos', url: '/eventos', permissao: 'EVENTO' },
   { label: 'Paróquia', url: '/paroquia', permissao: 'PAROQUIA' },
   { label: 'Perfis', url: '/perfis', permissao: 'PERFIL' },
-  { label: 'Usuários', url: '/usuarios', permissao: 'USUARIO' }
+  { label: 'Usuários', url: '/usuarios', permissao: 'USUARIO' },
+  { label: 'Ajuda', url: '/ajuda', permissao: null }
 ];
 
 /** Ficam no menu do perfil (cabeçalho), não na barra; aqui só para o título da página. */

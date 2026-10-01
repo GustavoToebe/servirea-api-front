@@ -25,6 +25,7 @@ export const routes: Routes = [
     loadComponent: () => import('./core/layout/main-layout/main-layout.component').then(m => m.MainLayoutComponent),
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+      { path: 'ajuda', loadComponent: () => import('./features/ajuda/ajuda.component').then(m => m.AjudaComponent) },
       { path: 'dashboard', loadComponent: () => import('./features/dashboard/pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
       { path: 'pessoas', loadComponent: () => import('./features/pessoas/pages/pessoas-list.component').then(m => m.PessoasListComponent) },
       { path: 'pessoas/nova', canDeactivate: [pendingChangesGuard], loadComponent: () => import('./features/pessoas/pages/pessoa-form.component').then(m => m.PessoaFormComponent) },

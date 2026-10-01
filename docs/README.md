@@ -19,3 +19,5 @@ O dump `DOCUMENTACAO-COMPLETA-PARA-IA.md` descrevia o front falando direto com o
 - Histórico explica decisões antigas; contrato e código atuais definem o comportamento vigente.
 
 - [Listas paginadas](listas-paginadas.md): contratos, ordenação, seleção por página e compatibilidade.
+
+- [Ajuda](ajuda.md): conteúdo por módulo e atalhos contextuais sem IA.

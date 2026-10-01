@@ -1,6 +1,7 @@
 <div class="space-y-5">
   <app-cabecalho-pagina titulo="Financeiro" subtitulo="Entradas, saídas, contas e visão dos recursos da paróquia." icone="⇄">
     <div acoes>
+      <a routerLink="/ajuda" [queryParams]="{tema:'financeiro'}" class="btn-secondary">Ajuda</a>
       @if (aba === 'movimentos' && pode('FINANCEIRO_CRIAR')) { <button class="btn-primary" (click)="abrirMovimento()" [disabled]="carregando || !contasAtivas.length || !categoriasAtivas.length">Novo lançamento</button> }
       @if (aba === 'contas' && pode('FINANCEIRO_CONFIGURAR')) { <button class="btn-primary" (click)="abrirConta()">Nova conta</button> }
       @if (aba === 'categorias' && pode('FINANCEIRO_CONFIGURAR')) { <button class="btn-primary" (click)="abrirCategoria()">Nova categoria</button> }

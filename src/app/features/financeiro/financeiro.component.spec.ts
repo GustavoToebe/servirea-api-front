@@ -1,3 +1,4 @@
+import { provideRouter } from '@angular/router';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { FinanceiroComponent } from './financeiro.component';
@@ -17,7 +18,7 @@ describe('Financeiro paroquial', () => {
     api.categorias.and.resolveTo([{ id:'g',nome:'Doações',ativo:true }]);
     api.listar.and.resolveTo({ itens:[],total:0,pagina:0,tamanho:30 });
     api.resumo.and.resolveTo({ de:'2026-01-01',ate:'2026-01-31',receitas:50,despesas:20,resultado:30,saldoTotal:130,contas:[{ id:'c',nome:'Caixa',saldo:130 }] });
-    await TestBed.configureTestingModule({ imports:[FinanceiroComponent], providers:[
+    await TestBed.configureTestingModule({ imports:[FinanceiroComponent], providers:[provideRouter([]),
       { provide:FinanceiroApiService,useValue:api }, { provide:SessaoAtual,useValue:{ permissoes } },
       { provide:DialogoService,useValue:{ avisar: jasmine.createSpy().and.resolveTo(), confirmar:jasmine.createSpy().and.resolveTo(true) } }
     ] }).compileComponents();

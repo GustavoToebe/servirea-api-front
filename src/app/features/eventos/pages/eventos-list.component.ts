@@ -14,6 +14,7 @@ import { EventoResumo, SITUACAO_EVENTO, rotuloQuando } from '../eventos.models';
   template: `
     <div class="space-y-6">
       <app-cabecalho-pagina titulo="Eventos" subtitulo="Retiros, encontros e festas: inscreva as pessoas e o WhatsApp avisa e lembra.">
+        <a acoes routerLink="/ajuda" [queryParams]="{tema:'eventos'}" class="btn-secondary">Ajuda</a>
         @if (podeCriar()) {
           <a acoes routerLink="/eventos/novo" class="btn-primary" data-acao="novo">＋ Novo evento</a>
         }

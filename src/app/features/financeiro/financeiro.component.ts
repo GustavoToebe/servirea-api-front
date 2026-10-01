@@ -1,3 +1,4 @@
+import { RouterLink } from '@angular/router';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
@@ -18,7 +19,7 @@ function hojeLocal(): string {
 }
 @Component({
   selector: 'app-financeiro', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, CabecalhoPaginaComponent, BarraFiltrosComponent, EstadoListaComponent, CampoDataComponent, ModalComponent, RodapeFormComponent],
+  imports: [RouterLink, CommonModule, FormsModule, CabecalhoPaginaComponent, BarraFiltrosComponent, EstadoListaComponent, CampoDataComponent, ModalComponent, RodapeFormComponent],
   templateUrl: './financeiro.component.html', styleUrl: './financeiro.component.scss'
 })
 export class FinanceiroComponent implements OnInit, OnDestroy {

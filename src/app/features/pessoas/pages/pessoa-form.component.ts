@@ -29,6 +29,7 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
     <app-duplicidades-dialog [open]="dialogOpen" [itens]="duplicidades" (fechar)="dialogOpen = false" (continuar)="confirmarSave()"></app-duplicidades-dialog>
     <div class="mx-auto max-w-5xl space-y-6">
       <app-cabecalho-pagina [titulo]="id ? 'Editar pessoa' : 'Nova pessoa'" subtitulo="Identidade primeiro. Papéis podem coexistir. Responsável é opcional.">
+        <a acoes routerLink="/ajuda" [queryParams]="{tema:'pessoas'}" class="btn-secondary">Ajuda</a>
         <a acoes routerLink="/pessoas" class="btn-secondary">Voltar</a>
       </app-cabecalho-pagina>
 
