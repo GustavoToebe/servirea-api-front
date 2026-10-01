@@ -1,25 +1,25 @@
 export interface ItemMenu {
   label: string;
   url: string;
-  /** CÃ³digo do catÃ¡logo, ou vÃ¡rios (basta um). Vazio = sempre visÃ­vel. */
+  /** Código do catálogo, ou vários (basta um). Vazio = sempre visível. */
   permissao: string | readonly string[] | null;
 }
 
 export const BARRA: ItemMenu[] = [
-  { label: 'InÃ­cio', url: '/dashboard', permissao: null },
+  { label: 'Início', url: '/dashboard', permissao: null },
   { label: 'Escalas', url: '/escalas', permissao: ['ESCALA', 'VAGA'] },
   { label: 'Pessoas', url: '/pessoas', permissao: 'PESSOA' },
-  { label: 'RelatÃ³rios', url: '/relatorios', permissao: 'AUDITORIA' },
-  { label: 'Ajustes', url: '/ajustes', permissao: null },
+  { label: 'Relatórios', url: '/relatorios', permissao: 'AUDITORIA' },
   { label: 'Layouts', url: '/layouts', permissao: 'LAYOUT' },
   { label: 'Comunicados', url: '/comunicados', permissao: 'COMUNICADO' },
-  { label: 'ParÃ³quia', url: '/paroquia', permissao: 'PAROQUIA' },
+  { label: 'Paróquia', url: '/paroquia', permissao: 'PAROQUIA' },
   { label: 'Perfis', url: '/perfis', permissao: 'PERFIL' },
-  { label: 'UsuÃ¡rios', url: '/usuarios', permissao: 'USUARIO' }
+  { label: 'Usuários', url: '/usuarios', permissao: 'USUARIO' }
 ];
 
+/** Ficam no menu do perfil (cabeçalho), não na barra; aqui só para o título da página. */
 export const CONTA: ItemMenu[] = [
-  { label: 'Minha conta', url: '/minha-conta', permissao: 'PAROQUIA' },
+  { label: 'Ajustes', url: '/ajustes', permissao: null },
   { label: 'Meu perfil', url: '/meu-perfil', permissao: null }
 ];
 

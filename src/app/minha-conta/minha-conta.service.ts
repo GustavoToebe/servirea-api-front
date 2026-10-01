@@ -1,53 +1,73 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
+
+/** Resposta do GET /minha-conta: repasse do MinhaContaDto da Central (contrato-integracao-v1). */
+export interface MinhaContaEndereco {
+  logradouro: string | null;
+  numero: string | null;
+  complemento: string | null;
+  bairro: string | null;
+  cidade: string | null;
+  uf: string | null;
+  cep: string | null;
+}
+
+export interface MinhaContaContato {
+  nome: string;
+  email: string | null;
+  telefone: string | null;
+  principal: boolean;
+}
+
+export interface MinhaContaAdicional {
+  nome: string;
+  quantidade: number;
+}
+
+export type SituacaoComercial = 'TRIAL' | 'ATIVA' | 'INADIMPLENTE' | 'BLOQUEADA' | 'CANCELADA';
+export type SituacaoCobranca = 'ABERTA' | 'PAGA' | 'CANCELADA' | 'ISENTA';
+
+export interface MinhaContaCobranca {
+  id: string;
+  competenciaInicio: string;
+  competenciaFim: string;
+  vencimento: string;
+  valor: number;
+  situacao: SituacaoCobranca;
+  vencida: boolean;
+  pagoEm: string | null;
+}
 
 export interface MinhaContaDados {
   cliente: {
-    id: string;
     nome: string;
+    /** Já vem formatado pela Central (CPF ou CNPJ), como CEP e telefone. */
     documento: string;
-    tipo: 'PF' | 'PJ';
-    logradouro: string;
-    numero: string;
-    complemento: string;
-    bairro: string;
-    cidade: string;
-    uf: string;
-    cep: string;
-    contatos: { nome: string; email: string; telefone: string; principal: boolean }[];
+    endereco: MinhaContaEndereco;
+    contatos: MinhaContaContato[];
   };
   contratacao: {
     planoNome: string;
-    periodicidade: string;
+    periodicidade: 'MENSAL' | 'TRIMESTRAL' | 'SEMESTRAL' | 'ANUAL';
     valor: number;
     diaVencimento: number;
     inicio: string;
-    vigenteAte: string;
-    situacaoComercial: string;
+    vigenteAte: string | null;
+    situacaoComercial: SituacaoComercial;
     nomeInstancia: string;
-    slugInstancia: string;
-    direitos: { limites: Record<string, number>; funcionalidades: string[] };
-    adicionais: { codigo: string; quantidade: number }[];
+    adicionais: MinhaContaAdicional[];
   };
-  cobrancas: {
-    id: string;
-    competenciaInicio: string;
-    competenciaFim: string;
-    vencimento: string;
-    valor: number;
-    status: string;
-    vencida: boolean;
-    pagoEm: string | null;
-  }[];
+  cobrancas: MinhaContaCobranca[];
 }
 
 @Injectable({ providedIn: 'root' })
 export class MinhaContaService {
   private http = inject(HttpClient);
+  private readonly api = environment.apiUrl;
 
   buscar(): Observable<MinhaContaDados> {
-    return this.http.get<MinhaContaDados>('/api/minha-conta');
+    return this.http.get<MinhaContaDados>(`${this.api}/minha-conta`);
   }
 }
-
