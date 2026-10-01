@@ -31,6 +31,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
     <div class="space-y-6">
       <app-cabecalho-pagina titulo="Pessoas e ministérios" subtitulo="Coroinhas, acólitos e responsáveis. A ficha guarda função, idade e contato.">
         <a acoes routerLink="/ajuda" [queryParams]="{tema:'pessoas'}" class="btn-secondary">Ajuda</a>
+        @if (podeImportar) {<a acoes routerLink="/pessoas/importar" class="btn-secondary">Importar CSV</a>}
         <a acoes routerLink="/pessoas/nova" class="btn-primary">＋ Novo cadastro</a>
       </app-cabecalho-pagina>
 
@@ -462,6 +463,8 @@ export class PessoasListComponent implements OnInit, OnDestroy {
       { id: 'listagem', rotulo: 'Imprimir listagem', icone: '🖨', desabilitada: this.quantidadeMarcada === 0, dica: 'Marque ao menos uma pessoa' }
     ];
   }
+
+  get podeImportar(): boolean {return this.sessao.permissoes().includes('PESSOA') && this.sessao.permissoes().includes('PESSOA_CRIAR');}
 
   get podeComunicar(): boolean {
     return this.sessao.permissoes().includes('COMUNICADO_ENVIAR');

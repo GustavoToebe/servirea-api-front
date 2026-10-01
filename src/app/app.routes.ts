@@ -28,6 +28,7 @@ export const routes: Routes = [
       { path: 'ajuda', loadComponent: () => import('./features/ajuda/ajuda.component').then(m => m.AjudaComponent) },
       { path: 'dashboard', loadComponent: () => import('./features/dashboard/pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
       { path: 'pessoas', loadComponent: () => import('./features/pessoas/pages/pessoas-list.component').then(m => m.PessoasListComponent) },
+      { path: 'pessoas/importar', canDeactivate: [pendingChangesGuard], loadComponent: () => import('./features/pessoas/pages/importar-pessoas.component').then(m => m.ImportarPessoasComponent) },
       { path: 'pessoas/nova', canDeactivate: [pendingChangesGuard], loadComponent: () => import('./features/pessoas/pages/pessoa-form.component').then(m => m.PessoaFormComponent) },
       { path: 'pessoas/inscricoes/:id', loadComponent: () => import('./features/pessoas/pages/inscricao-detail.component').then(m => m.InscricaoDetailComponent) },
       { path: 'pessoas/:id/editar', canDeactivate: [pendingChangesGuard], loadComponent: () => import('./features/pessoas/pages/pessoa-form.component').then(m => m.PessoaFormComponent) },

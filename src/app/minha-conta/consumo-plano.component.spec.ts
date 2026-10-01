@@ -15,7 +15,14 @@ describe('Consumo do plano', () => {
     const f=TestBed.createComponent(ConsumoPlanoComponent); f.detectChanges();
     expect(f.nativeElement.textContent).toContain('5 / 5');
     expect(f.nativeElement.textContent).toContain('Limite atingido');
-    expect(f.nativeElement.textContent).toContain('cotas de envios ainda não');
+    expect(f.nativeElement.textContent).toContain('XLSX e importação de documentos gerais ainda não aplicadas');
+  });
+  it('mostra competência e explica que reenvio não conta novamente', () => {
+    api.consumo.and.returnValue(of({...dados,itens:[{codigo:'emails_mes',nome:'E-mails da fila por mês',usado:10,limite:10,disponivel:0,estado:'ATINGIDO',competencia:'2026-10'}]}));
+    const f=TestBed.createComponent(ConsumoPlanoComponent); f.detectChanges();
+    expect(f.nativeElement.textContent).toContain('Competência 2026-10');
+    expect(f.nativeElement.textContent).toContain('reenvios da mesma mensagem não contam novamente');
+    expect(f.nativeElement.textContent).toContain('novos envios aguardam disponibilidade');
   });
   it('falha não vira consumo zero nem mantém dados antigos', () => {
     const f=TestBed.createComponent(ConsumoPlanoComponent); f.detectChanges();

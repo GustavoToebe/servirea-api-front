@@ -77,5 +77,5 @@ export class MinhaContaService {
 
 export interface ConsumoPlano {
   planoNome: string | null; versaoDireitos: number | null; direitosConfirmadosEm: string | null; consultadoEm: string;
-  itens: {codigo: string; nome: string; usado: number; limite: number | null; disponivel: number | null; unidade?:string; pendentes?:number; estado: 'SEM_LIMITE_CONFIGURADO' | 'EXCEDIDO' | 'ATINGIDO' | 'ATENCAO' | 'DISPONIVEL' | 'INVENTARIO_PENDENTE'}[];
+  itens: {codigo: string; nome: string; usado: number; limite: number | null; disponivel: number | null; unidade?:string; pendentes?:number; competencia?:string | null; estado: 'SEM_LIMITE_CONFIGURADO' | 'EXCEDIDO' | 'ATINGIDO' | 'ATENCAO' | 'DISPONIVEL' | 'INVENTARIO_PENDENTE'}[];
 }

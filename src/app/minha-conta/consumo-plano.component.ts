@@ -20,6 +20,7 @@ import { ConsumoPlano, MinhaContaService } from './minha-conta.service';
               @if (item.unidade === 'bytes') { <span>{{ item.usado / 1048576 | number:'1.0-2' }} MB conhecidos / {{ item.limite === null ? 'Sem limite configurado' : ((item.limite / 1048576 | number:'1.0-2') + ' MB') }}</span> }
               @else { <span>{{ item.usado }} / {{ item.limite === null ? 'Sem limite configurado' : item.limite }}</span> }
             </div>
+            @if (item.competencia) { <p class="text-xs text-slate-500">Competência {{ item.competencia }} (horário de Brasília). @if (item.codigo === 'importacoes_mes') { Cada lote CSV confirmado conta uma vez, até 100 pessoas; prévias e repetição da confirmação não gastam outra unidade. } @else { Cada mensagem conta na primeira tentativa; reenvios da mesma mensagem não contam novamente. }</p> }
             @if (item.estado === 'INVENTARIO_PENDENTE') {
               <p class="mt-1 text-sm text-amber-700 dark:text-amber-300">{{ item.pendentes }} foto(s) antigas sem tamanho confirmado. O consumo é parcial; planos com cota exigem conferir antes de novos uploads.</p>
               @if (sessao.permissoes().includes('PAROQUIA_ALTERAR')) { <button type="button" class="btn-secondary mt-2" [disabled]="conferindo()" (click)="conferir()">{{ conferindo() ? 'Conferindo...' : 'Conferir fotos antigas' }}</button> }
@@ -28,7 +29,7 @@ import { ConsumoPlano, MinhaContaService } from './minha-conta.service';
             } @else if (item.estado === 'ATENCAO') { <p class="mt-1 text-sm text-amber-700 dark:text-amber-300">Perto do limite: @if (item.unidade === 'bytes') { {{ (item.disponivel ?? 0) / 1048576 | number:'1.0-2' }} MB disponíveis. } @else { {{ item.disponivel }} disponíveis. }</p> }
           </div>
         }
-        <p class="text-xs text-slate-500">Armazenamento inclui fotos vinculadas e anexos ainda retidos nos comunicados. Fotos compartilhadas contam uma vez. MB = 1.048.576 bytes; não representa toda a ocupação do provedor. Importação de documentos e cotas de envios ainda não estão aplicadas.</p>
+        <p class="text-xs text-slate-500">Armazenamento inclui fotos vinculadas e anexos ainda retidos nos comunicados. Fotos compartilhadas contam uma vez. MB = 1.048.576 bytes; não representa toda a ocupação do provedor. Cotas mensais incluem mensagens da fila, confirmações e lembretes de eventos; ao atingir o teto, novos envios aguardam disponibilidade. Falhas também consomem a unidade reservada. E-mails de acesso e recuperação e teste técnico do WhatsApp ficam fora. Importação CSV de pessoas tem cota de lotes mensais. XLSX e importação de documentos gerais ainda não aplicadas.</p>
       } @else if (carregando()) { <p class="text-sm text-slate-500">Consultando consumo...</p> }
       <button type="button" class="btn-secondary" [disabled]="carregando()" (click)="buscar()">Atualizar consumo</button>
       @if (aviso()) { <p class="text-sm text-amber-700" role="status">{{ aviso() }}</p> }
