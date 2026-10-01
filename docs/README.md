@@ -10,3 +10,5 @@
 | [design-system.md](design-system.md) | Os 3 pilares do design e as classes de cada app |
 
 O dump `DOCUMENTACAO-COMPLETA-PARA-IA.md` descrevia o front falando direto com o Supabase e foi removido. O que vale hoje é o código e o `AGENTS.md`.
+
+- [financeiro.md](financeiro.md): operação, permissões, cálculos e limites do financeiro paroquial.

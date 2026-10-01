@@ -1,0 +1,4 @@
+.selecionada { border-color: var(--brand); color: var(--brand); }
+.situacao { display: inline-block; font-size: 11px; text-transform: uppercase; border: 1px solid currentColor; border-radius: 6px; padding: 2px 6px; color: rgb(100 116 139); background: rgb(100 116 139 / .08); }
+.situacao.pago { color: rgb(22 163 74); background: rgb(22 163 74 / .08); }
+.situacao.pendente { color: rgb(180 83 9); background: rgb(180 83 9 / .08); }

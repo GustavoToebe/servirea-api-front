@@ -183,3 +183,7 @@ supabase/
 ## 8. Próximas evoluções possíveis
 
 A base foi deixada preparada para evoluções como disponibilidade por dia, bloqueio de datas, envio automático para WhatsApp, importação da planilha atual, notificações, histórico de alterações e múltiplos usuários/perfis.
+
+## Financeiro paroquial
+
+Módulo simples em `/financeiro`: contas/bancos, categorias, entradas, saídas, baixa manual, estorno e saldos. Liberação por perfil; [uso e regras](docs/financeiro.md).

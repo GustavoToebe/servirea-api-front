@@ -42,6 +42,7 @@ export const routes: Routes = [
       { path: 'escalas/layouts/:id', loadComponent: () => import('./features/escalas/pages/layouts/layout-form.component').then(m => m.LayoutFormComponent) },
       { path: 'escalas/nova', data: { larguraTotal: true }, canDeactivate: [pendingChangesGuard], loadComponent: () => import('./features/escalas/pages/escala-builder/escala-builder.component').then(m => m.EscalaBuilderComponent) },
       { path: 'escalas/:id', data: { larguraTotal: true }, canDeactivate: [pendingChangesGuard], loadComponent: () => import('./features/escalas/pages/escala-builder/escala-builder.component').then(m => m.EscalaBuilderComponent) },
+      { path: 'financeiro', canDeactivate: [pendingChangesGuard], loadComponent: () => import('./features/financeiro/financeiro.component').then(m => m.FinanceiroComponent) },
       { path: 'relatorios', loadComponent: () => import('./features/relatorios/pages/relatorios-home/relatorios-home.component').then(m => m.RelatoriosHomeComponent) },
       { path: 'ajustes', loadComponent: () => import('./features/ajustes/ajustes.component').then(m => m.AjustesComponent) },
       { path: 'layouts', loadComponent: () => import('./features/comunicacao/pages/layouts-list.component').then(m => m.LayoutsListComponent) },

@@ -108,3 +108,8 @@ Detalhe, tabelas e valores em `docs/design-system.md`. Leia antes de mexer em te
 
 - `core/auth/destino-api.ts` compara origem e fronteira do caminho antes de anexar Bearer, cookies e XSRF. Não substituir por `startsWith` na URL completa.
 - Pull requests executam testes e build; publicação apenas na main. Testes Angular são obrigatórios antes do build de produção.
+
+## Financeiro paroquial
+- `features/financeiro/`, rota `/financeiro`, telas de lançamentos, contas e categorias; regras em `docs/financeiro.md`.
+- Lista paginada por vencimento; resumo por data da baixa. Sem cache de saldos. Debounce e geração de carga impedem resposta antiga substituir a busca nova.
+- Exibir ações conforme FINANCEIRO_CRIAR/ALTERAR/BAIXAR/CONFIGURAR. Enviar versão para editar/baixar/estornar/cancelar; conflito exige atualizar. Datas no CampoData, sem controles nativos.

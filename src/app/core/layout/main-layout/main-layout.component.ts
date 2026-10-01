@@ -36,6 +36,7 @@ import { SessaoAtual } from '../sessao-atual';
                   @case ('/relatorios') { <path d="M5 19V9M10 19V5M15 19v-7M20 19V8"/> }
                   @case ('/layouts') { <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/> }
                   @case ('/comunicados') { <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/> }
+                  @case ('/financeiro') { <path d="M4 7h16m-4-4 4 4-4 4M20 17H4m4-4-4 4 4 4"/> }
                   @case ('/eventos') { <rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/><path d="m9 15 2 2 4-4"/> }
                   @case ('/paroquia') { <path d="M18 21v-8M6 21v-8M12 21v-4"/><path d="M3 9l9-6 9 6v12H3V9z"/> }
                   @case ('/perfis') { <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/> }
@@ -135,6 +136,7 @@ import { SessaoAtual } from '../sessao-atual';
                   @case ('/relatorios') { <path d="M5 19V9M10 19V5M15 19v-7M20 19V8"/> }
                   @case ('/layouts') { <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/> }
                   @case ('/comunicados') { <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/> }
+                  @case ('/financeiro') { <path d="M4 7h16m-4-4 4 4-4 4M20 17H4m4-4-4 4 4 4"/> }
                   @case ('/eventos') { <rect x="3" y="5" width="18" height="16" rx="2"/><path d="m9 15 2 2 4-4"/> }
                   @case ('/paroquia') { <path d="M18 21v-8M6 21v-8M12 21v-4"/> }
                   @case ('/perfis') { <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/> }
