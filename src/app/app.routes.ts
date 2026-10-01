@@ -52,7 +52,8 @@ export const routes: Routes = [
       { path: 'paroquia', loadComponent: () => import('./features/acesso/pages/paroquia.component').then(m => m.ParoquiaComponent) },
       { path: 'perfis', loadComponent: () => import('./features/acesso/pages/perfis.component').then(m => m.PerfisComponent) },
       { path: 'usuarios', loadComponent: () => import('./features/acesso/pages/usuarios.component').then(m => m.UsuariosComponent) },
-      { path: 'meu-perfil', loadComponent: () => import('./features/acesso/pages/meu-perfil.component').then(m => m.MeuPerfilComponent) }
+      { path: 'meu-perfil', loadComponent: () => import('./features/acesso/pages/meu-perfil.component').then(m => m.MeuPerfilComponent) },
+      { path: 'minha-conta', outlet: 'modal', loadComponent: () => import('./minha-conta/minha-conta-modal.component').then(m => m.MinhaContaModalComponent) }
     ]
   },
   { path: '**', redirectTo: '' }

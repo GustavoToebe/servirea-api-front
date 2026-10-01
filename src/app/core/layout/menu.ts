@@ -10,15 +10,16 @@ export const BARRA: ItemMenu[] = [
   { label: 'Escalas', url: '/escalas', permissao: ['ESCALA', 'VAGA'] },
   { label: 'Pessoas', url: '/pessoas', permissao: 'PESSOA' },
   { label: 'Relatórios', url: '/relatorios', permissao: 'AUDITORIA' },
-  { label: 'Ajustes', url: '/ajustes', permissao: null }
-];
-
-export const CONTA: ItemMenu[] = [
   { label: 'Layouts', url: '/layouts', permissao: 'LAYOUT' },
   { label: 'Comunicados', url: '/comunicados', permissao: 'COMUNICADO' },
   { label: 'Paróquia', url: '/paroquia', permissao: 'PAROQUIA' },
   { label: 'Perfis', url: '/perfis', permissao: 'PERFIL' },
-  { label: 'Usuários', url: '/usuarios', permissao: 'USUARIO' },
+  { label: 'Usuários', url: '/usuarios', permissao: 'USUARIO' }
+];
+
+/** Ficam no menu do perfil (cabeçalho), não na barra; aqui só para o título da página. */
+export const CONTA: ItemMenu[] = [
+  { label: 'Ajustes', url: '/ajustes', permissao: null },
   { label: 'Meu perfil', url: '/meu-perfil', permissao: null }
 ];
 
