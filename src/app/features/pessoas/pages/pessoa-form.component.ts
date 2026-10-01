@@ -36,18 +36,32 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
       @if (!loading) {
         <form [formGroup]="form" (ngSubmit)="save()" class="space-y-6">
           <section class="card p-6">
-            <h2 class="mb-4 text-lg font-black">Papéis</h2>
-            <div class="flex flex-wrap gap-4">
-              <label class="flex items-center gap-2"><input type="checkbox" (change)="togglePapel('VOLUNTARIO', $event)" [checked]="temPapel('VOLUNTARIO')" [disabled]="papeisOriginais.has('VOLUNTARIO')"> Voluntário (escala)</label>
-              <label class="flex items-center gap-2"><input type="checkbox" (change)="togglePapel('RESPONSAVEL', $event)" [checked]="temPapel('RESPONSAVEL')" [disabled]="papeisOriginais.has('RESPONSAVEL')"> Responsável</label>
-            </div>
-            @if (papeisOriginais.size) {
-              <p class="mt-2 text-xs text-slate-500">Dá para acrescentar papel; os que a pessoa já tem não podem ser removidos.</p>
-            }
-          </section>
-          <section class="card p-6">
             <h2 class="mb-4 text-lg font-black">Identidade</h2>
-            <div class="grid gap-4 md:grid-cols-2">
+            <div class="flex flex-col items-center gap-6 md:flex-row md:items-start">
+            <div class="flex shrink-0 flex-col items-center gap-2" data-bloco="foto">
+              <div class="relative h-36 w-36">
+                @if (photoPreview) {
+                  <img [src]="photoPreview" class="h-36 w-36 rounded-full object-cover ring-4 ring-[var(--line)]" alt="Foto de {{ form.get('nomeCompleto')?.value || 'pessoa' }}" data-foto="imagem">
+                } @else {
+                  <div class="flex h-36 w-36 items-center justify-center rounded-full text-4xl font-black ring-4 ring-[var(--line)]"
+                    [style.background]="'color-mix(in srgb, var(--brand) 15%, transparent)'" [style.color]="'var(--brand)'" data-foto="iniciais">{{ iniciais }}</div>
+                }
+                @if (temPapel('VOLUNTARIO')) {
+                  <label class="absolute bottom-1 right-1 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-white shadow-lg ring-4 ring-[var(--card,white)]"
+                    [style.background]="'var(--brand)'" title="Trocar foto" data-foto="trocar">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>
+                    <span class="sr-only">Trocar foto</span>
+                    <input type="file" class="sr-only" accept="image/jpeg,image/png,image/webp,image/heic" (change)="onPhoto($event)">
+                  </label>
+                }
+              </div>
+              @if (erroFoto) {
+                <p class="max-w-40 text-center text-xs text-red-600" data-foto="erro">{{ erroFoto }}</p>
+              } @else if (!temPapel('VOLUNTARIO')) {
+                <p class="max-w-40 text-center text-xs text-slate-500">A foto é do cadastro de voluntário.</p>
+              }
+            </div>
+            <div class="grid w-full gap-4 md:grid-cols-2">
               <div class="md:col-span-2"><label class="label">Nome completo *</label><input class="field" formControlName="nomeCompleto">
                 @if (form.get('nomeCompleto')?.invalid && form.get('nomeCompleto')?.touched) { <p class="mt-1 text-xs text-red-600">Informe o nome.</p> }</div>
               <div><label class="label">Nascimento</label><app-campo-data formControlName="dataNascimento" [max]="hoje" /></div>
@@ -71,6 +85,17 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
                 @if (erro(form.get('rg')); as e) { <p class="mt-1 text-xs text-red-600">{{ e }}</p> }
               </div>
             </div>
+            </div>
+          </section>
+          <section class="card p-6">
+            <h2 class="mb-4 text-lg font-black">Papéis</h2>
+            <div class="flex flex-wrap gap-4">
+              <label class="flex items-center gap-2"><input type="checkbox" (change)="togglePapel('VOLUNTARIO', $event)" [checked]="temPapel('VOLUNTARIO')" [disabled]="papeisOriginais.has('VOLUNTARIO')"> Voluntário (escala)</label>
+              <label class="flex items-center gap-2"><input type="checkbox" (change)="togglePapel('RESPONSAVEL', $event)" [checked]="temPapel('RESPONSAVEL')" [disabled]="papeisOriginais.has('RESPONSAVEL')"> Responsável</label>
+            </div>
+            @if (papeisOriginais.size) {
+              <p class="mt-2 text-xs text-slate-500">Dá para acrescentar papel; os que a pessoa já tem não podem ser removidos.</p>
+            }
           </section>
           <app-cuidados formControlName="cuidados" [nome]="primeiroNome"></app-cuidados>
           <section class="card p-6">
@@ -245,13 +270,6 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
                     }
                   </div>
                   <label class="mt-4 flex items-center gap-2"><input type="checkbox" formControlName="autorizaWhatsapp"> Autoriza WhatsApp</label>
-                  <div class="mt-4">
-                    <label class="label">Foto</label>
-                    <input type="file" accept="image/jpeg,image/png,image/webp,image/heic" (change)="onPhoto($event)">
-                    @if (photoPreview) {
-                      <img [src]="photoPreview" class="mt-3 h-32 w-32 rounded-2xl object-cover" alt="Prévia">
-                    }
-                  </div>
                 </section>
               }
               <section class="card p-6">
@@ -278,6 +296,15 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
   duplicidades: Duplicidade[] = [];
   photoFile: File | null = null;
   photoPreview: string | null = null;
+  erroFoto = '';
+
+  /** Sem foto, o círculo mostra as iniciais (primeiro e último nome). */
+  get iniciais(): string {
+    const partes = String(this.form.get('nomeCompleto')?.value || '').trim().split(/\s+/).filter(Boolean);
+    if (!partes.length) return '?';
+    const ultima = partes.length > 1 ? partes[partes.length - 1][0] : '';
+    return (partes[0][0] + ultima).toUpperCase();
+  }
   papeis = new Set<PessoaPapel>(['VOLUNTARIO']);
   /** Papéis que a pessoa já tinha — a API não deixa remover. */
   papeisOriginais = new Set<PessoaPapel>();
@@ -417,7 +444,8 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
     const invalid = validatePhotoFile(file);
-    if (invalid) { this.error = invalid; return; }
+    if (invalid) { this.erroFoto = invalid; return; }
+    this.erroFoto = '';
     this.photoFile = file;
     this.photoPreview = await readPhotoPreview(file);
     this.form.markAsDirty();

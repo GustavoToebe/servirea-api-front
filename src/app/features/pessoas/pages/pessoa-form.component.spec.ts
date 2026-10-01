@@ -76,6 +76,70 @@ describe('PessoaFormComponent (máscaras, validação e CEP)', () => {
     expect(fixture.componentInstance.error).toBe('Storage não configurado.');
   });
 
+  function voluntario(): Pessoa {
+    return {
+      id: 'p1', papeis: ['VOLUNTARIO'], nomeCompleto: 'Ana Maria Souza', emails: [], telefones: [],
+      responsaveis: [], dependentes: [], voluntario: { tipo: 'COROINHA', funcoesHabilitadas: [], fotoPath: null }
+    } as unknown as Pessoa;
+  }
+
+  it('a foto fica no topo da página, no bloco Identidade, antes de Papéis', async () => {
+    const fixture = montar(null);
+    await fixture.componentInstance.ngOnInit();
+    fixture.detectChanges();
+    const secoes = Array.from(fixture.nativeElement.querySelectorAll('form > section') as NodeListOf<HTMLElement>);
+    expect(secoes[0].querySelector('[data-bloco="foto"]')).not.toBeNull();
+    expect(secoes[0].textContent).toContain('Identidade');
+    expect(secoes[1].textContent).toContain('Papéis');
+  });
+
+  it('sem foto mostra as iniciais do primeiro e do último nome', async () => {
+    const fixture = montar('p1');
+    pessoas.buscar.and.resolveTo(voluntario());
+    await fixture.componentInstance.ngOnInit();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-foto="iniciais"]').textContent.trim()).toBe('AS');
+    expect(fixture.nativeElement.querySelector('[data-foto="imagem"]')).toBeNull();
+  });
+
+  it('voluntário tem o botão de câmera; quem não é voluntário não', async () => {
+    const fixture = montar('p1');
+    pessoas.buscar.and.resolveTo(voluntario());
+    await fixture.componentInstance.ngOnInit();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-foto="trocar"] input[type="file"]')).not.toBeNull();
+
+    const outro = montarOutro();
+    await outro.componentInstance.ngOnInit();
+    outro.detectChanges();
+    expect(outro.nativeElement.querySelector('[data-foto="trocar"]')).toBeNull();
+    expect(outro.nativeElement.textContent).toContain('A foto é do cadastro de voluntário.');
+  });
+
+  function montarOutro() {
+    TestBed.resetTestingModule();
+    const f = montar('p2');
+    pessoas.buscar.and.resolveTo({
+      id: 'p2', papeis: ['RESPONSAVEL'], nomeCompleto: 'José', emails: [], telefones: [], responsaveis: [], dependentes: []
+    } as unknown as Pessoa);
+    return f;
+  }
+
+  it('arquivo que não é imagem mostra o erro embaixo da foto e não troca a prévia', async () => {
+    const fixture = montar('p1');
+    pessoas.buscar.and.resolveTo(voluntario());
+    await fixture.componentInstance.ngOnInit();
+    fixture.detectChanges();
+
+    const arquivo = new File(['x'], 'nota.txt', { type: 'text/plain' });
+    await fixture.componentInstance.onPhoto({ target: { files: [arquivo] } } as unknown as Event);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.photoFile).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-foto="erro"]')).not.toBeNull();
+    expect(fixture.componentInstance.error).toBeFalsy();
+  });
+
   it('ficha antiga abre com sexo na lista e documentos formatados', async () => {
     const fixture = montar('p1');
     pessoas.buscar.and.resolveTo({
