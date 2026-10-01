@@ -100,6 +100,10 @@ export interface PessoaRequest {
   bairro: string | null;
   observacoes: string | null;
   voluntario: VoluntarioPerfil | null;
+  condicoes?: CondicaoEspecial[];
+  nivelSuporteTea?: number | null;
+  condicaoOutra?: string | null;
+  cuidados?: string | null;
 }
 
 /** Informe `pessoaId` OU `novaPessoa` (esta só em `responsaveis`; criada na mesma transação). */

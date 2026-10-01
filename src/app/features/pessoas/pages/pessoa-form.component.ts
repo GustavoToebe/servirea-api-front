@@ -1,3 +1,4 @@
+import { SessaoAtual } from '../../../core/layout/sessao-atual';
 import { CommonModule } from '@angular/common';
 import { CuidadosComponent } from '../../../shared/components/cuidados/cuidados.component';
 import { Component, ElementRef, OnInit, inject } from '@angular/core';
@@ -97,7 +98,7 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
               <p class="mt-2 text-xs text-slate-500">Dá para acrescentar papel; os que a pessoa já tem não podem ser removidos.</p>
             }
           </section>
-          <app-cuidados formControlName="cuidados" [nome]="primeiroNome"></app-cuidados>
+          @if (sessao.permissoes().includes('PESSOA_CUIDADOS_ALTERAR')) { <app-cuidados formControlName="cuidados" [nome]="primeiroNome"></app-cuidados> }
           <section class="card p-6">
             <div class="mb-4 flex items-center justify-between"><h2 class="text-lg font-black">E-mails</h2><button type="button" class="btn-secondary" (click)="addEmail()">＋</button></div>
             <div formArrayName="emails" class="space-y-3">
@@ -286,6 +287,7 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
     `
 })
 export class PessoaFormComponent implements OnInit, HasPendingChanges {
+  readonly sessao = inject(SessaoAtual);
   readonly hoje = hojeIso();
   id: string | null = null;
   loading = true;
@@ -603,6 +605,7 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
       complemento: p.complemento || '',
       bairro: p.bairro || '',
       observacoes: p.observacoes || '',
+      cuidados: { condicoes: p.condicoes ?? [], nivelSuporteTea: p.nivelSuporteTea ?? null, condicaoOutra: p.condicaoOutra ?? '', cuidados: p.cuidados ?? '' },
       voluntario: {
         tipo: p.voluntario?.tipo || 'COROINHA',
         etapaCatequese: p.voluntario?.etapaCatequese || '',
@@ -703,6 +706,7 @@ export class PessoaFormComponent implements OnInit, HasPendingChanges {
       complemento: blank(v.complemento),
       bairro: blank(v.bairro),
       observacoes: blank(v.observacoes),
+      ...(this.sessao.permissoes().includes('PESSOA_CUIDADOS_ALTERAR') ? { condicoes: v.cuidados?.condicoes ?? [], nivelSuporteTea: v.cuidados?.nivelSuporteTea ?? null, condicaoOutra: blank(v.cuidados?.condicaoOutra), cuidados: blank(v.cuidados?.cuidados) } : {}),
       voluntario
     };
   }

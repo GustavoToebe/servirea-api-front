@@ -1,3 +1,4 @@
+import { SessaoAtual } from '../../../core/layout/sessao-atual';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { CepService } from '../../../shared/services/cep.service';
@@ -207,5 +208,29 @@ describe('PessoaFormComponent (máscaras, validação e CEP)', () => {
     await fixture.componentInstance.save();
     const corpo = pessoas.criar.calls.mostRecent().args[0] as { responsaveis: { pessoaId?: string }[] };
     expect(corpo.responsaveis[0].pessoaId).toBe('m1');
+  });
+  it('editor geral não envia dados de cuidados, mesmo com valor colocado no formulário', async () => {
+    const fixture=montar(null);
+    await fixture.componentInstance.ngOnInit();
+    pessoas.duplicidades.and.resolveTo([]);
+    pessoas.criar.and.resolveTo({id:'p1'} as Pessoa);
+    fixture.componentInstance.form.patchValue({nomeCompleto:'Ana',cuidados:{condicoes:['TEA'],cuidados:'Reservado'}} as never);
+    await fixture.componentInstance.save();
+    const corpo=pessoas.criar.calls.mostRecent().args[0];
+    expect(Object.prototype.hasOwnProperty.call(corpo,'cuidados')).toBeFalse();
+    expect(Object.prototype.hasOwnProperty.call(corpo,'condicoes')).toBeFalse();
+  });
+
+  it('editor autorizado carrega e salva cuidados da ficha', async () => {
+    const fixture=montar('p1');
+    spyOn(TestBed.inject(SessaoAtual),'permissoes').and.returnValue(['PESSOA_CUIDADOS_LER','PESSOA_CUIDADOS_ALTERAR']);
+    pessoas.buscar.and.resolveTo({...voluntario(),condicoes:['TEA'],nivelSuporteTea:1,cuidados:'Acompanhamento'} as unknown as Pessoa);
+    pessoas.duplicidades.and.resolveTo([]);
+    pessoas.atualizar.and.resolveTo({id:'p1'} as Pessoa);
+    await fixture.componentInstance.ngOnInit();
+    await fixture.componentInstance.save();
+    const corpo=pessoas.atualizar.calls.mostRecent().args[1];
+    expect(corpo.condicoes).toEqual(['TEA']);
+    expect(corpo.cuidados).toBe('Acompanhamento');
   });
 });

@@ -113,3 +113,7 @@ Detalhe, tabelas e valores em `docs/design-system.md`. Leia antes de mexer em te
 - `features/financeiro/`, rota `/financeiro`, telas de lançamentos, contas e categorias; regras em `docs/financeiro.md`.
 - Lista paginada por vencimento; resumo por data da baixa. Sem cache de saldos. Debounce e geração de carga impedem resposta antiga substituir a busca nova.
 - Exibir ações conforme FINANCEIRO_CRIAR/ALTERAR/BAIXAR/CONFIGURAR. Enviar versão para editar/baixar/estornar/cancelar; conflito exige atualizar. Datas no CampoData, sem controles nativos.
+
+## Cuidados pessoais
+
+Formulário de pessoa só mostra e envia cuidados com PESSOA_CUIDADOS_ALTERAR. Editor geral omite esses campos; backend mantém os anteriores. Campos da resposta dependem de PESSOA_CUIDADOS_LER.
