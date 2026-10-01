@@ -5,6 +5,7 @@ import { Observable, catchError, finalize, map, shareReplay, switchMap, throwErr
 import { environment } from '../../../environments/environment';
 import { AccessTokenResponse } from './auth.models';
 import { cabecalhoXsrf, comXsrf } from './xsrf';
+import { caminhoDaApi } from './destino-api';
 
 const TOKEN_KEY = 'sv_access';
 const TENANT_KEY = 'sv_tenant';
@@ -21,7 +22,8 @@ const ROTAS_PUBLICAS = ['/auth/login', '/auth/select-tenant', '/auth/forgot-pass
 
 export const parishAuthInterceptor: HttpInterceptorFn = (req, next) => {
   const api = environment.apiUrl;
-  if (!req.url.startsWith(api)) {
+  const caminho = caminhoDaApi(req.url, api);
+  if (caminho === null) {
     return next(req);
   }
 
@@ -30,7 +32,7 @@ export const parishAuthInterceptor: HttpInterceptorFn = (req, next) => {
   const backend = inject(HttpBackend);
   const router = inject(Router);
 
-  const publica = ROTAS_PUBLICAS.some(rota => req.url.includes(rota));
+  const publica = ROTAS_PUBLICAS.some(rota => rota.endsWith('/') ? caminho.startsWith(rota) : caminho === rota);
   const token = sessionStorage.getItem(TOKEN_KEY);
   let authed = comXsrf(req.clone({ withCredentials: true }));
   if (!publica && token) {
@@ -39,7 +41,7 @@ export const parishAuthInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authed).pipe(
     catchError((error: HttpErrorResponse) => {
-      const ehRotaDoCookie = req.url.includes('/auth/refresh') || req.url.includes('/auth/logout');
+      const ehRotaDoCookie = caminho === '/auth/refresh' || caminho === '/auth/logout';
       if (error.status !== 401 || publica || ehRotaDoCookie) {
         return throwError(() => error);
       }

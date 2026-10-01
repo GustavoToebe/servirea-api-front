@@ -110,4 +110,26 @@ describe('parishAuthInterceptor', () => {
     expect(sessionStorage.getItem('sv_access')).toBeNull();
     expect(router.navigate).toHaveBeenCalledWith(['/login']);
   });
+
+  it('não envia credenciais para um host parecido com o da API', () => {
+    sessionStorage.setItem('sv_access', 'segredo');
+    const externa = new URL(api);
+    externa.hostname += '.externo.test';
+    externa.pathname += '/pessoas';
+    http.post(externa.href, {}).subscribe();
+    const req = httpMock.expectOne(externa.href);
+    expect(req.request.headers.has('Authorization')).toBeFalse();
+    expect(req.request.headers.has('X-XSRF-TOKEN')).toBeFalse();
+    expect(req.request.withCredentials).toBeFalse();
+    req.flush({});
+  });
+
+  it('não trata URL autenticada como pública por causa da query string', () => {
+    sessionStorage.setItem('sv_access', 'jwt');
+    const url = `${api}/pessoas?retorno=/auth/login`;
+    http.get(url).subscribe();
+    const req = httpMock.expectOne(url);
+    expect(req.request.headers.get('Authorization')).toBe('Bearer jwt');
+    req.flush([]);
+  });
 });

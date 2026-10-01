@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths-ignore:
       - '**/*.md'
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -25,11 +27,14 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci --no-audit --no-fund
+      - name: Testes do frontend
+        run: npm test
       - name: Build de produção
         run: npm run build:prod
 
   publicar:
     needs: testar
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:

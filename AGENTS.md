@@ -103,3 +103,8 @@ Detalhe, tabelas e valores em `docs/design-system.md`. Leia antes de mexer em te
 - Tema escuro: estilos sob `.parish` (`styles.scss`); componente fora da moldura envolve o conteúdo em
   `<div class="parish">`.
 - Commits vão direto na `main`.
+
+## Segurança e CI na branch de melhorias
+
+- `core/auth/destino-api.ts` compara origem e fronteira do caminho antes de anexar Bearer, cookies e XSRF. Não substituir por `startsWith` na URL completa.
+- Pull requests executam testes e build; publicação apenas na main. Testes Angular são obrigatórios antes do build de produção.
