@@ -28,4 +28,15 @@ describe('AjustesComponent', () => {
     expect(cartao.getAttribute('aria-pressed')).toBe('true');
     expect(fixture.nativeElement.querySelectorAll('[data-paleta][aria-pressed="true"]').length).toBe(1);
   });
+
+  it('permite alternar entre contraste padrao e forte das bordas', () => {
+    const fixture = TestBed.createComponent(AjustesComponent);
+    fixture.detectChanges();
+    const service = TestBed.inject(ThemeService);
+    expect(service.contraste()).toBe('padrao');
+    service.definirContraste('forte');
+    expect(service.contraste()).toBe('forte');
+    service.definirContraste('padrao');
+    expect(service.contraste()).toBe('padrao');
+  });
 });

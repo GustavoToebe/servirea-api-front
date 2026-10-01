@@ -5,6 +5,7 @@ import { SessaoAtual } from '../../../core/layout/sessao-atual';
 import { DialogoService } from '../../../shared/services/dialogo.service';
 import { PessoasService } from '../../pessoas/services/pessoas.service';
 import { EventosApiService } from '../eventos-api.service';
+import { LayoutsApiService } from '../../comunicacao/layouts-api.service';
 import { EventoDetalhe, EventoResumo } from '../eventos.models';
 import { EventoFichaComponent } from './evento-ficha.component';
 import { EventosListComponent } from './eventos-list.component';
@@ -17,7 +18,9 @@ function detalhe(parcial: Partial<EventoDetalhe> = {}): EventoDetalhe {
     id: 'e1', titulo: 'Retiro de jovens', descricao: null, inicio: '2026-10-10T19:30:00', termino: null,
     localNome: 'Salão', cep: '85810-000', logradouro: 'Rua A', numero: '1', complemento: null, bairro: 'Centro',
     cidade: 'Cascavel', uf: 'PR', mapaUrl: null, vagas: 30, responsavelNome: 'Maria', responsavelTelefone: '(45) 99965-0660',
-    lembreteDias: 1, mensagemConfirmacao: 'Olá #PESSOA.NOME#!', mensagemLembrete: 'Lembrete #EVENTO.TITULO#',
+    lembreteDias: [1], whatsappHabilitado: true, whatsappLayoutConfirmacaoId: null, whatsappLayoutLembreteId: null,
+    emailHabilitado: false, emailLayoutConfirmacaoId: null, emailLayoutLembreteId: null,
+    mensagemConfirmacao: 'Olá #PESSOA.NOME#!', mensagemLembrete: 'Lembrete #EVENTO.TITULO#',
     situacao: 'PUBLICADO', fotos: [], inscritos: [], tags: { '#PESSOA.NOME#': 'Nome da pessoa inscrita' }, ...parcial
   };
 }
@@ -84,6 +87,8 @@ describe('EventoFichaComponent', () => {
     dialogo = jasmine.createSpyObj('DialogoService', ['confirmar']);
     const pessoas = jasmine.createSpyObj('PessoasService', ['listar']);
     pessoas.listar.and.resolveTo([{ id: 'p1', nomeCompleto: 'Ana Souza', sequencial: 7 }]);
+    const layouts = jasmine.createSpyObj('LayoutsApiService', ['listar']);
+    layouts.listar.and.resolveTo([]);
     TestBed.configureTestingModule({
       imports: [EventoFichaComponent],
       providers: [
@@ -92,6 +97,7 @@ describe('EventoFichaComponent', () => {
         { provide: EventosApiService, useValue: api },
         { provide: DialogoService, useValue: dialogo },
         { provide: PessoasService, useValue: pessoas },
+        { provide: LayoutsApiService, useValue: layouts },
         { provide: SessaoAtual, useValue: sessao(permissoes) }
       ]
     });

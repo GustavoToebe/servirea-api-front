@@ -1,5 +1,5 @@
 export type SituacaoEvento = 'RASCUNHO' | 'PUBLICADO' | 'ENCERRADO' | 'CANCELADO';
-export type SituacaoMensagem = 'PENDENTE' | 'ENVIADA' | 'FALHOU' | 'SEM_AUTORIZACAO' | 'SEM_TELEFONE';
+export type SituacaoMensagem = 'PENDENTE' | 'ENVIADA' | 'FALHOU' | 'SEM_AUTORIZACAO' | 'SEM_TELEFONE' | 'SEM_EMAIL';
 
 export interface EventoResumo {
   id: string;
@@ -25,6 +25,11 @@ export interface Inscrito {
   pessoaId: string;
   nome: string;
   telefone: string | null;
+  email?: string | null;
+  confirmacaoWhatsapp?: SituacaoMensagem | null;
+  lembreteWhatsapp?: SituacaoMensagem | null;
+  confirmacaoEmail?: SituacaoMensagem | null;
+  lembreteEmail?: SituacaoMensagem | null;
   confirmacao: SituacaoMensagem | null;
   lembrete: SituacaoMensagem | null;
 }
@@ -47,9 +52,15 @@ export interface EventoDetalhe {
   vagas: number | null;
   responsavelNome: string | null;
   responsavelTelefone: string | null;
-  lembreteDias: number;
-  mensagemConfirmacao: string;
-  mensagemLembrete: string;
+  lembreteDias: number[];
+  whatsappHabilitado: boolean;
+  whatsappLayoutConfirmacaoId: string | null;
+  whatsappLayoutLembreteId: string | null;
+  emailHabilitado: boolean;
+  emailLayoutConfirmacaoId: string | null;
+  emailLayoutLembreteId: string | null;
+  mensagemConfirmacao: string | null;
+  mensagemLembrete: string | null;
   situacao: SituacaoEvento;
   fotos: FotoEvento[];
   inscritos: Inscrito[];
@@ -73,9 +84,15 @@ export interface EventoRequest {
   vagas: number | null;
   responsavelNome: string | null;
   responsavelTelefone: string | null;
-  lembreteDias: number;
-  mensagemConfirmacao: string | null;
-  mensagemLembrete: string | null;
+  lembreteDias: number[];
+  whatsappHabilitado?: boolean;
+  whatsappLayoutConfirmacaoId?: string | null;
+  whatsappLayoutLembreteId?: string | null;
+  emailHabilitado?: boolean;
+  emailLayoutConfirmacaoId?: string | null;
+  emailLayoutLembreteId?: string | null;
+  mensagemConfirmacao?: string | null;
+  mensagemLembrete?: string | null;
 }
 
 const VERDE = 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold';
@@ -95,7 +112,8 @@ export const SITUACAO_MENSAGEM: Record<SituacaoMensagem, { texto: string; tom: s
   ENVIADA: { texto: 'Enviada', tom: VERDE },
   FALHOU: { texto: 'Falhou', tom: VERMELHO },
   SEM_AUTORIZACAO: { texto: 'Sem autorização', tom: AMBAR },
-  SEM_TELEFONE: { texto: 'Sem telefone', tom: AMBAR }
+  SEM_TELEFONE: { texto: 'Sem telefone', tom: AMBAR },
+  SEM_EMAIL: { texto: 'Sem e-mail', tom: AMBAR }
 };
 
 /** "sáb., 10/10/2026 às 19:30" a partir de "2026-10-10T19:30:00" (horário de Brasília, sem fuso). */

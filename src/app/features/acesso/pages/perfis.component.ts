@@ -44,7 +44,7 @@ import { RodapeFormComponent } from '../../../shared/components/rodape-form/roda
         <form class="card secao-form p-6" (ngSubmit)="salvar()">
           <h2 class="secao-titulo">{{ form.id ? 'Editar perfil' : 'Novo perfil' }}<app-numero [numero]="form.sequencial" /></h2>
           <label class="block text-sm font-semibold">Nome
-            <input class="mt-1 w-full rounded-xl border px-3 py-2" name="nome" [(ngModel)]="form.nome" required>
+            <input class="field mt-1" name="nome" [(ngModel)]="form.nome" required>
           </label>
           <label class="flex items-center gap-2 text-sm font-semibold">
             <input type="checkbox" name="ativo" [(ngModel)]="form.ativo" [disabled]="form.sistema">

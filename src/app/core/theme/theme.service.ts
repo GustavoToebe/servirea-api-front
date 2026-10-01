@@ -3,6 +3,7 @@ import { Injectable, signal } from '@angular/core';
 export type PaletaId = 'ROXO' | 'MARIANA' | 'COMUM' | 'QUARESMA' | 'OURO' | 'MONASTICO'
   | 'PENTECOSTES' | 'ROSA' | 'CELESTE' | 'TURQUESA' | 'OLIVA' | 'TERRACOTA';
 export type FonteId = 'PADRAO' | 'CONFORTO' | 'GRANDE' | 'EXTRA';
+export type ContrasteId = 'padrao' | 'forte';
 
 export interface Paleta {
   id: PaletaId;
@@ -14,10 +15,21 @@ export interface Paleta {
   bg: string;
 }
 
+export interface ContrasteOpcao {
+  id: ContrasteId;
+  rotulo: string;
+}
+
+export const CONTRASTES: ContrasteOpcao[] = [
+  { id: 'padrao', rotulo: 'Padrão' },
+  { id: 'forte', rotulo: 'Forte' }
+];
+
 export interface Aparencia {
   paleta: PaletaId;
   noturno: boolean;
   fonte: FonteId;
+  contraste: ContrasteId;
   vibrar: boolean;
 }
 
@@ -37,20 +49,21 @@ export const PALETAS: Paleta[] = [
 ];
 
 export const FONTES: { id: FonteId; rotulo: string; detalhe: string; px: string }[] = [
-  { id: 'PADRAO', rotulo: '14px', detalhe: 'Padrão', px: '16px' },
-  { id: 'CONFORTO', rotulo: '+1', detalhe: '16px', px: '18.3px' },
-  { id: 'GRANDE', rotulo: '+2', detalhe: '18px', px: '20.6px' },
-  { id: 'EXTRA', rotulo: '+3', detalhe: '20px', px: '22.9px' }
+  { id: 'PADRAO', rotulo: '14 px', detalhe: 'Padrão compacto', px: '16px' },
+  { id: 'CONFORTO', rotulo: '16 px', detalhe: 'Médio confortável', px: '18.3px' },
+  { id: 'GRANDE', rotulo: '18 px', detalhe: 'Grande para leitura', px: '20.6px' },
+  { id: 'EXTRA', rotulo: '20 px', detalhe: 'Extra acessível', px: '22.9px' }
 ];
 
 const CHAVE = 'sv_aparencia';
-const INICIAL: Aparencia = { paleta: 'ROXO', noturno: false, fonte: 'PADRAO', vibrar: false };
+const INICIAL: Aparencia = { paleta: 'ROXO', noturno: false, fonte: 'PADRAO', contraste: 'padrao', vibrar: false };
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
   readonly paleta = signal<PaletaId>(INICIAL.paleta);
   readonly noturno = signal(INICIAL.noturno);
   readonly fonte = signal<FonteId>(INICIAL.fonte);
+  readonly contraste = signal<ContrasteId>(INICIAL.contraste);
   readonly vibrar = signal(INICIAL.vibrar);
 
   constructor() {
@@ -58,6 +71,7 @@ export class ThemeService {
     this.paleta.set(salva.paleta);
     this.noturno.set(salva.noturno);
     this.fonte.set(salva.fonte);
+    this.contraste.set(salva.contraste);
     this.vibrar.set(salva.vibrar);
     this.aplicar();
   }
@@ -80,6 +94,12 @@ export class ThemeService {
     this.tocar();
   }
 
+  definirContraste(id: ContrasteId) {
+    this.contraste.set(id);
+    this.persistir();
+    this.tocar();
+  }
+
   definirVibrar(ativo: boolean) {
     this.vibrar.set(ativo);
     this.persistir();
@@ -90,6 +110,7 @@ export class ThemeService {
     this.paleta.set(INICIAL.paleta);
     this.noturno.set(INICIAL.noturno);
     this.fonte.set(INICIAL.fonte);
+    this.contraste.set(INICIAL.contraste);
     this.vibrar.set(INICIAL.vibrar);
     this.persistir();
   }
@@ -108,6 +129,7 @@ export class ThemeService {
       paleta: this.paleta(),
       noturno: this.noturno(),
       fonte: this.fonte(),
+      contraste: this.contraste(),
       vibrar: this.vibrar()
     };
     try {
@@ -123,6 +145,8 @@ export class ThemeService {
     const paleta = this.paletaAtual();
     const fonte = FONTES.find(f => f.id === this.fonte()) || FONTES[0];
     const escuro = this.noturno();
+    const contraste = this.contraste();
+
     root.style.setProperty('--brand', paleta.brand);
     root.style.setProperty('--brand-hover', paleta.hover);
     root.style.setProperty('--brand-navy', paleta.navy);
@@ -130,10 +154,18 @@ export class ThemeService {
     root.style.setProperty('--ink', escuro ? '#F1F0F7' : '#131b2e');
     root.style.setProperty('--muted', escuro ? '#9D9BB0' : '#64748b');
     root.style.setProperty('--card', escuro ? 'rgba(26, 24, 38, 0.92)' : 'rgba(255, 255, 255, 0.86)');
-    root.style.setProperty('--line', escuro ? 'rgba(255, 255, 255, 0.08)' : '#E7E4F5');
-    root.style.setProperty('--field-line', escuro ? 'rgba(255, 255, 255, 0.14)' : '#DDD8F0');
+
+    if (escuro) {
+      root.style.setProperty('--line', contraste === 'forte' ? 'rgba(255, 255, 255, 0.28)' : 'rgba(255, 255, 255, 0.08)');
+      root.style.setProperty('--field-line', contraste === 'forte' ? 'rgba(255, 255, 255, 0.40)' : 'rgba(255, 255, 255, 0.14)');
+    } else {
+      root.style.setProperty('--line', contraste === 'forte' ? '#b8b0db' : '#E7E4F5');
+      root.style.setProperty('--field-line', contraste === 'forte' ? '#9488bf' : '#DDD8F0');
+    }
+
     root.style.fontSize = fonte.px;
     root.classList.toggle('dark', escuro);
+    root.setAttribute('data-contrast', contraste);
     document.body.style.background = escuro ? '#0F0F14' : paleta.bg;
     document.body.style.color = escuro ? '#F1F0F7' : '#131b2e';
   }
@@ -145,9 +177,11 @@ export class ThemeService {
       const lido = JSON.parse(bruto) as Partial<Aparencia>;
       const paleta = PALETAS.some(p => p.id === lido.paleta) ? lido.paleta as PaletaId : INICIAL.paleta;
       const fonte = FONTES.some(f => f.id === lido.fonte) ? lido.fonte as FonteId : INICIAL.fonte;
+      const contraste = CONTRASTES.some(c => c.id === lido.contraste) ? lido.contraste as ContrasteId : INICIAL.contraste;
       return {
         paleta,
         fonte,
+        contraste,
         noturno: !!lido.noturno,
         vibrar: !!lido.vibrar
       };

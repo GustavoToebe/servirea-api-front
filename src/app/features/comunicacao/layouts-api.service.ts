@@ -34,7 +34,8 @@ export class LayoutsApiService {
     const chave = `${this.auth.tenantId()}|${canal}`;
     let pedido = forcar ? undefined : this.ativos.get(chave);
     if (!pedido) {
-      pedido = this.listar(undefined, canal, true);
+      // Layout de evento só serve para os eventos (as tags dele não têm dado num comunicado).
+      pedido = this.listar(undefined, canal, true).then(lista => lista.filter(l => l.tipoLayout !== 'EVENTO'));
       this.ativos.set(chave, pedido);
       // Erro não fica guardado: a próxima chamada tenta de novo.
       pedido.catch(() => this.ativos.delete(chave));

@@ -1,8 +1,9 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { podeVer } from '../../core/layout/menu';
+import { AuthService } from '../../core/auth/auth.service';
 import { SessaoAtual } from '../../core/layout/sessao-atual';
-import { FONTES, PALETAS, ThemeService } from '../../core/theme/theme.service';
+import { CONTRASTES, FONTES, PALETAS, ThemeService } from '../../core/theme/theme.service';
 
 @Component({
     selector: 'app-ajustes',
@@ -48,20 +49,67 @@ import { FONTES, PALETAS, ThemeService } from '../../core/theme/theme.service';
         </div>
       </section>
 
+      <!-- Contraste das bordas: Padrão ou Forte, nos dois temas -->
       <section class="card p-5">
-        <h2 class="text-lg font-black">Tamanho do texto</h2>
-        <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-black">Contraste das bordas</h2>
+            <p class="text-xs text-slate-500">Deixa as bordas de cartões, campos e divisões mais nítidas, nos temas claro e escuro.</p>
+          </div>
+          <div class="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1" role="group" aria-label="Contraste das bordas" data-contraste>
+            @for (c of contrastes; track c.id) {
+              <button type="button"
+                class="cursor-pointer rounded-lg px-4 py-1.5 text-sm font-bold transition-colors"
+                [class.bg-[var(--brand)]]="tema.contraste() === c.id"
+                [class.text-white]="tema.contraste() === c.id"
+                [class.text-slate-600]="tema.contraste() !== c.id"
+                [attr.aria-pressed]="tema.contraste() === c.id"
+                (click)="tema.definirContraste(c.id)">{{ c.rotulo }}</button>
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- Escala de Texto -->
+      <section class="card p-5 space-y-4">
+        <div class="flex items-center gap-2">
+          <span class="rounded-md px-2 py-0.5 text-xs font-extrabold uppercase tracking-wide text-emerald-400 bg-emerald-950/60 border border-emerald-800">Tipografia</span>
+          <h2 class="text-lg font-black text-slate-900 dark:text-white">Tamanho do texto</h2>
+        </div>
+        <p class="text-xs text-slate-500 dark:text-neutral-400">
+          Ajuste a densidade visual e o conforto visual para longas sessões de operação.
+        </p>
+
+        <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
           @for (fonte of fontes; track fonte.id) {
-            <button type="button" class="rounded-2xl border px-3 py-3 text-center" [class.chip-on]="tema.fonte() === fonte.id" [style.border-color]="tema.fonte() === fonte.id ? 'transparent' : 'var(--field-line)'" (click)="tema.definirFonte(fonte.id)">
+            <button
+              type="button"
+              class="rounded-xl border p-3 text-center transition-all cursor-pointer"
+              [class.bg-[var(--brand)]]="tema.fonte() === fonte.id"
+              [class.text-white]="tema.fonte() === fonte.id"
+              [class.border-[var(--brand)]]="tema.fonte() === fonte.id"
+              [class.bg-[#181818]]="tema.fonte() !== fonte.id && tema.noturno()"
+              [class.bg-slate-50]="tema.fonte() !== fonte.id && !tema.noturno()"
+              [class.text-neutral-300]="tema.fonte() !== fonte.id && tema.noturno()"
+              [class.text-slate-700]="tema.fonte() !== fonte.id && !tema.noturno()"
+              [class.border-[#2e2e2e]]="tema.fonte() !== fonte.id && tema.noturno()"
+              [class.border-slate-200]="tema.fonte() !== fonte.id && !tema.noturno()"
+              (click)="tema.definirFonte(fonte.id)">
               <span class="block text-base font-black">{{ fonte.rotulo }}</span>
-              <span class="block text-xs font-semibold opacity-80">{{ fonte.detalhe }}</span>
+              <span class="block text-[11px] font-semibold opacity-85 mt-0.5">{{ fonte.detalhe }}</span>
             </button>
           }
         </div>
-        <div class="mt-4 rounded-2xl bg-violet-50 p-4">
-          <div class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Demonstração</div>
-          <div class="mt-2 font-extrabold">Missa dominical · 08:00</div>
-          <div class="text-sm text-slate-500">Cruz, missal e credência no altar principal</div>
+
+        <!-- Prévia em tempo real -->
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Prévia em tempo real</span>
+          <div class="mt-2 text-base font-extrabold">{{ paroquia() }}</div>
+          <div class="text-sm font-semibold mt-0.5">Missa dominical · 08:00</div>
+          <div class="text-xs text-slate-500 mt-0.5">Cruz, missal e credência no altar principal</div>
+          @if (sessao.eu(); as eu) {
+            <div class="text-xs text-slate-500 mt-2">Conectado como {{ eu.nome }} · {{ eu.perfil }}</div>
+          }
         </div>
       </section>
 
@@ -95,9 +143,15 @@ import { FONTES, PALETAS, ThemeService } from '../../core/theme/theme.service';
 })
 export class AjustesComponent {
   tema = inject(ThemeService);
-  private sessao = inject(SessaoAtual);
+  private auth = inject(AuthService);
+  readonly sessao = inject(SessaoAtual);
   paletas = PALETAS;
   fontes = FONTES;
+  contrastes = CONTRASTES;
+
+  paroquia(): string {
+    return this.auth.tenantNome() || 'Sua paróquia';
+  }
 
   pode(codigo: string): boolean {
     return podeVer(this.sessao.permissoes(), codigo);

@@ -157,6 +157,75 @@ html.dark .parish .bg-white\/80 { background-color: var(--card); }
 html.dark .parish .bg-slate-50,
 html.dark .parish .bg-slate-100,
 html.dark .parish .bg-\[\#F4F5FF\] { background-color: rgba(255, 255, 255, 0.05); }
+/* Cinzas claros com opacidade e sólidos que não tinham versão escura (caixas cinza na montagem de escala). */
+html.dark .parish [class~="bg-slate-50/40"],
+html.dark .parish [class~="bg-slate-50/50"],
+html.dark .parish [class~="bg-slate-50/70"],
+html.dark .parish [class~="bg-slate-100/80"] { background-color: rgba(255, 255, 255, 0.05); }
+html.dark .parish [class~="even:bg-slate-50/60"]:nth-child(even) { background-color: rgba(255, 255, 255, 0.04); }
+html.dark .parish .bg-slate-200,
+html.dark .parish .bg-slate-300 { background-color: rgba(255, 255, 255, 0.14); }
+html.dark .parish .bg-red-100 { background-color: rgba(244, 63, 94, 0.22); }
+html.dark .parish .hover\:bg-white:hover { background-color: rgba(255, 255, 255, 0.08); }
+
+/* Tons de cor claros (índigo, roxo, esmeralda, âmbar, céu) sem versão escura: editor de layouts de escala,
+   lista de layouts e montagem de escala. Os tons de marca seguem a cor principal. */
+html.dark .parish [class~="bg-indigo-50/20"],
+html.dark .parish [class~="bg-indigo-50/50"],
+html.dark .parish [class~="bg-indigo-50/70"],
+html.dark .parish [class~="bg-violet-50/50"],
+html.dark .parish .bg-purple-50,
+html.dark .parish .bg-purple-100 { background-color: color-mix(in srgb, var(--brand) 14%, transparent); }
+html.dark .parish .bg-sky-50,
+html.dark .parish .bg-sky-100 { background-color: rgba(14, 165, 233, 0.16); }
+html.dark .parish [class~="bg-emerald-50/20"],
+html.dark .parish [class~="bg-emerald-50/50"] { background-color: rgba(16, 185, 129, 0.10); }
+html.dark .parish [class~="bg-amber-50/60"] { background-color: rgba(245, 158, 11, 0.12); }
+html.dark .parish .bg-amber-200 { background-color: rgba(245, 158, 11, 0.24); }
+/* Degradês claros viram um tom chapado (o degradê usa branco/pastel). */
+html.dark .parish [class~="from-indigo-50/50"],
+html.dark .parish [class~="from-indigo-50/40"] { background-image: none; background-color: color-mix(in srgb, var(--brand) 12%, transparent); }
+html.dark .parish [class~="from-emerald-50/30"] { background-image: none; background-color: rgba(16, 185, 129, 0.08); }
+
+html.dark .parish .border-indigo-100,
+html.dark .parish .border-indigo-200,
+html.dark .parish .border-indigo-300,
+html.dark .parish [class~="border-indigo-200/80"],
+html.dark .parish .border-violet-200,
+html.dark .parish .border-violet-300,
+html.dark .parish [class~="border-violet-200/50"],
+html.dark .parish .border-purple-200,
+html.dark .parish .hover\:border-indigo-300:hover { border-color: color-mix(in srgb, var(--brand) 38%, transparent); }
+html.dark .parish .border-emerald-100,
+html.dark .parish .border-emerald-200,
+html.dark .parish [class~="border-emerald-200/80"],
+html.dark .parish .hover\:border-emerald-300:hover { border-color: rgba(16, 185, 129, 0.35); }
+html.dark .parish .border-red-200,
+html.dark .parish .border-rose-200,
+html.dark .parish .hover\:border-red-200:hover { border-color: rgba(244, 63, 94, 0.35); }
+html.dark .parish .border-amber-200 { border-color: rgba(245, 158, 11, 0.35); }
+html.dark .parish .border-sky-200 { border-color: rgba(14, 165, 233, 0.35); }
+
+html.dark .parish .hover\:bg-red-50:hover,
+html.dark .parish .hover\:bg-rose-50:hover { background-color: rgba(244, 63, 94, 0.16); }
+html.dark .parish .hover\:bg-emerald-50:hover,
+html.dark .parish [class~="hover:bg-emerald-50/50"]:hover,
+html.dark .parish [class~="hover:bg-emerald-100/60"]:hover { background-color: rgba(16, 185, 129, 0.16); }
+html.dark .parish .hover\:bg-amber-50:hover { background-color: rgba(245, 158, 11, 0.16); }
+html.dark .parish .hover\:bg-indigo-100:hover,
+html.dark .parish [class~="hover:bg-indigo-100/60"]:hover,
+html.dark .parish [class~="hover:bg-indigo-50/50"]:hover,
+html.dark .parish [class~="hover:bg-violet-50/40"]:hover { background-color: color-mix(in srgb, var(--brand) 22%, transparent); }
+html.dark .parish .hover\:text-slate-700:hover,
+html.dark .parish .hover\:text-slate-900:hover { color: var(--ink); }
+html.dark .parish .text-indigo-600,
+html.dark .parish .text-violet-600,
+html.dark .parish .text-purple-700,
+html.dark .parish .hover\:text-indigo-600:hover { color: #c4b5fd; }
+html.dark .parish .text-emerald-600 { color: #6ee7b7; }
+html.dark .parish .text-sky-700 { color: #7dd3fc; }
+/* Balão de WhatsApp da pré-visualização é claro nos dois temas: o texto precisa continuar escuro. */
+html.dark .parish .bg-\[\#dcf8c6\] { color: #0f172a; }
 html.dark .parish .border-slate-100,
 html.dark .parish .border-slate-200,
 html.dark .parish .border-slate-300,
@@ -192,17 +261,34 @@ html.dark .parish .text-indigo-700,
 html.dark .parish .text-indigo-800,
 html.dark .parish .text-indigo-900,
 html.dark .parish .text-brand-blue { color: #c4b5fd; }
+html.dark .btn-secondary,
 html.dark .parish .btn-secondary {
   background: var(--card);
   color: var(--ink);
   border-color: var(--field-line);
 }
-html.dark .parish .field {
-  background: var(--card);
-  color: var(--ink);
-  border-color: var(--field-line);
+html.dark .field,
+html.dark .parish .field,
+html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]),
+html.dark select,
+html.dark textarea {
+  background-color: var(--card) !important;
+  color: var(--ink) !important;
+  border-color: var(--field-line) !important;
 }
+html.dark .label,
 html.dark .parish .label { color: var(--ink); }
+
+/* Autofill no modo escuro não pode ficar com fundo branco do Chrome/Safari */
+html.dark input:-webkit-autofill,
+html.dark input:-webkit-autofill:hover,
+html.dark input:-webkit-autofill:focus,
+html.dark textarea:-webkit-autofill,
+html.dark select:-webkit-autofill {
+  -webkit-text-fill-color: var(--ink) !important;
+  -webkit-box-shadow: 0 0 0px 1000px #1a1826 inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
 
 html.dark .parish .tabela {
   background: var(--card);
@@ -220,6 +306,34 @@ html.dark .parish .tabela tbody tr.marcada:hover td {
 }
 html.dark .parish .tabela tbody td {
   border-bottom-color: var(--line);
+}
+
+/* Níveis de Contraste das Bordas */
+html[data-contrast="forte"].dark .border-neutral-800,
+html[data-contrast="forte"].dark .border-neutral-700,
+html[data-contrast="forte"].dark .border-\[\#2e2e2e\],
+html[data-contrast="forte"].dark .border-slate-700 {
+  border-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+html[data-contrast="forte"].dark .card,
+html[data-contrast="forte"].dark .secao-form {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+html[data-contrast="forte"].dark .field,
+html[data-contrast="forte"].dark input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]),
+html[data-contrast="forte"].dark select,
+html[data-contrast="forte"].dark textarea {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+html[data-contrast="forte"]:not(.dark) .card {
+  box-shadow: 0 0 0 1px rgba(100, 116, 139, 0.15), 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+html[data-contrast="forte"]:not(.dark) .field {
+  box-shadow: 0 0 0 1px rgba(100, 116, 139, 0.2);
 }
 
 html.dark .bo { color: #f5f5f5; background: #101010; }

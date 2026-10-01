@@ -11,11 +11,18 @@ import { focarPrimeiroInvalido } from '../../../shared/utils/foco';
 import { cepValido, formatarCep, formatarTelefone } from '../../../shared/utils/formatos';
 import { validatePhotoFile } from '../../../shared/utils/photo.utils';
 import { SessaoAtual } from '../../../core/layout/sessao-atual';
+import { Layout } from '../../comunicacao/comunicacao.models';
+import { LayoutsApiService } from '../../comunicacao/layouts-api.service';
 import { PessoasService } from '../../pessoas/services/pessoas.service';
 import { EventosApiService } from '../eventos-api.service';
 import { EventoDetalhe, EventoRequest, Inscrito, SITUACAO_EVENTO, SITUACAO_MENSAGEM, SituacaoMensagem, rotuloQuando } from '../eventos.models';
 
-const PADRAO_LEMBRETE = 1;
+export const OPCOES_LEMBRETE = [
+  { dias: 1, rotulo: '1 dia antes' },
+  { dias: 2, rotulo: '2 dias antes' },
+  { dias: 3, rotulo: '3 dias antes' },
+  { dias: 7, rotulo: '1 semana antes' }
+];
 
 /** Ficha do evento: dados e mensagens no formulário; fotos e inscritos em blocos próprios depois de salvo. */
 @Component({
@@ -76,15 +83,24 @@ const PADRAO_LEMBRETE = 1;
                 <input id="evt-vagas" class="field" type="number" min="1" formControlName="vagas" placeholder="Sem limite">
                 @if (form.controls.vagas.invalid && form.controls.vagas.touched) { <p class="mt-1 text-xs text-red-600">Deixe em branco ou informe 1 ou mais.</p> }
               </div>
-              <div>
-                <label class="label" for="evt-lembrete">Lembrete pelo WhatsApp</label>
-                <select id="evt-lembrete" class="field" formControlName="lembreteDias">
-                  <option [ngValue]="0">Não enviar lembrete</option>
-                  <option [ngValue]="1">1 dia antes</option>
-                  <option [ngValue]="2">2 dias antes</option>
-                  <option [ngValue]="3">3 dias antes</option>
-                  <option [ngValue]="7">1 semana antes</option>
-                </select>
+              <div class="md:col-span-2">
+                <label class="label">Lembretes (WhatsApp e E-mail)</label>
+                <p class="mb-2 text-xs text-[var(--muted)]">Escolha com quantos dias de antecedência os lembretes devem ser enviados.</p>
+                <div class="flex flex-wrap gap-2">
+                  @for (opcao of opcoesLembrete; track opcao.dias) {
+                    <button type="button"
+                      class="rounded-xl px-4 py-2 text-xs font-bold transition-all border cursor-pointer"
+                      [class.bg-[var(--brand)]]="lembreteDias().includes(opcao.dias)"
+                      [class.text-white]="lembreteDias().includes(opcao.dias)"
+                      [class.border-transparent]="lembreteDias().includes(opcao.dias)"
+                      [class.bg-[var(--card)]]="!lembreteDias().includes(opcao.dias)"
+                      [class.border-[var(--line)]]="!lembreteDias().includes(opcao.dias)"
+                      [class.text-[var(--ink)]]="!lembreteDias().includes(opcao.dias)"
+                      (click)="alternarLembreteDia(opcao.dias)">
+                      {{ opcao.rotulo }}
+                    </button>
+                  }
+                </div>
               </div>
             </div>
           </section>
@@ -122,20 +138,77 @@ const PADRAO_LEMBRETE = 1;
           </section>
 
           <section class="card p-6">
-            <h2 class="mb-1 text-lg font-black">Mensagens do WhatsApp</h2>
-            <p class="mb-4 text-sm text-[var(--muted)]">Só para quem autorizou WhatsApp no cadastro. Linha com informação vazia (sem mapa, por exemplo) some da mensagem.</p>
-            <div class="grid gap-4 md:grid-cols-2">
-              <div><label class="label" for="evt-msg-conf">Ao inscrever</label><textarea id="evt-msg-conf" class="field min-h-48 font-mono text-xs" formControlName="mensagemConfirmacao" maxlength="2000"></textarea></div>
-              <div><label class="label" for="evt-msg-lemb">Lembrete</label><textarea id="evt-msg-lemb" class="field min-h-48 font-mono text-xs" formControlName="mensagemLembrete" maxlength="2000"></textarea></div>
+            <div class="mb-4 flex items-center justify-between">
+              <div>
+                <h2 class="text-lg font-black">Mensagens do WhatsApp</h2>
+                <p class="text-sm text-[var(--muted)]">Só para quem autorizou WhatsApp no cadastro. Linha com informação vazia some da mensagem.</p>
+              </div>
+              <label class="flex items-center gap-2 cursor-pointer font-bold text-sm">
+                <input type="checkbox" class="h-4 w-4 rounded accent-[var(--brand)]" formControlName="whatsappHabilitado">
+                <span>Habilitar</span>
+              </label>
             </div>
-            <details class="mt-3 text-sm">
-              <summary class="cursor-pointer font-bold" [style.color]="'var(--brand)'">Informações que dá para usar</summary>
-              <ul class="mt-2 grid gap-1 md:grid-cols-2">
-                @for (t of tags(); track t[0]) {
-                  <li><code class="rounded bg-[var(--app-bg)] px-1 text-xs">{{ t[0] }}</code> <span class="text-[var(--muted)]">{{ t[1] }}</span></li>
-                }
-              </ul>
-            </details>
+            @if (form.controls.whatsappHabilitado.value) {
+              <div class="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label class="label" for="evt-zap-conf">Ao inscrever</label>
+                  <select id="evt-zap-conf" class="field" formControlName="whatsappLayoutConfirmacaoId">
+                    <option [ngValue]="null">Layout padrão do sistema</option>
+                    @for (l of layoutsWhats(); track l.id) {
+                      <option [ngValue]="l.id">{{ l.nome }}</option>
+                    }
+                  </select>
+                </div>
+                <div>
+                  <label class="label" for="evt-zap-lemb">Lembrete</label>
+                  <select id="evt-zap-lemb" class="field" formControlName="whatsappLayoutLembreteId">
+                    <option [ngValue]="null">Layout padrão do sistema</option>
+                    @for (l of layoutsWhats(); track l.id) {
+                      <option [ngValue]="l.id">{{ l.nome }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+            } @else {
+              <p class="text-xs text-[var(--muted)]">O envio de WhatsApp está desabilitado para este evento.</p>
+            }
+          </section>
+
+          <section class="card p-6">
+            <div class="mb-4 flex items-center justify-between">
+              <div>
+                <h2 class="text-lg font-black">Mensagens do E-mail</h2>
+                <p class="text-sm text-[var(--muted)]">Envia para o e-mail cadastrado da pessoa inscrita.</p>
+              </div>
+              <label class="flex items-center gap-2 cursor-pointer font-bold text-sm">
+                <input type="checkbox" class="h-4 w-4 rounded accent-[var(--brand)]" formControlName="emailHabilitado">
+                <span>Habilitar</span>
+              </label>
+            </div>
+            @if (form.controls.emailHabilitado.value) {
+              <div class="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label class="label" for="evt-email-conf">Ao inscrever</label>
+                  <select id="evt-email-conf" class="field" formControlName="emailLayoutConfirmacaoId">
+                    <option [ngValue]="null">Layout padrão do sistema</option>
+                    @for (l of layoutsEmail(); track l.id) {
+                      <option [ngValue]="l.id">{{ l.nome }}</option>
+                    }
+                  </select>
+                </div>
+                <div>
+                  <label class="label" for="evt-email-lemb">Lembrete</label>
+                  <select id="evt-email-lemb" class="field" formControlName="emailLayoutLembreteId">
+                    <option [ngValue]="null">Layout padrão do sistema</option>
+                    @for (l of layoutsEmail(); track l.id) {
+                      <option [ngValue]="l.id">{{ l.nome }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+            } @else {
+              <p class="text-xs text-[var(--muted)]">O envio de e-mail está desabilitado para este evento.</p>
+            }
           </section>
 
           @if (podeSalvar()) {
@@ -197,18 +270,35 @@ const PADRAO_LEMBRETE = 1;
             @if (e.inscritos.length) {
               <div class="tabela-rolagem">
                 <table class="tabela">
-                  <thead><tr><th>Nome</th><th>Telefone</th><th>Confirmação</th><th>Lembrete</th>@if (podeInscrever()) {<th></th>}</tr></thead>
+                  <thead><tr><th>Nome</th><th>Telefone</th><th>WhatsApp</th><th>E-mail</th>@if (podeInscrever()) {<th></th>}</tr></thead>
                   <tbody>
                     @for (i of e.inscritos; track i.id) {
                       <tr [attr.data-inscrito]="i.id">
                         <td class="font-semibold">{{ i.nome }}</td>
                         <td>{{ i.telefone || '—' }}</td>
                         <td>
-                          @if (i.confirmacao; as s) { <span class="badge {{ tomMensagem(s) }}">{{ textoMensagem(s) }}</span> } @else { — }
+                          <div class="flex flex-col gap-1">
+                            @if (i.confirmacaoWhatsapp || i.confirmacao; as s) {
+                              <span class="badge {{ tomMensagem(s) }}">Conf: {{ textoMensagem(s) }}</span>
+                            }
+                            @if (i.lembreteWhatsapp || i.lembrete; as s) {
+                              <span class="badge {{ tomMensagem(s) }}">Lemb: {{ textoMensagem(s) }}</span>
+                            } @else {
+                              <span class="text-xs text-[var(--muted)]">{{ e.whatsappHabilitado && e.lembreteDias.length ? 'Lemb: Agendado' : 'Sem lembrete' }}</span>
+                            }
+                          </div>
                         </td>
                         <td>
-                          @if (i.lembrete; as s) { <span class="badge {{ tomMensagem(s) }}">{{ textoMensagem(s) }}</span> }
-                          @else { <span class="text-xs text-[var(--muted)]">{{ e.lembreteDias ? 'Agendado' : 'Sem lembrete' }}</span> }
+                          <div class="flex flex-col gap-1">
+                            @if (i.confirmacaoEmail; as s) {
+                              <span class="badge {{ tomMensagem(s) }}">Conf: {{ textoMensagem(s) }}</span>
+                            }
+                            @if (i.lembreteEmail; as s) {
+                              <span class="badge {{ tomMensagem(s) }}">Lemb: {{ textoMensagem(s) }}</span>
+                            } @else {
+                              <span class="text-xs text-[var(--muted)]">{{ e.emailHabilitado && e.lembreteDias.length ? 'Lemb: Agendado' : 'Sem lembrete' }}</span>
+                            }
+                          </div>
                         </td>
                         @if (podeInscrever()) {
                           <td class="text-right"><button type="button" class="text-xs font-bold text-red-600 hover:underline dark:text-red-400" (click)="remover(i)">Remover</button></td>
@@ -230,6 +320,7 @@ const PADRAO_LEMBRETE = 1;
 export class EventoFichaComponent implements OnInit {
   private api = inject(EventosApiService);
   private pessoas = inject(PessoasService);
+  private layoutsApi = inject(LayoutsApiService);
   private cepService = inject(CepService);
   private dialogo = inject(DialogoService);
   private sessao = inject(SessaoAtual);
@@ -239,12 +330,16 @@ export class EventoFichaComponent implements OnInit {
   private fb = inject(FormBuilder);
 
   readonly quando = rotuloQuando;
+  readonly opcoesLembrete = OPCOES_LEMBRETE;
   readonly evento = signal<EventoDetalhe | null>(null);
   readonly carregando = signal(true);
   readonly ocupado = signal(false);
   readonly erro = signal<string | null>(null);
   readonly avisoCep = signal('');
   readonly opcoesPessoas = signal<OpcaoSelectBusca[]>([]);
+  readonly layoutsWhats = signal<Layout[]>([]);
+  readonly layoutsEmail = signal<Layout[]>([]);
+  readonly lembreteDias = signal<number[]>([1]);
   readonly tags = computed(() => Object.entries(this.evento()?.tags ?? {}));
   readonly situacao = computed(() => SITUACAO_EVENTO[this.evento()?.situacao ?? 'RASCUNHO']);
   readonly podeSalvar = computed(() => {
@@ -265,7 +360,7 @@ export class EventoFichaComponent implements OnInit {
     dataTermino: [''],
     horaTermino: [''],
     vagas: [null as number | null, Validators.min(1)],
-    lembreteDias: [PADRAO_LEMBRETE],
+    lembreteDias: [[1] as number[]],
     localNome: [''],
     cep: [''],
     logradouro: [''],
@@ -277,6 +372,12 @@ export class EventoFichaComponent implements OnInit {
     mapaUrl: ['', Validators.pattern(/^https?:\/\/\S+$/)],
     responsavelNome: [''],
     responsavelTelefone: [''],
+    whatsappHabilitado: [true],
+    whatsappLayoutConfirmacaoId: [null as string | null],
+    whatsappLayoutLembreteId: [null as string | null],
+    emailHabilitado: [false],
+    emailLayoutConfirmacaoId: [null as string | null],
+    emailLayoutLembreteId: [null as string | null],
     mensagemConfirmacao: [''],
     mensagemLembrete: ['']
   });
@@ -285,9 +386,18 @@ export class EventoFichaComponent implements OnInit {
     return this.sessao.permissoes().includes(codigo);
   }
 
+  alternarLembreteDia(dias: number): void {
+    if (!this.podeSalvar()) return;
+    const atuais = this.lembreteDias();
+    const novos = atuais.includes(dias) ? atuais.filter(d => d !== dias) : [...atuais, dias].sort((a, b) => a - b);
+    this.lembreteDias.set(novos);
+    this.form.controls.lembreteDias.setValue(novos);
+  }
+
   async ngOnInit(): Promise<void> {
     const id = this.rota.snapshot.paramMap.get('id');
     try {
+      void this.carregarLayouts();
       if (id) {
         this.aplicar(await this.api.buscar(id));
       } else {
@@ -300,6 +410,20 @@ export class EventoFichaComponent implements OnInit {
       this.carregando.set(false);
     }
     if (this.pode('EVENTO_INSCREVER')) void this.carregarPessoas();
+  }
+
+  private async carregarLayouts(): Promise<void> {
+    try {
+      const [whats, email] = await Promise.all([
+        this.layoutsApi.listar('EVENTO', 'WHATSAPP', true),
+        this.layoutsApi.listar('EVENTO', 'EMAIL', true)
+      ]);
+      this.layoutsWhats.set(whats);
+      this.layoutsEmail.set(email);
+    } catch {
+      this.layoutsWhats.set([]);
+      this.layoutsEmail.set([]);
+    }
   }
 
   private async carregarPessoas(): Promise<void> {
@@ -315,12 +439,20 @@ export class EventoFichaComponent implements OnInit {
     this.evento.set(e);
     const [dataInicio, horaInicio] = e.inicio.split('T');
     const [dataTermino, horaTermino] = e.termino ? e.termino.split('T') : ['', ''];
+    const dias = Array.isArray(e.lembreteDias) ? e.lembreteDias : (typeof e.lembreteDias === 'number' && e.lembreteDias > 0 ? [e.lembreteDias] : [1]);
+    this.lembreteDias.set(dias);
     this.form.reset({
       titulo: e.titulo, descricao: e.descricao ?? '', dataInicio, horaInicio: horaInicio.slice(0, 5),
-      dataTermino, horaTermino: (horaTermino ?? '').slice(0, 5), vagas: e.vagas, lembreteDias: e.lembreteDias,
+      dataTermino, horaTermino: (horaTermino ?? '').slice(0, 5), vagas: e.vagas, lembreteDias: dias,
       localNome: e.localNome ?? '', cep: e.cep ? formatarCep(e.cep) : '', logradouro: e.logradouro ?? '', numero: e.numero ?? '',
       complemento: e.complemento ?? '', bairro: e.bairro ?? '', cidade: e.cidade ?? '', uf: e.uf ?? '', mapaUrl: e.mapaUrl ?? '',
       responsavelNome: e.responsavelNome ?? '', responsavelTelefone: e.responsavelTelefone ?? '',
+      whatsappHabilitado: e.whatsappHabilitado ?? true,
+      whatsappLayoutConfirmacaoId: e.whatsappLayoutConfirmacaoId ?? null,
+      whatsappLayoutLembreteId: e.whatsappLayoutLembreteId ?? null,
+      emailHabilitado: e.emailHabilitado ?? false,
+      emailLayoutConfirmacaoId: e.emailLayoutConfirmacaoId ?? null,
+      emailLayoutLembreteId: e.emailLayoutLembreteId ?? null,
       mensagemConfirmacao: e.mensagemConfirmacao, mensagemLembrete: e.mensagemLembrete
     });
     if (!this.podeSalvar()) this.form.disable();
@@ -337,7 +469,13 @@ export class EventoFichaComponent implements OnInit {
       bairro: texto(v.bairro), cidade: texto(v.cidade), uf: texto(v.uf), mapaUrl: texto(v.mapaUrl),
       vagas: v.vagas === null || (v.vagas as unknown) === '' ? null : Number(v.vagas),
       responsavelNome: texto(v.responsavelNome), responsavelTelefone: texto(v.responsavelTelefone),
-      lembreteDias: v.lembreteDias ?? PADRAO_LEMBRETE,
+      lembreteDias: this.lembreteDias(),
+      whatsappHabilitado: !!v.whatsappHabilitado,
+      whatsappLayoutConfirmacaoId: v.whatsappLayoutConfirmacaoId || null,
+      whatsappLayoutLembreteId: v.whatsappLayoutLembreteId || null,
+      emailHabilitado: !!v.emailHabilitado,
+      emailLayoutConfirmacaoId: v.emailLayoutConfirmacaoId || null,
+      emailLayoutLembreteId: v.emailLayoutLembreteId || null,
       mensagemConfirmacao: texto(v.mensagemConfirmacao), mensagemLembrete: texto(v.mensagemLembrete)
     };
   }

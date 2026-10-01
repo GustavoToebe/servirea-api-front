@@ -1,4 +1,4 @@
-export type TipoLayout = 'TODOS' | 'RESPONSAVEL' | 'COROINHA' | 'ACOLITO' | 'COROINHA_ACOLITO' | 'MINISTRO';
+export type TipoLayout = 'TODOS' | 'RESPONSAVEL' | 'COROINHA' | 'ACOLITO' | 'COROINHA_ACOLITO' | 'MINISTRO' | 'EVENTO';
 
 export const TIPO_LAYOUT_LABEL: Record<TipoLayout, string> = {
   TODOS: 'Todos',
@@ -6,7 +6,8 @@ export const TIPO_LAYOUT_LABEL: Record<TipoLayout, string> = {
   COROINHA: 'Coroinhas',
   ACOLITO: 'Acólitos',
   COROINHA_ACOLITO: 'Coroinha / acólito',
-  MINISTRO: 'Ministros'
+  MINISTRO: 'Ministros',
+  EVENTO: 'Evento'
 };
 
 export type TipoEnvio = 'EMAIL' | 'WHATSAPP';
