@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, computed, inject, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { SessaoAtual } from '../../../../core/layout/sessao-atual';
+import { AniversariantesCardComponent } from '../../components/aniversariantes-card.component';
 import { VoluntariosService } from '../../../voluntarios/services/voluntarios.service';
 import { EscalasService } from '../../../escalas/services/escalas.service';
 import { EscalaDetalhe, EscalaEvento, STATUS_LABEL, StatusEscala } from '../../../escalas/models/escala.model';
@@ -22,7 +24,7 @@ interface MissaVista {
 
 @Component({
     selector: 'app-dashboard',
-    imports: [CommonModule, RouterLink],
+    imports: [CommonModule, RouterLink, AniversariantesCardComponent],
     template: `
     <div class="space-y-6">
       <div>
@@ -116,6 +118,10 @@ interface MissaVista {
           }
         </section>
 
+        <div class="space-y-6">
+        @if (veAniversariantes()) {
+          <app-aniversariantes-card />
+        }
         <section class="card h-fit p-6 space-y-4">
           <div class="flex items-center gap-2">
             <span class="px-2.5 py-1 rounded-md text-xs font-black uppercase tracking-wider text-white shadow-xs" [style.background]="'var(--brand)'">Ações</span>
@@ -131,6 +137,7 @@ interface MissaVista {
             Feche as vagas da próxima celebração e só então marque a escala como finalizada.
           </div>
         </section>
+        </div>
       </div>
     </div>
     `
@@ -149,6 +156,9 @@ export class DashboardComponent implements OnInit {
   loading = true;
   error = '';
   rotuloDia = rotuloDia;
+  private sessao = inject(SessaoAtual);
+  /** A API exige PERM_PESSOA; sem ela o cartão nem aparece. */
+  readonly veAniversariantes = computed(() => this.sessao.permissoes().includes('PESSOA'));
 
   constructor(private volunteers: VoluntariosService, private scales: EscalasService) {}
 
