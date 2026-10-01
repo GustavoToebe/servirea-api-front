@@ -72,6 +72,8 @@ export class TurnstileComponent implements AfterViewInit, OnDestroy {
 
     this.widgetId = window.turnstile.render(this.widget.nativeElement, {
       sitekey: this.siteKey.trim(),
+      // Segue o modo da página (classe "dark" do ThemeService), não o do navegador.
+      theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
       callback: (token: string) => window.onTurnstileSuccessCallback?.(token),
       'expired-callback': () => window.onTurnstileExpiredCallback?.(),
       'error-callback': (errorCode?: string) => {
