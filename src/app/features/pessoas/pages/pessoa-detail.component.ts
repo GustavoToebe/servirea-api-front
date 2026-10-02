@@ -63,6 +63,10 @@ import { VoluntariosApiService } from '../services/voluntarios-api.service';
             </div>
           </section>
         }
+        <section class="card p-6">
+          <h2 class="mb-4 text-lg font-black text-[var(--ink)]">Privacidade</h2>
+          <a class="btn-secondary" [routerLink]="['/pessoas',pessoa.id,'privacidade']" data-privacidade>Autorizações e exportação de dados</a>
+        </section>
         @if (pessoa.dependentes.length) {
           <section class="card p-6">
             <h2 class="mb-4 text-lg font-black text-[var(--ink)]">Dependentes</h2><a class="btn-secondary" [routerLink]="['/pessoas',pessoa.id,'acessos-dependentes']">Autorizações de acesso</a>

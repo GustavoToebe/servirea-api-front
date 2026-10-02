@@ -1,4 +1,6 @@
 import {firstValueFrom} from 'rxjs';
+import { NotificacoesApiService, CanalNotificacao } from '../../../notificacoes/notificacoes-api.service';
+import { mensagemApi } from '../../../../core/api/api-error';
 import { OrientacaoToggleComponent } from '../../../../shared/components/orientacao-toggle/orientacao-toggle.component';
 import { Orientacao, lerOrientacao } from '../../../../shared/export/orientacao';
 import { SessaoAtual } from '../../../../core/layout/sessao-atual';
@@ -62,6 +64,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
         @if (id) {
           <div class="flex flex-wrap items-center gap-2"><span class="badge" [ngClass]="statusClass(status)">{{ statusLabel(status) }}</span>
             @if (status==='RASCUNHO' && sessaoRespostas.permissoes().includes('VAGA_DISTRIBUIR')) {<a class="btn-secondary !py-2" [routerLink]="['/escalas',id,'distribuicao']" data-distribuir>Distribuir por regras</a>}
+            @if (status==='FINALIZADA' && sessaoRespostas.permissoes().includes('NOTIFICACAO_ENVIAR')) {<button type="button" class="btn-secondary !py-2" [disabled]="avisando" (click)="avisarEscalados('EMAIL')" data-avisar-email>Avisar escalados por e-mail</button><button type="button" class="btn-secondary !py-2" [disabled]="avisando" (click)="avisarEscalados('WHATSAPP')" data-avisar-whatsapp>Avisar por WhatsApp</button>}
             @if (sessaoRespostas.permissoes().includes('VAGA_TROCA_LER')) {<a class="btn-secondary !py-2" [routerLink]="['/escalas',id,'trocas']">Trocas</a>}
             @if (sessaoRespostas.permissoes().includes('VAGA_CANDIDATURA_LER')) {<a class="btn-secondary !py-2" [routerLink]="['/escalas',id,'candidaturas']">Candidaturas</a>}
             @if (sessaoRespostas.permissoes().includes('VAGA_RESPOSTA_LER')) {<a class="btn-secondary !py-2" [routerLink]="['/escalas',id,'respostas']">Respostas de participação</a>}
@@ -620,6 +623,24 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
 
   private dialogo = inject(DialogoService);
   private authService = inject(AuthService);
+  private notificacoes = inject(NotificacoesApiService);
+  avisando = false;
+
+  /** Enfileira a escala finalizada para cada pessoa escalada com contato (e, no WhatsApp, autorização). */
+  async avisarEscalados(canal: CanalNotificacao) {
+    if (!this.id || this.avisando) return;
+    const nome = canal === 'EMAIL' ? 'e-mail' : 'WhatsApp';
+    if (!await this.dialogo.confirmar({ mensagem: `Avisar por ${nome} cada pessoa escalada? As mensagens entram na fila de comunicados e esta versão da escala não é avisada de novo por este canal.`, confirmar: 'Avisar' })) return;
+    this.avisando = true;
+    try {
+      const r = await firstValueFrom(this.notificacoes.notificarEscala(this.id, canal));
+      await this.dialogo.avisar(`${r.total} mensagens na fila.${r.ignorados ? ` ${r.ignorados} pessoas sem contato ou autorização foram ignoradas.` : ''}`, 'Escalados avisados');
+    } catch (e) {
+      await this.dialogo.avisar(mensagemApi(e, 'Não foi possível avisar os escalados.'));
+    } finally {
+      this.avisando = false;
+    }
+  }
   readonly sessaoRespostas = inject(SessaoAtual);
 
   get linhasCelebracaoLayout(): { index: number; elementos: ColunaEscala[] }[] {

@@ -12,6 +12,7 @@ export const BARRA: ItemMenu[] = [
   { label: 'Relatórios', url: '/relatorios', permissao: 'AUDITORIA' },
   { label: 'Layouts', url: '/layouts', permissao: 'LAYOUT' },
   { label: 'Comunicados', url: '/comunicados', permissao: 'COMUNICADO' },
+  { label: 'Centro de entregas', url: '/entregas', permissao: 'NOTIFICACAO' },
   { label: 'Dependentes', url: '/portal/dependentes', permissao: 'PORTAL_DEPENDENTES' },
   { label: 'Meus compromissos', url: '/portal', permissao: 'PORTAL_VOLUNTARIO' },
   {label:'Minhas pastorais',url:'/minhas-pastorais',permissao:'PASTORAL_COORDENACAO'},
@@ -29,6 +30,7 @@ export const BARRA: ItemMenu[] = [
   {label:'Estoque e patrimônio',url:'/estoque',permissao:'ESTOQUE'},
   {label:'Felicitações',url:'/aniversarios',permissao:'ANIVERSARIO'},
   {label:'Página pública',url:'/site-paroquia',permissao:'SITE'},
+  { label: 'Retenção de dados', url: '/privacidade', permissao: 'PRIVACIDADE' },
   { label: 'Primeiros passos', url: '/primeiros-passos', permissao: 'ONBOARDING' },
   { label: 'Ajuda', url: '/ajuda', permissao: null }
 ];

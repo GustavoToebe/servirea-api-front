@@ -12,11 +12,13 @@ import { CabecalhoPaginaComponent } from '../../shared/components/cabecalho-pagi
 import { RodapeFormComponent } from '../../shared/components/rodape-form/rodape-form.component';
 import { CampoDataComponent } from '../../shared/components/datas/campo-data.component';
 import { focarPrimeiroInvalido } from '../../shared/utils/foco';
+import { NotificacoesApiService, CanalNotificacao } from '../notificacoes/notificacoes-api.service';
+import { DialogoService } from '../../shared/services/dialogo.service';
 import { OrganizacaoApiService, ModuloOrganizacao, RegistroOrganizacao, SalvarOrganizacao } from './organizacao-api.service';
 @Component({selector:'app-organizacao',imports:[BarraFiltrosComponent,EstadoListaComponent,CommonModule,FormsModule,CabecalhoPaginaComponent,RodapeFormComponent,CampoDataComponent],changeDetection:ChangeDetectionStrategy.OnPush,
  templateUrl:'./organizacao.component.html'})
 export class OrganizacaoComponent implements OnInit,OnDestroy {
- private readonly api=inject(OrganizacaoApiService);private readonly sessao=inject(SessaoAtual);private readonly plano=inject(FuncionalidadesPlanoService);private readonly host=inject(ElementRef<HTMLElement>);
+ private readonly api=inject(OrganizacaoApiService);private readonly notificacoes=inject(NotificacoesApiService);private readonly dialogo=inject(DialogoService);private readonly sessao=inject(SessaoAtual);private readonly plano=inject(FuncionalidadesPlanoService);private readonly host=inject(ElementRef<HTMLElement>);
  readonly tipo: ModuloOrganizacao=inject(ActivatedRoute).snapshot.data['modulo']==='mural'?'mural':'tarefas';
  readonly titulo=this.tipo==='mural'?'Mural de avisos':'Tarefas e solicitações';
  readonly permissao=this.tipo==='mural'?'MURAL':'TAREFA';
@@ -29,6 +31,14 @@ export class OrganizacaoComponent implements OnInit,OnDestroy {
  busca='';status='';pagina=0;id: string | null=null;dados: SalvarOrganizacao=this.vazio();private leitura?:Subscription;private direito?:Subscription;private escrita?:Subscription;
  ngOnInit() {this.carregar();if(this.tipo==='tarefas')this.buscarResponsaveis();this.direito=this.plano.consultar().subscribe({next:c=>this.contratado.set(c.includes(this.tipo==='mural'?'MURAL':'TAREFAS')),error:()=>this.contratado.set(false)});}
  pode(acao:string) {return this.sessao.permissoes().includes(this.permissao+acao);}
+ podeNotificar(){return this.tipo==='mural'&&this.sessao.permissoes().includes('NOTIFICACAO_ENVIAR');}
+ async notificar(canal:CanalNotificacao){
+  const r=this.registroAtual();if(!r||this.salvando()||!this.podeNotificar()||r.status!=='PUBLICADO')return;
+  const nome=canal==='EMAIL'?'e-mail':'WhatsApp';
+  if(!await this.dialogo.confirmar({mensagem:`Notificar por ${nome} as pessoas com conta vinculada neste público? Esta versão do aviso não é notificada de novo por este canal.`,confirmar:'Notificar'}))return;
+  this.salvando.set(true);this.erro.set('');
+  this.escrita=this.notificacoes.notificarAviso(r.id,canal,r.versao).subscribe({next:x=>{this.salvando.set(false);void this.dialogo.avisar(`${x.total} mensagens na fila.${x.ignorados?` ${x.ignorados} pessoas sem contato ou autorização foram ignoradas.`:''}`,'Aviso notificado');},error:e=>{this.salvando.set(false);this.erro.set(mensagemApi(e,'Não foi possível notificar. Atualize o aviso.'));}});
+ }
  carregar() {this.leitura?.unsubscribe();this.carregando.set(true);this.erro.set('');this.leitura=(this.tipo==='tarefas'?this.api.listar(this.tipo,this.busca,this.status,this.pagina,this.filtroResponsavel,this.minhas):this.api.listar(this.tipo,this.busca,this.status,this.pagina)).subscribe({next:p=>{this.itens.set(p.itens);this.total.set(p.total);this.carregando.set(false);},error:e=>{this.itens.set([]);this.total.set(0);this.carregando.set(false);this.erro.set(mensagemApi(e,'Não foi possível carregar os registros.'));}});}
  buscar() {this.pagina=0;this.carregar();}
  paginar(delta:number) {this.pagina+=delta;this.carregar();}
