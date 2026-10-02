@@ -156,3 +156,5 @@ Pessoas/inscrições/eventos usam contratos de [listas paginadas](docs/listas-pa
 
 ## Acessos pessoais
 Dependentes exigem autorização explícita e conta ligada à pessoa; parentesco não concede acesso. Coordenação própria revalida membro ativo COORDENADOR a cada operação e não autoriza nomear coordenadores. Contratos em docs/acessos-responsaveis-coordenacao.md.
+
+- F04: docs/distribuicao-escala.md. Tela /escalas/:id/distribuicao; prévia explicada, escolhas marcadas, aplicação com versão e regras da prévia. Sem IA.

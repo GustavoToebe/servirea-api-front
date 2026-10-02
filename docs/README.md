@@ -66,3 +66,5 @@ O dump `DOCUMENTACAO-COMPLETA-PARA-IA.md` descrevia o front falando direto com o
 - [MFA dos usuários](mfa-usuarios.md): proteção da conta global, recuperação e revogação de sessões.
 
 - [Responsáveis e coordenação própria](acessos-responsaveis-coordenacao.md): autorização explícita, escopo e revogação.
+
+- [Distribuição por regras](distribuicao-escala.md): F04, prévia, conflitos e aplicação.

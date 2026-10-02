@@ -53,6 +53,7 @@ export const routes: Routes = [
       { path: 'escalas/layouts/:id', loadComponent: () => import('./features/escalas/pages/layouts/layout-form.component').then(m => m.LayoutFormComponent) },
       { path: 'escalas/nova', canActivate: [funcionalidadePlanoGuard('ESCALAS')], data: { larguraTotal: true }, canDeactivate: [pendingChangesGuard], loadComponent: () => import('./features/escalas/pages/escala-builder/escala-builder.component').then(m => m.EscalaBuilderComponent) },
       { path: 'escalas/:id/candidaturas', loadComponent: () => import('./features/voluntario/candidaturas.component').then(m => m.CandidaturasComponent) },
+      { path: 'escalas/:id/distribuicao', canActivate: [funcionalidadePlanoGuard('ESCALAS')], loadComponent: () => import('./features/escalas/pages/distribuicao/distribuicao.component').then(m => m.DistribuicaoComponent) },
       { path: 'escalas/:id/respostas', loadComponent: () => import('./features/voluntario/respostas-coordenacao.component').then(m => m.RespostasCoordenacaoComponent) },
       { path: 'escalas/:id', data: { larguraTotal: true }, canDeactivate: [pendingChangesGuard], loadComponent: () => import('./features/escalas/pages/escala-builder/escala-builder.component').then(m => m.EscalaBuilderComponent) },
       { path: 'portal/indisponibilidades', canActivate: [funcionalidadePlanoGuard('PORTAL_VOLUNTARIO')], canDeactivate: [pendingChangesGuard], loadComponent: () => import('./features/voluntario/disponibilidade.component').then(m => m.DisponibilidadeComponent) },
