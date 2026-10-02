@@ -1,7 +1,9 @@
 import {
   ApplicationRef, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EmbeddedViewRef, EventEmitter, Input,
-  NgZone, OnChanges, OnDestroy, Output, SimpleChanges, TemplateRef, ViewChild, inject
+  NgZone, OnChanges, OnDestroy, Output, SimpleChanges, TemplateRef, ViewChild, Injector, inject
 } from '@angular/core';
+import {Subscription} from 'rxjs';
+import {VoluntariosService} from '../../../features/voluntarios/services/voluntarios.service';
 import { FormsModule } from '@angular/forms';
 import { TipoVoluntario, Voluntario } from '../../../features/voluntarios/models/voluntario.model';
 import { DialogoService } from '../../services/dialogo.service';
@@ -66,7 +68,7 @@ const SEM_EXCLUIDOS: ReadonlySet<string> = new Set();
               }
             </div>
             <input class="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm outline-none focus:border-violet-500"
-              [ngModel]="search" (ngModelChange)="buscar($event)" placeholder="Filtrar" autofocus>
+              [ngModel]="search" (ngModelChange)="buscar($event)" [placeholder]="remoto ? 'Início do nome' : 'Filtrar'" autofocus>
           </div>
           <div class="max-h-56 overflow-auto py-1">
             @for (v of lista; track v.id) {
@@ -97,7 +99,8 @@ const SEM_EXCLUIDOS: ReadonlySet<string> = new Set();
                 }
               </button>
             }
-            @if (!lista.length) {
+            @if(remoto){<p role="status" class="px-3 text-xs">{{carregando?'Buscando…':erroBusca}}</p><div class="flex justify-between px-3"><button type="button" [disabled]="carregando||pagina===0" (click)="paginar(-1)">Anterior</button><span>{{pagina+1}}</span><button type="button" [disabled]="carregando||!temMais" (click)="paginar(1)">Próxima</button></div>}
+            @if (!carregando && !erroBusca && !lista.length) {
               <div class="px-3 py-4 text-center text-xs text-slate-400">Nenhum irmão encontrado.</div>
             }
           </div>
@@ -107,6 +110,11 @@ const SEM_EXCLUIDOS: ReadonlySet<string> = new Set();
     `
 })
 export class VolunteerPickerComponent implements OnChanges, OnDestroy {
+  @Input() remoto=false;
+  @Output() voluntarioSelecionado=new EventEmitter<Voluntario>();
+  private readonly injector=inject(Injector);
+  private consulta?:Subscription;private debounce?:ReturnType<typeof setTimeout>;
+  private destruido=false;pagina=0;temMais=false;carregando=false;erroBusca='';
   @Input() volunteers: Voluntario[] = [];
   @Input() selectedId: string | null = null;
   @Input() excludeIds: ReadonlySet<string> | readonly string[] = [];
@@ -167,7 +175,7 @@ export class VolunteerPickerComponent implements OnChanges, OnDestroy {
     }
     this.open = true;
     this.search = '';
-    this.atualizarLista();
+    if(this.remoto){this.pagina=0;this.consultar();}else this.atualizarLista();
     this.posicionar();
     this.montarPainel();
     this.escutar();
@@ -253,6 +261,7 @@ export class VolunteerPickerComponent implements OnChanges, OnDestroy {
   }
 
   private fechar() {
+    this.consulta?.unsubscribe();clearTimeout(this.debounce);
     this.open = false;
     this.search = '';
     this.pararDeEscutar();
@@ -266,19 +275,20 @@ export class VolunteerPickerComponent implements OnChanges, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.destruido=true;this.consulta?.unsubscribe();clearTimeout(this.debounce);
     this.pararDeEscutar();
     this.desmontarPainel();
   }
 
   buscar(texto: string) {
     this.search = texto;
-    this.atualizarLista();
+    if(this.remoto){this.consulta?.unsubscribe();this.lista=[];this.carregando=true;clearTimeout(this.debounce);this.debounce=setTimeout(()=>{this.pagina=0;this.consultar();},300);}else this.atualizarLista();
     this.viewPainel?.detectChanges();
   }
 
   setTipo(tipo: TipoVoluntario) {
     this.tipoFiltro = this.tipoFiltro === tipo ? '' : tipo;
-    this.atualizarLista();
+    if(this.remoto){clearTimeout(this.debounce);this.pagina=0;this.consultar();}else this.atualizarLista();
     this.viewPainel?.detectChanges();
   }
 
@@ -307,6 +317,7 @@ export class VolunteerPickerComponent implements OnChanges, OnDestroy {
       });
       if (!ok) return;
     }
+    if(this.destruido)return;this.voluntarioSelecionado.emit(v);
     this.selectedIdChange.emit(v.id);
     this.selectedName = this.nomeDe(v);
     this.fechar();
@@ -329,9 +340,18 @@ export class VolunteerPickerComponent implements OnChanges, OnDestroy {
   }
 
   private atualizarLista() {
+    if(this.remoto)return;
     this.lista = this.filtered();
   }
 
+  paginar(d:number){if(!this.open||this.carregando||this.pagina+d<0||d>0&&!this.temMais)return;this.pagina+=d;this.consultar();}
+  private consultar(){
+    this.consulta?.unsubscribe();this.lista=[];this.carregando=true;this.erroBusca='';
+    this.consulta=this.injector.get(VoluntariosService).opcoes(this.search,this.pagina,this.tipoFiltro).subscribe({
+      next:r=>{this.lista=r.itens;this.temMais=r.temMais;this.carregando=false;this.cdr.markForCheck();this.viewPainel?.detectChanges();},
+      error:()=>{this.lista=[];this.temMais=false;this.carregando=false;this.erroBusca='Não foi possível buscar. Tente novamente.';this.cdr.markForCheck();this.viewPainel?.detectChanges();}
+    });
+  }
   private syncName() {
     const encontrado = this.volunteers.find(v => v.id === this.selectedId);
     this.selectedName = encontrado ? this.nomeDe(encontrado) : '';

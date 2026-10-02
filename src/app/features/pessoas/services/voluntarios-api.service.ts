@@ -1,12 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { mensagemApi } from '../../../core/api/api-error';
 import { CacheDeListas } from '../../../core/api/cache-de-listas.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { TipoVoluntario, VoluntarioLista } from '../models/pessoa.model';
 
+export interface VoluntarioOpcao {id:string;nomeCompleto:string;tipo:TipoVoluntario;ativo:boolean;funcoesHabilitadas:VoluntarioLista['funcoesHabilitadas'];}
+export interface PaginaOpcoes {itens:VoluntarioOpcao[];pagina:number;tamanho:number;temMais:boolean;}
 interface VoluntarioResponse {
   id: string;
   nomeCompleto: string;
@@ -29,6 +31,12 @@ export class VoluntariosApiService {
 
   constructor(private http: HttpClient, private cache: CacheDeListas, private auth: AuthService) {}
 
+  opcoes(nome='',pagina=0,tipo:TipoVoluntario|''=''):Observable<PaginaOpcoes> {
+    return this.http.get<PaginaOpcoes>(`${this.base}/opcoes`, {params:{nome,pagina,...(tipo?{tipo}:{})}});
+  }
+  resolverOpcoes(ids:string[]):Promise<VoluntarioOpcao[]> {
+    return firstValueFrom(this.http.post<VoluntarioOpcao[]>(`${this.base}/opcoes/ids`,{ids}));
+  }
   emCache(ativo: boolean): VoluntarioLista[] | null {
     return this.cache.ler<VoluntarioLista[]>(`voluntarios:${ativo}`, this.auth.tenantId());
   }

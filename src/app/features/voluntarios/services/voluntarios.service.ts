@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import {map} from 'rxjs';
+import {VoluntarioOpcao} from '../../pessoas/services/voluntarios-api.service';
 import { VoluntariosApiService } from '../../pessoas/services/voluntarios-api.service';
 import { TipoVoluntario, VoluntarioLista } from '../../pessoas/models/pessoa.model';
 import { Voluntario, VoluntarioFilters } from '../models/voluntario.model';
@@ -16,6 +18,14 @@ export class VoluntariosService {
       .map(paraVoluntarioAntigo);
   }
 
+  opcoes(nome='',pagina=0,tipo:TipoVoluntario|''='') {
+    return this.api.opcoes(nome,pagina,tipo).pipe(map(r=>({...r,itens:r.itens.map(paraOpcao)})));
+  }
+  async resolverOpcoes(ids:string[]):Promise<Voluntario[]> {
+    const unicos=[...new Set(ids)];const rows:Voluntario[]=[];
+    for(let i=0;i<unicos.length;i+=100) rows.push(...(await this.api.resolverOpcoes(unicos.slice(i,i+100))).map(paraOpcao));
+    return rows;
+  }
   async active(): Promise<Voluntario[]> {
     return this.list({ status: 'ATIVO' });
   }
@@ -50,4 +60,8 @@ function paraVoluntarioAntigo(v: VoluntarioLista): Voluntario {
     mandato_inicio: v.mandatoInicio || null,
     mandato_fim: v.mandatoFim || null
   };
+}
+
+function paraOpcao(v:VoluntarioOpcao):Voluntario {
+ return paraVoluntarioAntigo({...v,nome_completo:v.nomeCompleto,dataNascimento:null,fotoPath:null,fotoUrl:null,etapaCatequese:null,eucaristiaAno:null,crismaAno:null,horarioEstudo:null,autorizaWhatsapp:false,mandatoInicio:null,mandatoFim:null});
 }

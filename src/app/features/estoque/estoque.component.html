@@ -1,0 +1,108 @@
+<div class="space-y-5">
+<app-cabecalho-pagina titulo="Estoque e patrimônio" subtitulo="Itens, saldo e histórico. Entrada/saída não é lançamento financeiro.">
+<div acoes>@if(pode('ESTOQUE_EDITAR')){<button class="btn-primary" [disabled]="ocupado()" (click)="abrir()">Novo item</button>}</div>
+</app-cabecalho-pagina>
+@if(erro()){<p role="alert" class="card p-4 text-red-700">{{erro()}}</p>}
+@if(aviso()){<p role="status" class="card p-4 text-emerald-700">{{aviso()}}</p>}
+<app-barra-filtros [(termo)]="busca" (buscar)="buscar()"/>
+<section class="card p-4">
+<div class="overflow-auto">
+<table class="tabela w-full">
+<thead>
+<tr>
+<th>Item</th>
+<th>Código</th>
+<th>Tipo</th>
+<th>Saldo</th>
+<th>Estado</th>
+<th>Ação</th>
+</tr>
+</thead>
+<tbody>@for(i of itens();track i.id){<tr>
+<td>{{i.nome}}</td>
+<td>{{i.codigo}}</td>
+<td>{{i.tipo==='PATRIMONIO'?'Patrimônio':'Consumível'}}</td>
+<td>{{i.saldo|number:'1.0-3'}} {{i.unidade}}</td>
+<td>
+<span class="badge" [class]="i.ativo?'bg-emerald-50 text-emerald-700':'bg-slate-100 text-slate-600'">{{i.ativo?'Ativo':'Inativo'}}</span>
+</td>
+<td>
+<button class="btn-secondary" (click)="abrir(i)">Abrir</button>
+</td>
+</tr>}</tbody>
+</table>
+</div>
+<app-estado-lista [carregando]="carregando()" [vazio]="!total()"/>
+<div class="flex gap-3 mt-4">
+<button class="btn-secondary" [disabled]="pagina===0||carregando()" (click)="paginar(-1)">Anterior</button>
+<span>Página {{pagina+1}} · {{total()}} itens</span>
+<button class="btn-secondary" [disabled]="(pagina+1)*30>=total()||carregando()" (click)="paginar(1)">Próxima</button>
+</div>
+</section>
+@if(form;as i){<form #f="ngForm" (ngSubmit)="salvar(f)" (input)="alterado.set(true)" (change)="alterado.set(true)">
+<section class="card p-5 space-y-3">
+<h2 class="secao-titulo">Item</h2>
+<p>Saldo: {{i.saldo|number:'1.0-3'}} {{i.unidade}}. Tipo e unidade não mudam depois de movimentar.</p>
+<fieldset class="space-y-3" [disabled]="ocupado()||!!movimento||!pode('ESTOQUE_EDITAR')">
+<label class="label" for="est-nome">Nome</label>
+<input id="est-nome" name="nome" class="field w-full" required maxlength="160" [(ngModel)]="i.nome">
+<label class="label" for="est-codigo">Código / etiqueta</label>
+<input id="est-codigo" name="codigo" class="field w-full" required maxlength="60" [(ngModel)]="i.codigo">
+<label class="label" for="est-tipo">Tipo</label>
+<select id="est-tipo" name="tipo" class="field" [(ngModel)]="i.tipo">
+<option value="CONSUMIVEL">Consumível</option>
+<option value="PATRIMONIO">Patrimônio</option>
+</select>
+<label class="label" for="est-unidade">Unidade (unidade, kg, litro…)</label>
+<input id="est-unidade" name="unidade" class="field" required maxlength="30" [(ngModel)]="i.unidade">
+<label class="label" for="est-local">Local</label>
+<input id="est-local" name="local" class="field w-full" maxlength="200" [(ngModel)]="i.local">
+<label class="label" for="est-busca-resp">Buscar responsável (conta da paróquia)</label>
+<div class="flex gap-2">
+<input id="est-busca-resp" name="buscaResp" class="field" [(ngModel)]="buscaResponsavel">
+<button type="button" class="btn-secondary" (click)="buscarResponsaveis()">Buscar</button>
+</div>
+<label class="label" for="est-resp">Responsável</label>
+<select id="est-resp" name="responsavel" class="field w-full" [(ngModel)]="i.responsavelUsuarioId">
+<option [ngValue]="null">Sem responsável</option>@if(i.responsavelUsuarioId){<option [value]="i.responsavelUsuarioId">{{i.responsavelNome||'Responsável selecionado'}}</option>}
+@for(r of responsaveis();track r.id){<option [value]="r.id">{{r.nome}}</option>}</select>
+<label>
+<input type="checkbox" name="ativo" [(ngModel)]="i.ativo"> Ativo</label>
+</fieldset>
+</section>@if(pode('ESTOQUE_EDITAR')){<app-rodape-form [carregando]="ocupado()||!!movimento" (cancelar)="fechar()"/>}
+@else{<button type="button" class="btn-secondary" (click)="fechar()">Fechar</button>}</form>}
+@if(atual();as a){<section class="card p-5 space-y-3">
+<h2 class="secao-titulo">Movimentações</h2>@if(pode('ESTOQUE_MOVIMENTAR')){<button type="button" class="btn-primary" [disabled]="ocupado()||alterado()||!a.ativo||!!movimento" (click)="iniciarMovimento()">Registrar movimento</button>}<p class="text-sm text-slate-500">Saída não permite saldo negativo. Ajuste informa o saldo contado, não a diferença. Histórico é preservado; correções são novos movimentos com motivo.</p>
+@for(m of historico();track m.id){<article class="border-b py-3">
+<p>{{m.registradoEm|date:'dd/MM/yyyy HH:mm'}} · {{m.tipo}} · {{m.quantidade|number:'1.0-3'}} {{a.unidade}}</p>
+<p>Saldo {{m.saldoAntes|number:'1.0-3'}} → {{m.saldoDepois|number:'1.0-3'}}</p>
+<p>{{m.motivo}}</p>
+<p class="text-sm text-slate-500">Responsável: {{m.responsavelNome||(m.responsavelUsuarioId?'Vínculo indisponível':'Não informado')}} · Registro: {{m.registradoPorNome||(m.registradoPor?'Vínculo indisponível':'Sem identificação disponível')}}</p>
+</article>}
+@empty{<p>Nenhuma movimentação nesta página.</p>}<div class="flex gap-3">
+<button class="btn-secondary" [disabled]="paginaHistorico===0" (click)="carregarHistorico(-1)">Anterior</button>
+<span>{{totalHistorico()}} movimentos</span>
+<button class="btn-secondary" [disabled]="(paginaHistorico+1)*30>=totalHistorico()" (click)="carregarHistorico(1)">Próxima</button>
+</div>
+</section>}
+@if(movimento;as m){<form #fm="ngForm" (ngSubmit)="registrar(fm)" (input)="alterado.set(true)" (change)="alterado.set(true)">
+<section class="card p-5 space-y-3">
+<h2 class="secao-titulo">Novo movimento</h2>
+<fieldset class="space-y-3" [disabled]="ocupado()||pedidoPendente()">
+<label class="label" for="mov-tipo">Tipo</label>
+<select id="mov-tipo" name="tipo" class="field" [(ngModel)]="m.tipo">
+<option value="ENTRADA">Entrada</option>
+<option value="SAIDA">Saída</option>@if(pode('ESTOQUE_AJUSTAR')){<option value="AJUSTE">Ajuste de inventário</option>}</select>
+<label class="label" for="mov-qtd">{{m.tipo==='AJUSTE'?'Saldo contado':'Quantidade'}}</label>
+<input id="mov-qtd" name="quantidade" type="number" class="field" required [min]="m.tipo==='AJUSTE'?0:0.001" [step]="atual()?.tipo==='PATRIMONIO'?1:0.001" [(ngModel)]="m.quantidade">
+<label class="label" for="mov-motivo">Motivo</label>
+<textarea id="mov-motivo" name="motivo" class="field w-full" required maxlength="500" [(ngModel)]="m.motivo">
+</textarea>
+<label class="label" for="mov-resp">Responsável pelo movimento</label>
+<select id="mov-resp" name="responsavel" class="field w-full" [(ngModel)]="m.responsavelUsuarioId">
+<option [ngValue]="null">Sem responsável</option>@if(m.responsavelUsuarioId){<option [value]="m.responsavelUsuarioId">{{atual()?.responsavelNome||'Responsável selecionado'}}</option>}
+@for(r of responsaveis();track r.id){<option [value]="r.id">{{r.nome}}</option>}</select>
+</fieldset>@if(pedidoPendente()){<p role="status">Resultado anterior não confirmado. Nova tentativa utiliza o mesmo pedido e a mesma chave para impedir duplicação.</p>}</section>
+<app-rodape-form [carregando]="ocupado()" (cancelar)="cancelarMovimento()"/>
+</form>}
+</div>

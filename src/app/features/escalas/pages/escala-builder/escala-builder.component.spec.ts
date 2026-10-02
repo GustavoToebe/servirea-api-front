@@ -1,3 +1,4 @@
+import {of} from 'rxjs';
 import { SessaoAtual } from '../../../../core/layout/sessao-atual';
 import { Voluntario } from '../../../voluntarios/models/voluntario.model';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -46,7 +47,7 @@ describe('EscalaBuilderComponent', () => {
         provideRouter([]),
         {provide:SessaoAtual,useValue:{permissoes:()=>['ESCALA_CRIAR','ESCALA_ALTERAR']}},
         { provide: EscalasService, useValue: escalas },
-        { provide: VoluntariosService, useValue: { active: () => Promise.resolve([]) } },
+        { provide: VoluntariosService, useValue: { opcoes:()=>of({itens:[],pagina:0,tamanho:30,temMais:false}),resolverOpcoes:()=>Promise.resolve([]) } },
         { provide: ExportService, useValue: { exportPdf: () => Promise.resolve(), exportPng: () => Promise.resolve() } },
         { provide: LayoutsEscalaService, useValue: { listar: () => Promise.resolve([]) } },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => null } } } }

@@ -1,3 +1,4 @@
+import {firstValueFrom} from 'rxjs';
 import { OrientacaoToggleComponent } from '../../../../shared/components/orientacao-toggle/orientacao-toggle.component';
 import { Orientacao, lerOrientacao } from '../../../../shared/export/orientacao';
 import { SessaoAtual } from '../../../../core/layout/sessao-atual';
@@ -74,7 +75,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
       </div>
 
       @if(!readOnly&&podeArrastar()){
-      <section class="card space-y-3 p-4"><h2 class="secao-titulo">Alocar por arraste ou teclado</h2><p class="text-sm text-slate-500">Arraste uma pessoa para a vaga, ou selecione aqui e use “Aplicar pessoa selecionada” na vaga. Altera apenas o rascunho; salve depois. Para substituir uma pessoa, será pedida confirmação.</p><label class="label" for="busca-arraste">Buscar voluntário ativo</label><input id="busca-arraste" class="field" [(ngModel)]="buscaArraste" (ngModelChange)="filtrarArraste()"><div class="flex flex-wrap gap-2">@for(v of pessoasArraste;track v.id){<button type="button" class="btn-secondary" [draggable]="!saving&&!arrasteOcupado" [disabled]="saving||arrasteOcupado" [attr.aria-pressed]="pessoaArraste===v.id" (dragstart)="iniciarArraste($event,v.id)" (dragend)="encerrarArraste()" (click)="pessoaArraste=v.id">{{v.nome_completo}}</button>}</div><p role="status">{{avisoArraste}}</p><button type="button" class="btn-secondary" (click)="pessoaArraste=null">Limpar seleção</button></section>
+      <section class="card space-y-3 p-4"><h2 class="secao-titulo">Alocar por arraste ou teclado</h2><p class="text-sm text-slate-500">Arraste uma pessoa para a vaga, ou selecione aqui e use “Aplicar pessoa selecionada” na vaga. Altera apenas o rascunho; salve depois. Para substituir uma pessoa, será pedida confirmação.</p><label class="label" for="busca-arraste">Buscar voluntário ativo</label><input id="busca-arraste" class="field" [(ngModel)]="buscaArraste" (ngModelChange)="buscarArraste()" placeholder="Início do nome"><div class="flex flex-wrap gap-2">@for(v of pessoasArraste;track v.id){<button type="button" class="btn-secondary" [draggable]="!saving&&!arrasteOcupado" [disabled]="saving||arrasteOcupado" [attr.aria-pressed]="pessoaArraste===v.id" (dragstart)="iniciarArraste($event,v.id)" (dragend)="encerrarArraste()" (click)="pessoaArraste=v.id">{{v.nome_completo}}</button>}</div><div class="flex gap-3"><button type="button" [disabled]="buscandoArraste||paginaArraste===0" (click)="paginarArraste(-1)">Anterior</button><span>{{paginaArraste+1}}</span><button type="button" [disabled]="buscandoArraste||!maisArraste" (click)="paginarArraste(1)">Próxima</button></div><p role="status">{{erroArraste||avisoArraste}}</p><button type="button" class="btn-secondary" (click)="pessoaArraste=null">Limpar seleção</button></section>
       }
       @if (loading) {
         <div class="space-y-3" aria-label="Carregando escala">
@@ -268,7 +269,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
                                           {{ slot.voluntario?.nome_completo || '—' }}
                                         </span>
                                       } @else {
-                                        <div class="rounded-lg border border-transparent focus-within:border-[var(--brand)]" (dragover)="permitirArraste($event)" (drop)="soltarPessoa($event,l.evento,slot)"><app-volunteer-picker [volunteers]="volunteers" [selectedId]="slot.voluntario_id" [excludeIds]="l.usados"
+                                        <div class="rounded-lg border border-transparent focus-within:border-[var(--brand)]" (dragover)="permitirArraste($event)" (drop)="soltarPessoa($event,l.evento,slot)"><app-volunteer-picker [remoto]="true" (voluntarioSelecionado)="lembrarOpcao($event)" [volunteers]="volunteers" [selectedId]="slot.voluntario_id" [excludeIds]="l.usados"
                                           (selectedIdChange)="selectVolunteer(l.evento, slot, $event)" />@if(pessoaArraste&&podeArrastar()){<button type="button" class="btn-secondary mt-1 text-xs" [disabled]="saving||arrasteOcupado" (click)="aplicarArraste(l.evento,slot)">Aplicar pessoa selecionada</button>}</div>
                                       }
                                     </div>
@@ -344,7 +345,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
                                 @if (readOnly) {
                                   <span class="block truncate rounded-lg px-2 py-1.5" [class.font-semibold]="!!slot.voluntario_id" [class.text-slate-400]="!slot.voluntario_id">{{ slot.voluntario?.nome_completo || '—' }}</span>
                                 } @else {
-                                  <div class="rounded-lg border border-transparent focus-within:border-[var(--brand)]" (dragover)="permitirArraste($event)" (drop)="soltarPessoa($event,l.evento,slot)"><app-volunteer-picker [volunteers]="volunteers" [selectedId]="slot.voluntario_id" [excludeIds]="l.usados" (selectedIdChange)="selectVolunteer(l.evento, slot, $event)" />@if(pessoaArraste&&podeArrastar()){<button type="button" class="btn-secondary mt-1 text-xs" [disabled]="saving||arrasteOcupado" (click)="aplicarArraste(l.evento,slot)">Aplicar pessoa selecionada</button>}</div>
+                                  <div class="rounded-lg border border-transparent focus-within:border-[var(--brand)]" (dragover)="permitirArraste($event)" (drop)="soltarPessoa($event,l.evento,slot)"><app-volunteer-picker [remoto]="true" (voluntarioSelecionado)="lembrarOpcao($event)" [volunteers]="volunteers" [selectedId]="slot.voluntario_id" [excludeIds]="l.usados" (selectedIdChange)="selectVolunteer(l.evento, slot, $event)" />@if(pessoaArraste&&podeArrastar()){<button type="button" class="btn-secondary mt-1 text-xs" [disabled]="saving||arrasteOcupado" (click)="aplicarArraste(l.evento,slot)">Aplicar pessoa selecionada</button>}</div>
                                 }
                               }
                             </td>
@@ -408,7 +409,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
                                         {{ slot.voluntario?.nome_completo || '—' }}
                                       </span>
                                     } @else {
-                                      <div class="rounded-lg border border-transparent focus-within:border-[var(--brand)]" (dragover)="permitirArraste($event)" (drop)="soltarPessoa($event,l.evento,slot)"><app-volunteer-picker [volunteers]="volunteers" [selectedId]="slot.voluntario_id" [excludeIds]="l.usados" [marcadores]="l.marcadores"
+                                      <div class="rounded-lg border border-transparent focus-within:border-[var(--brand)]" (dragover)="permitirArraste($event)" (drop)="soltarPessoa($event,l.evento,slot)"><app-volunteer-picker [remoto]="true" (voluntarioSelecionado)="lembrarOpcao($event)" [volunteers]="volunteers" [selectedId]="slot.voluntario_id" [excludeIds]="l.usados" [marcadores]="l.marcadores"
                                         (selectedIdChange)="selectVolunteer(l.evento, slot, $event)" />@if(pessoaArraste&&podeArrastar()){<button type="button" class="btn-secondary mt-1 text-xs" [disabled]="saving||arrasteOcupado" (click)="aplicarArraste(l.evento,slot)">Aplicar pessoa selecionada</button>}</div>
                                     }
                                   </div>
@@ -452,7 +453,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
                   <button type="button" class="text-xs font-semibold text-slate-500 hover:underline" (click)="alternarPainelDesktop()">{{ painelDesktop ? 'Recolher painel ›' : '‹ Ainda não escalados' }}</button>
                 </div>
                 @if (painelDesktop || painelAberto) {
-                  <app-ainda-nao-escalados [apoio]="apoio" [volunteers]="volunteers" [eventos]="events" [revisao]="revisao" />
+                  <app-ainda-nao-escalados [parcial]="true" [apoio]="apoio" [volunteers]="volunteers" [eventos]="events" [revisao]="revisao" />
                 }
               </div>
             }
@@ -682,11 +683,11 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
       this.painelDesktop = localStorage.getItem(CHAVE_PAINEL) !== 'recolhido';
     } catch { /* sem localStorage: painel aberto */ }
     try {
-      
-      this.volunteers = await this.volunteersService.active();this.filtrarArraste();
+
+      await this.carregarArraste();
       this.layouts = await this.layoutsService.listar();
 
-      
+
       if (this.id) {
         const d = await this.service.getById(this.id); this.currentDetail = d; this.status = d.status;
         this.form.setValue({ titulo:d.titulo, tipo:d.tipo, ano:d.ano, mes:d.mes, observacao:d.observacao||'', layoutId: d.layoutId || null });
@@ -703,7 +704,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
         this.events = d.eventos.map(e => ({...e, vagas:e.vagas.map(v=>({...v}))}));
         if (this.status !== 'RASCUNHO') this.form.disable({ emitEvent: false });
         if (d.tipo === 'MENSAL') await this.carregarApoio();
-      
+
       } else {
         const type = this.form.controls.tipo.value; const year=this.form.controls.ano.value; const month=this.form.controls.mes.value;
         this.form.controls.titulo.setValue(`Escala ${type==='SEMANAL'?'Semanal':'Mensal'} - ${MESES[month-1]} ${year}`);
@@ -711,6 +712,9 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
         this.events = this.service.buildDefaultEvents(type, year, month, (vagasDoLayout(this.colunas) as any));
       }
 
+      const ids=this.events.flatMap(e=>e.vagas.flatMap(v=>v.voluntario_id?[v.voluntario_id]:[]));
+      const irmaos=(this.apoio?.voluntarios??[]).filter(v=>ids.includes(v.voluntarioId)).flatMap(v=>v.irmaos);
+      for(const v of await this.volunteersService.resolverOpcoes([...ids,...irmaos]))this.lembrarVoluntario(v);
       this.form.markAsPristine(); this.eventsDirty=false;
       this.syncAddDate();
     } catch(e:any){this.error=e?.message||'Erro ao carregar a tela de escala.';}
@@ -903,6 +907,23 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
   }
 
 
+  paginaArraste=0;maisArraste=false;buscandoArraste=false;erroArraste='';private rodadaArraste=0;private timerArraste?:ReturnType<typeof setTimeout>;
+  private destruidoSeletores=false;
+  ngOnDestroy(){this.destruidoSeletores=true;this.rodadaArraste++;clearTimeout(this.timerArraste);}
+  lembrarVoluntario(v:Voluntario){this.volunteers=[...this.volunteers.filter(x=>x.id!==v.id),v];this.recalcular();}
+  lembrarOpcao(v:Voluntario){this.lembrarVoluntario(v);const ids=this.apoio?.voluntarios.find(x=>x.voluntarioId===v.id)?.irmaos??[];if(!ids.length)return;
+    void this.volunteersService.resolverOpcoes(ids).then(rows=>{if(this.destruidoSeletores)return;for(const r of rows)this.lembrarVoluntario(r);const evento=this.events.find(e=>e.vagas.some(s=>s.voluntario_id===v.id));if(evento)this.sugerirIrmao(evento,v.id);}).catch(()=>{this.avisoArraste='Não foi possível consultar irmãos desta pessoa.';});
+  }
+  buscarArraste(){clearTimeout(this.timerArraste);this.rodadaArraste++;this.pessoasArraste=[];this.timerArraste=setTimeout(()=>{this.paginaArraste=0;void this.carregarArraste();},300);}
+  paginarArraste(d:number){if(this.buscandoArraste||this.paginaArraste+d<0||d>0&&!this.maisArraste)return;this.paginaArraste+=d;void this.carregarArraste();}
+  async carregarArraste(){const rodada=++this.rodadaArraste;this.buscandoArraste=true;this.erroArraste='';
+    try{const r=await firstValueFrom(this.volunteersService.opcoes(this.buscaArraste,this.paginaArraste));if(this.destruidoSeletores||rodada!==this.rodadaArraste)return;
+      const selecionados=new Set(this.events.flatMap(e=>e.vagas.flatMap(v=>v.voluntario_id?[v.voluntario_id]:[])));
+      for(const a of this.apoio?.voluntarios??[])if(selecionados.has(a.voluntarioId))for(const id of a.irmaos)selecionados.add(id);
+      this.volunteers=this.volunteers.filter(v=>selecionados.has(v.id)||v.id===this.pessoaArraste);for(const v of r.itens)this.lembrarVoluntario(v);this.pessoasArraste=r.itens;this.maisArraste=r.temMais;
+    }catch{if(rodada===this.rodadaArraste){this.pessoasArraste=[];this.maisArraste=false;this.erroArraste='Busca indisponível. Tente novamente.';}}
+    finally{if(rodada===this.rodadaArraste)this.buscandoArraste=false;}
+  }
   buscaArraste='';pessoasArraste:Voluntario[]=[];pessoaArraste:string|null=null;avisoArraste='';arrasteOcupado=false;private arrastada:string|null=null;
   podeArrastar(){return this.sessaoRespostas.permissoes().includes(this.id?'ESCALA_ALTERAR':'ESCALA_CRIAR');}
   filtrarArraste(){const q=this.buscaArraste.trim().toLocaleLowerCase('pt-BR');this.pessoasArraste=this.volunteers.filter(v=>v.ativo&&v.nome_completo.toLocaleLowerCase('pt-BR').includes(q)).slice(0,30);}
@@ -1046,7 +1067,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
     try{
       const m=this.form.getRawValue();
       const eraNova=!this.id;
-      
+
       const result=await this.service.save({id:this.id||undefined,titulo:m.titulo,tipo:m.tipo,ano:m.ano,mes:m.mes,status,observacao:m.observacao||null,version:this.currentDetail?.version??null,eventos:this.events, layoutId: m.layoutId || null, colunas: this.colunas});
 
       this.id=result.id;this.currentDetail=result;this.status=result.status;this.events=result.eventos;this.saved=true;this.form.markAsPristine();this.eventsDirty=false;
@@ -1060,7 +1081,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
   async cancelScale(){if(!this.id)return;if(!await this.dialogo.confirmar({ titulo: 'Cancelar escala?', mensagem: `Tem certeza que deseja cancelar a escala ${MESES[this.form.controls.mes.value-1]} / ${this.form.controls.ano.value}?`, confirmar: 'Cancelar escala', cancelar: 'Voltar', perigo: true }))return;try{this.currentDetail=await this.service.setStatus(this.id,'CANCELADA');this.status='CANCELADA';this.form.disable({emitEvent:false});this.saved=true;}catch(e:any){this.error=e?.message||'Erro ao cancelar escala.';}}
   async reopen(){if(!this.id)return;if(!await this.dialogo.confirmar({ titulo: 'Reabrir escala?', mensagem: 'A escala volta a ser não finalizada e aceita alterações de novo.', confirmar: 'Reabrir' }))return;try{this.currentDetail=await this.service.setStatus(this.id,'RASCUNHO');this.status='RASCUNHO';this.form.enable({emitEvent:false});this.saved=true;}catch(e:any){this.error=e?.message||'Erro ao reabrir escala.';}}
   async remove(){if(!this.id)return;if(!await this.dialogo.confirmar({ titulo: 'Excluir escala?', mensagem: `Excluir definitivamente a escala de ${MESES[this.form.controls.mes.value-1]} / ${this.form.controls.ano.value}? Esta ação não pode ser desfeita.`, confirmar: 'Excluir', perigo: true }))return;try{await this.service.deleteCancelled(this.id);this.saved=true;await this.router.navigate(['/escalas']);}catch(e:any){this.error=e?.message||'Erro ao excluir escala.';}}
-  
+
   orientacao: Orientacao = lerOrientacao('escala', 'PAISAGEM');
 
   async gerarPrevia() {

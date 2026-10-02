@@ -73,6 +73,7 @@ export function montarPainel(volunteers: Voluntario[], apoio: ApoioEscala | null
           <option value="">Todos</option><option value="COROINHA">Coroinhas</option><option value="ACOLITO">Acólitos</option>
         </select>
       </div>
+      @if(parcial){<p class="text-xs text-slate-500">Este painel considera as pessoas carregadas. Use a busca paginada para consultar outras.</p>}
       <h3 class="text-sm font-black uppercase tracking-wide text-slate-600">Ainda não escalados ({{ ainda.length }})</h3>
       <ul class="max-h-[50vh] space-y-1 overflow-y-auto text-sm" data-ainda>
         @for (l of ainda; track l.id) {
@@ -82,7 +83,7 @@ export function montarPainel(volunteers: Voluntario[], apoio: ApoioEscala | null
             @else if (l.situacao === 'PENDENTE' || !l.situacao) { <span class="shrink-0 rounded bg-slate-100 px-1.5 text-[10px] text-slate-500">não respondeu</span> }
           </li>
         } @empty {
-          <li class="text-slate-500">Todos já estão na escala. 🎉</li>
+          <li class="text-slate-500">{{parcial ? 'Nenhuma pessoa carregada fora da escala.' : 'Todos já estão na escala. 🎉'}}</li>
         }
       </ul>
       <details>
@@ -97,6 +98,7 @@ export function montarPainel(volunteers: Voluntario[], apoio: ApoioEscala | null
   `
 })
 export class AindaNaoEscaladosComponent implements OnChanges {
+  @Input() parcial=false;
   @Input() apoio: ApoioEscala | null = null;
   @Input() volunteers: Voluntario[] = [];
   @Input() eventos: EscalaEvento[] = [];

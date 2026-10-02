@@ -1,0 +1,109 @@
+<div class="space-y-5">
+<app-cabecalho-pagina titulo="Referências e roteiros litúrgicos" subtitulo="Conteúdo informado e revisado pela equipe. A sequência é manual; não há conteúdo litúrgico gerado.">
+<div acoes>@if(podeEditar()){<button class="btn-primary" [disabled]="ocupado()" (click)="aba==='referencias'?abrirReferencia():abrirRoteiro()">Novo registro</button>}</div>
+</app-cabecalho-pagina>
+<div class="flex gap-2">
+<button class="btn-secondary" (click)="trocar('referencias')" [attr.aria-pressed]="aba==='referencias'">Referências</button>
+<button class="btn-secondary" (click)="trocar('roteiros')" [attr.aria-pressed]="aba==='roteiros'">Roteiros</button>
+</div>
+@if(erro()){<p role="alert" class="card p-4 text-red-700">{{erro()}}</p>}
+@if(aviso()){<p role="status" class="card p-4 text-emerald-700">{{aviso()}}</p>}
+<app-barra-filtros [(termo)]="busca" (buscar)="buscar()"/>
+<section class="card p-4">
+<div class="overflow-auto">
+<table class="tabela w-full">
+<thead>
+<tr>
+<th>Título</th>
+<th>Contexto</th>
+<th>Estado</th>
+<th>Ação</th>
+</tr>
+</thead>
+<tbody>
+@if(aba==='referencias'){@for(r of referencias();track r.id){<tr>
+<td>{{r.titulo}}</td>
+<td>{{r.fonte}}</td>
+<td>
+<span class="badge" [class]="r.ativo?'bg-emerald-50 text-emerald-700':'bg-slate-100 text-slate-600'">{{r.ativo?'Ativo':'Inativo'}}</span>
+</td>
+<td>
+<button class="btn-secondary" (click)="abrirReferencia(r)">Abrir</button>
+</td>
+</tr>}}
+@else{@for(r of roteiros();track r.id){<tr>
+<td>{{r.titulo}}</td>
+<td>{{r.celebracao}}</td>
+<td>
+<span class="badge" [class]="r.ativo?'bg-emerald-50 text-emerald-700':'bg-slate-100 text-slate-600'">{{r.ativo?'Ativo':'Inativo'}}</span>
+</td>
+<td>
+<button class="btn-secondary" (click)="abrirRoteiro(r)">Abrir</button>
+</td>
+</tr>}}
+</tbody>
+</table>
+</div>
+<app-estado-lista [carregando]="carregando()" [vazio]="!total()"/>
+<div class="flex gap-3 mt-4">
+<button class="btn-secondary" [disabled]="pagina===0||carregando()" (click)="paginar(-1)">Anterior</button>
+<span>Página {{pagina+1}} · {{total()}} registros</span>
+<button class="btn-secondary" [disabled]="(pagina+1)*30>=total()||carregando()" (click)="paginar(1)">Próxima</button>
+</div>
+</section>
+@if(referencia;as r){<form #f="ngForm" (ngSubmit)="salvar(f)" (input)="alterado.set(true)" (change)="alterado.set(true)">
+<section class="card p-5 space-y-3">
+<h2 class="secao-titulo">Referência</h2>
+<fieldset class="space-y-3" [disabled]="ocupado()||!podeEditar()">
+<label class="label" for="lit-titulo">Título</label>
+<input id="lit-titulo" name="titulo" class="field w-full" required maxlength="160" [(ngModel)]="r.titulo">
+<label class="label" for="lit-fonte">Fonte ou autoria informada pela equipe</label>
+<input id="lit-fonte" name="fonte" class="field w-full" required maxlength="200" [(ngModel)]="r.fonte">
+<label class="label" for="lit-url">Link da referência (http/https)</label>
+<input id="lit-url" name="url" class="field w-full" maxlength="1000" [(ngModel)]="r.url">
+<label class="label" for="lit-obs">Observação</label>
+<textarea id="lit-obs" name="obs" class="field w-full" maxlength="2000" [(ngModel)]="r.observacao">
+</textarea>
+<label>
+<input type="checkbox" name="ativo" [(ngModel)]="r.ativo"> Ativa</label>
+</fieldset>@if(r.url){<a class="btn-secondary" [href]="r.url" target="_blank" rel="noopener noreferrer">Abrir fonte cadastrada</a>}</section>@if(podeEditar()){<app-rodape-form [carregando]="ocupado()" (cancelar)="fechar()"/>}
+@else{<button type="button" class="btn-secondary" (click)="fechar()">Fechar</button>}</form>}
+@if(roteiro;as r){<form #f="ngForm" (ngSubmit)="salvar(f)" (input)="alterado.set(true)" (change)="alterado.set(true)">
+<section class="card p-5 space-y-3">
+<h2 class="secao-titulo">Sequência da celebração</h2>
+<fieldset class="space-y-3" [disabled]="ocupado()||!podeEditar()">
+<label class="label" for="rot-titulo">Título do roteiro</label>
+<input id="rot-titulo" name="titulo" class="field w-full" required maxlength="160" [(ngModel)]="r.titulo">
+<label class="label" for="rot-celebracao">Celebração / contexto (texto da equipe)</label>
+<input id="rot-celebracao" name="celebracao" class="field w-full" required maxlength="200" [(ngModel)]="r.celebracao">
+<label>
+<input type="checkbox" name="ativo" [(ngModel)]="r.ativo"> Ativo</label>
+<label class="label" for="rot-busca">Buscar referências para os passos</label>
+<div class="flex gap-2">
+<input id="rot-busca" name="buscaRef" class="field" [(ngModel)]="buscaReferencia">
+<button type="button" class="btn-secondary" (click)="buscarReferencias()">Buscar</button>
+<button type="button" class="btn-secondary" [disabled]="paginaReferencia===0" (click)="buscarReferencias(paginaReferencia-1)">Anterior</button>
+<button type="button" class="btn-secondary" [disabled]="(paginaReferencia+1)*30>=totalReferencias" (click)="buscarReferencias(paginaReferencia+1)">Próxima</button>
+</div>
+@for(p of r.passos;track $index;let i=$index){<div class="border rounded-xl p-4 space-y-2">
+<h3>Passo {{i+1}}</h3>
+<label class="label" [for]="'passo-titulo-'+i">Título informado pela equipe</label>
+<input [id]="'passo-titulo-'+i" [name]="'titulo'+i" class="field w-full" required maxlength="160" [(ngModel)]="p.titulo">
+<label class="label" [for]="'passo-ref-'+i">Referência opcional</label>
+<select [id]="'passo-ref-'+i" [name]="'ref'+i" class="field w-full" [(ngModel)]="p.referenciaId">
+<option [ngValue]="null">Sem referência</option>@if(p.referenciaId){<option [value]="p.referenciaId">{{nomeReferencia(p.referenciaId)}}</option>}
+@for(o of opcoes();track o.id){@if(o.ativo){<option [value]="o.id">{{o.titulo}} · {{o.fonte}}</option>}}</select>
+<label class="label" [for]="'passo-obs-'+i">Observação da sequência</label>
+<textarea [id]="'passo-obs-'+i" [name]="'obs'+i" class="field w-full" maxlength="2000" [(ngModel)]="p.observacao">
+</textarea>
+<div class="flex gap-2">
+<button type="button" class="btn-secondary" [disabled]="i===0" (click)="mover(i,-1)">Subir</button>
+<button type="button" class="btn-secondary" [disabled]="i===r.passos.length-1" (click)="mover(i,1)">Descer</button>
+<button type="button" class="btn-danger" [disabled]="r.passos.length<=1" (click)="removerPasso(i)">Remover passo</button>
+</div>
+</div>}
+<button type="button" class="btn-secondary" [disabled]="r.passos.length>=50" (click)="adicionarPasso()">Adicionar passo</button>
+</fieldset>
+</section>@if(podeEditar()){<app-rodape-form [carregando]="ocupado()" (cancelar)="fechar()"/>}
+@else{<button type="button" class="btn-secondary" (click)="fechar()">Fechar</button>}</form>}
+</div>

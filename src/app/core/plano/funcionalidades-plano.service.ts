@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 export const FUNCIONALIDADES = [
+  {codigo:'LITURGIA',nome:'Referências e roteiros'},{codigo:'ESTOQUE',nome:'Estoque e patrimônio'},
   {codigo:'PASTORAIS',nome:'Pastorais e equipes'},{codigo:'PORTAL_VOLUNTARIO',nome:'Portal do voluntário'},{codigo:'CALENDARIO',nome:'Calendário privado'},
   {codigo:'MURAL',nome:'Mural de avisos'}, {codigo:'TAREFAS',nome:'Tarefas e solicitações'},
   {codigo:'ESCALAS',nome:'Escalas'}, {codigo:'INSCRICAO_PUBLICA',nome:'Inscrição pública'},
@@ -15,6 +16,9 @@ export class FuncionalidadesPlanoService {
 }
 export function moduloDoPlano(url:string):string|null {
   const caminho=url.split('?')[0].split('(')[0];
+  if(caminho.startsWith('/liturgia'))return 'LITURGIA';
+  if(caminho.startsWith('/estoque'))return 'ESTOQUE';
+  if(caminho.startsWith('/indicadores'))return 'ESCALAS';
   if(caminho.startsWith('/portal')) return 'PORTAL_VOLUNTARIO';
   if(caminho.startsWith('/pastorais')) return 'PASTORAIS';
   if(caminho.startsWith('/mural')) return 'MURAL';
