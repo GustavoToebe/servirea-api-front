@@ -43,4 +43,12 @@ describe('DashboardComponent', () => {
     criarCom(['ESCALA']);
     expect(fixture.nativeElement.querySelector('[data-cartao="aniversariantes"]')).toBeNull();
   });
+  it('mostra os primeiros passos somente com ONBOARDING', () => {
+    criarCom(['ONBOARDING']);
+    expect(fixture.nativeElement.querySelector('a[href="/primeiros-passos"]')).not.toBeNull();
+  });
+  it('oculta os primeiros passos sem ONBOARDING', () => {
+    criarCom([]);
+    expect(fixture.nativeElement.querySelector('a[href="/primeiros-passos"]')).toBeNull();
+  });
 });

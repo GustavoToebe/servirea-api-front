@@ -1,0 +1,34 @@
+import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { signal } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
+import { of, throwError, Subject } from 'rxjs';
+import { OnboardingComponent } from './onboarding.component';
+import { OnboardingApiService, Onboarding } from './onboarding-api.service';
+import { SessaoAtual } from '../../core/layout/sessao-atual';
+import { DialogoService } from '../../shared/services/dialogo.service';
+describe('Primeiros passos', () => {
+ let fixture: ComponentFixture<OnboardingComponent>;
+ let api: jasmine.SpyObj<OnboardingApiService>;
+ let dialogo: jasmine.SpyObj<DialogoService>;
+ const permissoes = signal(['ONBOARDING','ONBOARDING_GERENCIAR']);
+ const estado = (): Onboarding => ({versao:3, concluidas:0,total:1,percentual:0,proximaEtapa:'PAROQUIA',iniciadoEm:null,atualizadoEm:null,etapas:[{codigo:'PAROQUIA',titulo:'Revisar a paróquia',orientacao:'Confira os dados',url:'/paroquia',permissao:'PAROQUIA',situacao:'PRONTA',podeConcluir:true,podeReabrir:false,podePular:false}]});
+ beforeEach(async () => {
+  permissoes.set(['ONBOARDING','ONBOARDING_GERENCIAR']);
+  api=jasmine.createSpyObj('OnboardingApiService',['consultar','alterar']);
+  dialogo=jasmine.createSpyObj('DialogoService',['confirmar']);
+  api.consultar.and.returnValue(of(estado()));dialogo.confirmar.and.returnValue(Promise.resolve(true));
+  await TestBed.configureTestingModule({imports:[OnboardingComponent],providers:[provideRouter([]),{provide:OnboardingApiService,useValue:api},{provide:SessaoAtual,useValue:{permissoes}},{provide:DialogoService,useValue:dialogo}]}).compileComponents();
+  fixture=TestBed.createComponent(OnboardingComponent);fixture.detectChanges();
+ });
+ it('retoma a etapa salva com link e progresso',()=>{expect(fixture.nativeElement.textContent).toContain('0 de 1');expect(fixture.nativeElement.querySelector('a[href="/paroquia"]')).not.toBeNull();expect(api.alterar).not.toHaveBeenCalled();});
+ it('salva somente após confirmação e envia a versão lida',async()=>{const resultado={...estado(),versao:4,concluidas:1,percentual:100,proximaEtapa:null};api.alterar.and.returnValue(of(resultado));await fixture.componentInstance.alterar(estado().etapas[0],'CONCLUIR');expect(api.alterar).toHaveBeenCalledOnceWith('PAROQUIA','CONCLUIR',3);expect(fixture.componentInstance.dados()?.versao).toBe(4);expect(fixture.componentInstance.ocupado()).toBeFalse();});
+ it('cancelamento não grava nem modifica progresso',async()=>{dialogo.confirmar.and.returnValue(Promise.resolve(false));await fixture.componentInstance.alterar(estado().etapas[0],'CONCLUIR');expect(api.alterar).not.toHaveBeenCalled();expect(fixture.componentInstance.dados()?.versao).toBe(3);});
+ it('conflito mantém a revisão anterior sem repetir escrita automaticamente',async()=>{api.alterar.and.returnValue(throwError(()=>new HttpErrorResponse({status:409,error:{message:'O checklist mudou. Atualize antes de registrar sua revisão.'}})));await fixture.componentInstance.alterar(estado().etapas[0],'CONCLUIR');expect(api.alterar).toHaveBeenCalledTimes(1);expect(fixture.componentInstance.dados()?.versao).toBe(3);expect(fixture.componentInstance.erro()).toBeTruthy();fixture.componentInstance.carregar();expect(api.consultar).toHaveBeenCalledTimes(2);});
+ it('impede dupla confirmação enquanto aguarda resposta',async()=>{let resolver!:(v:boolean)=>void;dialogo.confirmar.and.returnValue(new Promise(r=>resolver=r));const primeira=fixture.componentInstance.alterar(estado().etapas[0],'CONCLUIR');await fixture.componentInstance.alterar(estado().etapas[0],'CONCLUIR');expect(dialogo.confirmar).toHaveBeenCalledTimes(1);resolver(false);await primeira;});
+ it('perfil somente leitor não pode alterar',async()=>{permissoes.set(['ONBOARDING']);fixture.detectChanges();expect(fixture.nativeElement.textContent).not.toContain('Revisei e concluí');await fixture.componentInstance.alterar(estado().etapas[0],'CONCLUIR');expect(dialogo.confirmar).not.toHaveBeenCalled();});
+ it('etapa não contratada não oferece módulo ou ação',()=>{const d=estado();d.etapas[0]={...d.etapas[0],codigo:'ESCALA',situacao:'NAO_CONTRATADA',url:'/escalas',podeConcluir:false};fixture.componentInstance.dados.set(d);fixture.detectChanges();expect(fixture.nativeElement.textContent).toContain('Fora do plano');expect(fixture.nativeElement.querySelector('a[href="/escalas"]')).toBeNull();});
+ it('falha de consulta limpa dados e permite retomada',()=>{api.consultar.and.returnValue(throwError(()=>new HttpErrorResponse({status:503})));fixture.componentInstance.carregar();expect(fixture.componentInstance.dados()).toBeNull();expect(fixture.componentInstance.carregando()).toBeFalse();api.consultar.and.returnValue(of(estado()));fixture.componentInstance.carregar();expect(fixture.componentInstance.dados()?.versao).toBe(3);});
+ it('destruição durante confirmação não inicia gravação',async()=>{let resolver!:(v:boolean)=>void;dialogo.confirmar.and.returnValue(new Promise(r=>resolver=r));const acao=fixture.componentInstance.alterar(estado().etapas[0],'CONCLUIR');fixture.destroy();resolver(true);await acao;expect(api.alterar).not.toHaveBeenCalled();});
+ it('cancela a leitura ao sair da página',()=>{const leitura=new Subject<Onboarding>();api.consultar.and.returnValue(leitura);fixture.componentInstance.carregar();fixture.destroy();expect(leitura.observed).toBeFalse();});
+});

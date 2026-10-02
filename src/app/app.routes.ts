@@ -28,6 +28,7 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       { path: 'funcionalidade-indisponivel', loadComponent: () => import('./core/plano/funcionalidades-plano.component').then(m => m.FuncionalidadesPlanoComponent) },
       { path: 'ajuda', loadComponent: () => import('./features/ajuda/ajuda.component').then(m => m.AjudaComponent) },
+      { path: 'primeiros-passos', loadComponent: () => import('./features/onboarding/onboarding.component').then(m => m.OnboardingComponent) },
       { path: 'dashboard', loadComponent: () => import('./features/dashboard/pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
       { path: 'pessoas', loadComponent: () => import('./features/pessoas/pages/pessoas-list.component').then(m => m.PessoasListComponent) },
       { path: 'pessoas/importar', canActivate: [funcionalidadePlanoGuard('IMPORTACAO_PESSOAS')], canDeactivate: [pendingChangesGuard], loadComponent: () => import('./features/pessoas/pages/importar-pessoas.component').then(m => m.ImportarPessoasComponent) },

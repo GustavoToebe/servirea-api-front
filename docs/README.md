@@ -40,3 +40,5 @@ O dump `DOCUMENTACAO-COMPLETA-PARA-IA.md` descrevia o front falando direto com o
 - [Trocas de escala com aceite e aprovação](trocas-escala.md).
 
 - [Tarefas, relatórios e indisponibilidade](tarefas-relatorios-disponibilidade.md): responsável, CSV autorizado e portal próprio (V065).
+
+- [Primeiros passos](onboarding.md): checklist compartilhado, pré-requisitos, retomada e revisão versionada (F07/V066).

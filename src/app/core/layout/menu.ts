@@ -22,6 +22,7 @@ export const BARRA: ItemMenu[] = [
   { label: 'Paróquia', url: '/paroquia', permissao: 'PAROQUIA' },
   { label: 'Perfis', url: '/perfis', permissao: 'PERFIL' },
   { label: 'Usuários', url: '/usuarios', permissao: 'USUARIO' },
+  { label: 'Primeiros passos', url: '/primeiros-passos', permissao: 'ONBOARDING' },
   { label: 'Ajuda', url: '/ajuda', permissao: null }
 ];
 

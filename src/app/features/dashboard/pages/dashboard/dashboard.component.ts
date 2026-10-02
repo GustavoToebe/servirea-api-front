@@ -33,6 +33,8 @@ interface MissaVista {
         <p class="text-sm text-[var(--muted)]">O que está pronto para as próximas celebrações e o que ainda tem vaga.</p>
       </div>
 
+      @if(veOnboarding()){<section class="card p-5"><h2 class="text-lg font-bold">Primeiros passos</h2><p class="text-sm text-[var(--muted)]">Configure a paróquia e registre o progresso da equipe.</p><a routerLink="/primeiros-passos" class="btn-secondary mt-3 inline-block">Abrir checklist e retomar</a></section>}
+
       @if (error) {
         <div class="rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 p-4 text-rose-700 dark:text-rose-300">{{ error }}</div>
       }
@@ -158,6 +160,7 @@ export class DashboardComponent implements OnInit {
   rotuloDia = rotuloDia;
   private sessao = inject(SessaoAtual);
   /** A API exige PERM_PESSOA; sem ela o cartão nem aparece. */
+  readonly veOnboarding = computed(() => this.sessao.permissoes().includes('ONBOARDING'));
   readonly veAniversariantes = computed(() => this.sessao.permissoes().includes('PESSOA'));
 
   constructor(private volunteers: VoluntariosService, private scales: EscalasService) {}

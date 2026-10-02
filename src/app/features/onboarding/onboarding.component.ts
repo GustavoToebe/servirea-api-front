@@ -1,0 +1,34 @@
+import { ChangeDetectionStrategy,Component,OnInit,OnDestroy,inject,signal,computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { SessaoAtual } from '../../core/layout/sessao-atual';
+import { mensagemApi } from '../../core/api/api-error';
+import { DialogoService } from '../../shared/services/dialogo.service';
+import { CabecalhoPaginaComponent } from '../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
+import { OnboardingApiService,Onboarding,EtapaOnboarding,AcaoEtapa,SituacaoEtapa } from './onboarding-api.service';
+@Component({selector:'app-onboarding',imports:[CommonModule,RouterLink,CabecalhoPaginaComponent],changeDetection:ChangeDetectionStrategy.OnPush,template:`
+ <div class="space-y-5"><app-cabecalho-pagina titulo="Primeiros passos" subtitulo="Configure a paróquia por etapas. O progresso fica salvo para a equipe retomar de onde parou."><div acoes class="flex gap-2"><a routerLink="/ajuda" class="btn-secondary">Ajuda</a><button type="button" class="btn-secondary" [disabled]="carregando()||ocupado()" (click)="carregar()">Atualizar checklist</button></div></app-cabecalho-pagina>
+ @if(erro()){<div class="card bg-red-50 p-4 text-red-700" role="alert">{{erro()}}</div>}@if(aviso()){<p role="status" class="card p-4 text-emerald-700">{{aviso()}}</p>}
+ @if(carregando()){<p role="status">Consultando a configuração…</p>}
+ @if(dados();as d){<section class="card p-5 space-y-3"><h2 class="secao-titulo">Sua configuração</h2><p>{{d.concluidas}} de {{d.total}} etapas acessíveis concluídas · {{d.percentual}}%</p><progress class="w-full" [value]="d.concluidas" [max]="d.total||1" aria-label="Progresso da configuração"></progress>@if(proxima();as p){<p>Próxima etapa: {{p.titulo}}</p>@if(p.url){<a [routerLink]="p.url" class="btn-primary inline-block">Retomar {{p.titulo}}</a>}}@else if(d.total>0&&d.concluidas===d.total){<p class="text-emerald-700">As etapas acessíveis estão revisadas. A configuração continua disponível para novas conferências.</p>}@else{<p>Peça ao administrador para conferir as etapas indisponíveis.</p>}@if(d.atualizadoEm){<p class="text-sm text-slate-500">Última revisão da equipe: {{d.atualizadoEm | date:'dd/MM/yyyy HH:mm'}}</p>}<p class="text-sm text-slate-500">O checklist não envia convites nem altera cadastros ou escalas. Abra o módulo, faça a configuração e volte para registrar a revisão.</p></section>
+ <div class="grid gap-4 lg:grid-cols-2">@for(e of d.etapas;track e.codigo){<section class="card p-5 space-y-3" [attr.data-etapa]="e.codigo"><div class="flex flex-wrap items-center justify-between gap-2"><h2 class="secao-titulo">{{e.titulo}}</h2><span class="badge" [ngClass]="cores[e.situacao]">{{rotulos[e.situacao]}}</span></div><p>{{e.orientacao}}</p>@if(e.situacao==='SEM_PERMISSAO'){<p class="text-sm text-slate-500">Seu perfil precisa de acesso a este módulo. O checklist não concede permissões.</p>}@else if(e.situacao==='NAO_CONTRATADA'){<p class="text-sm text-amber-700">Escalas não está incluído no plano atual. Consulte Minha conta ou o administrador.</p>}@else{<div class="flex flex-wrap gap-2">@if(e.url){<a [routerLink]="e.url" class="btn-secondary">Abrir módulo</a>}@if(podeGerenciar()&&e.podeConcluir){<button type="button" class="btn-primary" [disabled]="ocupado()||carregando()" (click)="alterar(e,'CONCLUIR')">Revisei e concluí</button>}@if(podeGerenciar()&&e.podePular){<button type="button" class="btn-secondary" [disabled]="ocupado()||carregando()" (click)="alterar(e,'PULAR')">Trabalho sozinho</button>}@if(podeGerenciar()&&e.podeReabrir){<button type="button" class="btn-secondary" [disabled]="ocupado()||carregando()" (click)="alterar(e,'REABRIR')">Reabrir revisão</button>}</div>}
+ @if(e.situacao==='REVISAR'){<p class="text-sm text-amber-700">A configuração mudou desde a revisão. Confira novamente.</p>}</section>}</div>}
+ </div>`})
+export class OnboardingComponent implements OnInit,OnDestroy {
+ private readonly api=inject(OnboardingApiService);private readonly sessao=inject(SessaoAtual);private readonly dialogo=inject(DialogoService);private leitura?:Subscription;private escrita?:Subscription;private destruido=false;
+ readonly dados=signal<Onboarding|null>(null);readonly erro=signal('');readonly aviso=signal('');readonly carregando=signal(false);readonly ocupado=signal(false);
+ readonly proxima=computed(()=>{const d=this.dados();return d?.etapas.find(e=>e.codigo===d.proximaEtapa)||null;});
+ readonly rotulos:Record<SituacaoEtapa,string>={PENDENTE:'Configuração pendente',PRONTA:'Pronta para revisão',CONCLUIDA:'Concluída',DISPENSADA:'Dispensada',REVISAR:'Revisar novamente',SEM_PERMISSAO:'Sem acesso',NAO_CONTRATADA:'Fora do plano'};
+ readonly cores:Record<SituacaoEtapa,string>={PENDENTE:'bg-amber-50 text-amber-700',PRONTA:'bg-amber-50 text-amber-700',CONCLUIDA:'bg-emerald-50 text-emerald-700',DISPENSADA:'bg-slate-100 text-slate-600',REVISAR:'bg-amber-50 text-amber-700',SEM_PERMISSAO:'bg-slate-100 text-slate-600',NAO_CONTRATADA:'bg-amber-50 text-amber-700'};
+ ngOnInit(){this.carregar();}podeGerenciar(){return this.sessao.permissoes().includes('ONBOARDING_GERENCIAR');}
+ carregar(){if(this.ocupado()||this.destruido)return;this.leitura?.unsubscribe();this.carregando.set(true);this.dados.set(null);this.erro.set('');this.leitura=this.api.consultar().subscribe({next:d=>{this.dados.set(d);this.carregando.set(false);},error:e=>{this.carregando.set(false);this.erro.set(mensagemApi(e,'Não foi possível consultar os primeiros passos.'));}});}
+ async alterar(e:EtapaOnboarding,acao:AcaoEtapa){const d=this.dados();if(!d||this.ocupado()||this.carregando()||!this.podeGerenciar()||!this.permitida(e,acao))return;this.ocupado.set(true);
+  try{const mensagem=acao==='CONCLUIR'?'Registrar que você revisou esta etapa? A configuração será conferida novamente pelo servidor.':acao==='PULAR'?'Dispensar o convite de outra conta por enquanto? Você poderá reabrir esta etapa.':'Reabrir esta revisão? Os cadastros e configurações serão preservados.';
+   if(!await this.dialogo.confirmar({mensagem,confirmar:acao==='CONCLUIR'?'Concluir':acao==='PULAR'?'Dispensar convite':'Reabrir'})||this.destruido){this.ocupado.set(false);return;}
+   this.erro.set('');this.aviso.set('');this.escrita=this.api.alterar(e.codigo,acao,d.versao).subscribe({next:r=>{this.dados.set(r);this.ocupado.set(false);this.aviso.set('Revisão salva para a equipe.');},error:erro=>{this.ocupado.set(false);this.erro.set(mensagemApi(erro,'Não foi possível salvar. Atualize o checklist antes de tentar novamente.'));}});
+  }catch{this.ocupado.set(false);this.erro.set('Não foi possível registrar a revisão.');}
+ }
+ private permitida(e:EtapaOnboarding,a:AcaoEtapa){return a==='CONCLUIR'?e.podeConcluir:a==='REABRIR'?e.podeReabrir:e.podePular;}
+ ngOnDestroy(){this.destruido=true;this.leitura?.unsubscribe();this.escrita?.unsubscribe();}
+}

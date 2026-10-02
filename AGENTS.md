@@ -102,7 +102,7 @@ Detalhe, tabelas e valores em `docs/design-system.md`. Leia antes de mexer em te
 - Mensagem de erro da API: `mensagemApi(erro, 'fallback')` (`core/api/api-error.ts`).
 - Tema escuro: estilos sob `.parish` (`styles.scss`); componente fora da moldura envolve o conteúdo em
   `<div class="parish">`.
-- Commits vão direto na `main`.
+- Trabalhar na branch autorizada pelo usuário; nesta implementação, `melhoria/ecossistema-sem-ia`.
 
 ## Segurança e CI na branch de melhorias
 
@@ -145,3 +145,5 @@ Pessoas/inscrições/eventos usam contratos de [listas paginadas](docs/listas-pa
 - [Fontes e retomada](docs/desenvolvimento/fontes-e-retomada.md): precedência, histórico e registro de evidências.
 
 - V065: docs/tarefas-relatorios-disponibilidade.md. Responsável é usuario_id com FK composta do vínculo; diretório mínimo de 30. Relatórios projetam vagas ocupadas finalizadas; CSV limitado a 5.000, AUDITORIA + RELATORIO_EXPORTAR. Portal próprio PORTAL_DISPONIBILIDADE; versão mensal sob lock da paróquia compartilhada com a coordenação. PUT mensal exige versao.
+
+- F07/V066: [Primeiros passos](docs/onboarding.md). ONBOARDING + ONBOARDING_GERENCIAR e leitura do módulo; progresso compartilhado por paróquia, versão manual sob lock da paróquia, GET sem escrita. Requisitos mínimos são conferidos pelo servidor; nenhuma configuração/envio automático. ESCALAS respeita plano; etapas sem acesso/recurso ficam fora do percentual.
