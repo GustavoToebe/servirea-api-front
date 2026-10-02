@@ -28,3 +28,5 @@ O dump `DOCUMENTACAO-COMPLETA-PARA-IA.md` descrevia o front falando direto com o
 
 - [Funcionalidades por plano](funcionalidades-plano.md).
 - [Mural e tarefas](mural-tarefas.md).
+
+- [Portal, calendário e pastorais](portal-calendario-pastorais.md): configuração, identidade pessoal, assinatura privada e equipes simples.

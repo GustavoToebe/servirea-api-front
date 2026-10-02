@@ -131,3 +131,5 @@ Pessoas/inscrições/eventos usam contratos de [listas paginadas](docs/listas-pa
 - Consumo de pessoas/voluntários/usuários: docs/cotas-plano.md, seção independente em Minha conta. Fotos vinculadas/anexos retidos têm cota (V057); consumo em bytes convertido para MB. Inventário pendente exige conferência com PAROQUIA_ALTERAR. Mensais da fila e importacoes_mes aplicados; CSV em Pessoas → Importar, com PESSOA/PESSOA_CRIAR, prévia/chave/hash e confirmação atômica. XLSX/documentos gerais pendentes.
 
 - Nova rodada de produto: docs/funcionalidades-plano.md e docs/mural-tarefas.md. Recursos explícitos, leitura preservada, mutações protegidas; tabelas V060, histórico versionado, sem HTML/notificações.
+
+- Portal/calendário/pastorais: docs/portal-calendario-pastorais.md. Token de calendário só em memória, limpar ao destruir tela. /portal exige recurso explícito até para consulta. Vínculo pessoa/usuário configurado por administrador; não inferir identidade nem oferecer confirmação/troca/dependentes ainda. Coordenador do grupo não altera permissões.
