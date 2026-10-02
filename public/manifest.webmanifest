@@ -1,0 +1,21 @@
+{
+  "name": "Servirea — Escalas",
+  "short_name": "Servirea",
+  "description": "Escalas, compromissos e avisos da paróquia.",
+  "lang": "pt-BR",
+  "start_url": "/portal",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#673DE6",
+  "icons": [
+    { "src": "/icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icone-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Meus compromissos", "url": "/portal" },
+    { "name": "Registrar presença", "url": "/portal/checkin" }
+  ]
+}

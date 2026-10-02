@@ -162,3 +162,5 @@ Dependentes exigem autorização explícita e conta ligada à pessoa; parentesco
 - F05/F13: docs/notificacoes-entregas.md. /entregas (gatilhos e histórico); avisar escalados na montagem finalizada e notificar no mural. Confirmar antes de enfileirar; sem IA.
 
 - F09: docs/privacidade.md. /pessoas/:id/privacidade (histórico e exportação) e /privacidade (retenção); confirmar antes de exportar ou anonimizar.
+
+- F15/F16: docs/checkin-pwa.md. /escalas/:id/checkin e /portal/checkin; PWA com sw.js que só guarda a página offline (nunca cachear API/portal/documentos).

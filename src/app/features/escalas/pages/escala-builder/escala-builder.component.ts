@@ -65,6 +65,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
           <div class="flex flex-wrap items-center gap-2"><span class="badge" [ngClass]="statusClass(status)">{{ statusLabel(status) }}</span>
             @if (status==='RASCUNHO' && sessaoRespostas.permissoes().includes('VAGA_DISTRIBUIR')) {<a class="btn-secondary !py-2" [routerLink]="['/escalas',id,'distribuicao']" data-distribuir>Distribuir por regras</a>}
             @if (status==='FINALIZADA' && sessaoRespostas.permissoes().includes('NOTIFICACAO_ENVIAR')) {<button type="button" class="btn-secondary !py-2" [disabled]="avisando" (click)="avisarEscalados('EMAIL')" data-avisar-email>Avisar escalados por e-mail</button><button type="button" class="btn-secondary !py-2" [disabled]="avisando" (click)="avisarEscalados('WHATSAPP')" data-avisar-whatsapp>Avisar por WhatsApp</button>}
+            @if (status==='FINALIZADA' && sessaoRespostas.permissoes().includes('CHECKIN')) {<a class="btn-secondary !py-2" [routerLink]="['/escalas',id,'checkin']" data-checkin>Check-in</a>}
             @if (sessaoRespostas.permissoes().includes('VAGA_TROCA_LER')) {<a class="btn-secondary !py-2" [routerLink]="['/escalas',id,'trocas']">Trocas</a>}
             @if (sessaoRespostas.permissoes().includes('VAGA_CANDIDATURA_LER')) {<a class="btn-secondary !py-2" [routerLink]="['/escalas',id,'candidaturas']">Candidaturas</a>}
             @if (sessaoRespostas.permissoes().includes('VAGA_RESPOSTA_LER')) {<a class="btn-secondary !py-2" [routerLink]="['/escalas',id,'respostas']">Respostas de participação</a>}

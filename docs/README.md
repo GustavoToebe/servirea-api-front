@@ -72,3 +72,5 @@ O dump `DOCUMENTACAO-COMPLETA-PARA-IA.md` descrevia o front falando direto com o
 - [Centro de entregas](notificacoes-entregas.md): F05/F13, gatilhos, histórico e botões de aviso.
 
 - [Privacidade](privacidade.md): F09, histórico, exportação e retenção.
+
+- [Check-in e PWA](checkin-pwa.md): F15/F16, telas de check-in e instalação sem cache de dados sensíveis.

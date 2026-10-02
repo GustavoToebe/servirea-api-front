@@ -15,6 +15,7 @@ const hoje=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMont
  <div class="space-y-5"><app-cabecalho-pagina titulo="Meus compromissos" subtitulo="Suas escalas finalizadas e eventos em que você está inscrito. Horários de Brasília."><a acoes routerLink="/ajuda" [queryParams]="{tema:'portal'}" class="btn-secondary">Ajuda do portal</a></app-cabecalho-pagina>
  @if(sessao.permissoes().includes('PORTAL_DEPENDENTES')){<a routerLink="/portal/dependentes" class="btn-secondary inline-block">Dependentes</a>}
  <a routerLink="/portal/indisponibilidades" class="btn-secondary inline-block">Minha indisponibilidade</a>
+ <a routerLink="/portal/checkin" class="btn-secondary inline-block">Registrar presença</a>
  <a routerLink="/portal/trocas" class="btn-secondary inline-block">Trocas de escala</a>
  <a routerLink="/portal/vagas" class="btn-secondary inline-block">Vagas e candidaturas</a>
  @if(erro()){<div class="card bg-red-50 p-4 text-red-700" role="alert">{{erro()}}</div>}
