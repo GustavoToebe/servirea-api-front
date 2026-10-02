@@ -1,3 +1,4 @@
+import { FuncionalidadesPlanoService } from '../../plano/funcionalidades-plano.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { Component } from '@angular/core';
@@ -56,6 +57,7 @@ describe('MainLayoutComponent', () => {
     await TestBed.configureTestingModule({
       imports: [MainLayoutComponent],
       providers: [
+        {provide:FuncionalidadesPlanoService,useValue:{consultar:() => of([])}},
         provideRouter([
           { path: 'ajustes', component: Vazio },
           { path: 'meu-perfil', component: Vazio },

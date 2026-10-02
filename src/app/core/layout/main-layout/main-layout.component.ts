@@ -4,10 +4,11 @@ import { NgClass } from '@angular/common';
 import { AuthService } from '../../auth/auth.service';
 import { BARRA, CONTA, montarMenu, podeVer } from '../menu';
 import { SessaoAtual } from '../sessao-atual';
+import { FuncionalidadesPlanoComponent } from '../../plano/funcionalidades-plano.component';
 
 @Component({
     selector: 'app-main-layout',
-    imports: [RouterOutlet, RouterLink, RouterLinkActive, NgClass],
+    imports: [RouterOutlet, RouterLink, RouterLinkActive, NgClass, FuncionalidadesPlanoComponent],
     template: `
     <div class="parish min-h-screen bg-app lg:flex">
       <aside class="fixed inset-y-0 left-0 z-40 hidden flex-col overflow-x-hidden bg-brand-navy text-white lg:flex transition-[width] duration-200" [ngClass]="recolhido ? 'w-20' : 'w-72'">
@@ -100,7 +101,7 @@ import { SessaoAtual } from '../sessao-atual';
             }
           </div>
         </header>
-        <section class="p-4 pb-24 md:p-6 lg:pb-8"><router-outlet /></section>
+        <section class="p-4 pb-24 md:p-6 lg:pb-8"><app-funcionalidades-plano [contextual]="true"/><router-outlet /></section>
       </main>
 
       @if (maisAberto) {

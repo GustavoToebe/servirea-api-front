@@ -12,6 +12,8 @@ export const BARRA: ItemMenu[] = [
   { label: 'Relatórios', url: '/relatorios', permissao: 'AUDITORIA' },
   { label: 'Layouts', url: '/layouts', permissao: 'LAYOUT' },
   { label: 'Comunicados', url: '/comunicados', permissao: 'COMUNICADO' },
+  { label: 'Mural', url: '/mural', permissao: 'MURAL' },
+  { label: 'Tarefas', url: '/tarefas', permissao: 'TAREFA' },
   { label: 'Financeiro', url: '/financeiro', permissao: 'FINANCEIRO' },
   { label: 'Eventos', url: '/eventos', permissao: 'EVENTO' },
   { label: 'Paróquia', url: '/paroquia', permissao: 'PAROQUIA' },

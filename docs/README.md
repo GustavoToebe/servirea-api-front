@@ -23,3 +23,8 @@ O dump `DOCUMENTACAO-COMPLETA-PARA-IA.md` descrevia o front falando direto com o
 - [Ajuda](ajuda.md): conteúdo por módulo e atalhos contextuais sem IA.
 
 - [Consumo do plano](cotas-plano.md): comportamento, contratos e limitações.
+
+## Quatro entregas de produto — 01/10/2026
+
+- [Funcionalidades por plano](funcionalidades-plano.md).
+- [Mural e tarefas](mural-tarefas.md).

@@ -1,0 +1,33 @@
+<div class="space-y-5">
+ <app-cabecalho-pagina [titulo]="titulo" subtitulo="Organização interna da paróquia. Sem envio automático de mensagens.">
+  <div acoes>@if (!editando() && contratado() && pode('_CRIAR')) {<button class="btn-primary" type="button" (click)="novo()">Novo registro</button>}</div>
+ </app-cabecalho-pagina>
+ @if(erro()) {<div class="card bg-red-50 p-4 text-red-700" role="alert">{{erro()}}</div>}
+ @if(editando()) {
+ <form #form="ngForm" (ngSubmit)="salvar(form)" class="space-y-4">
+  <section class="card space-y-4 p-5">
+   <h2 class="secao-titulo">{{id ? 'Detalhe do registro' : 'Novo registro'}}</h2>
+   <fieldset [disabled]="salvando() || !contratado() || !pode(id ? '_ALTERAR' : '_CRIAR')" class="space-y-4">
+   <label class="label" for="org-titulo">Título</label><input id="org-titulo" name="titulo" class="field w-full" required maxlength="160" [(ngModel)]="dados.titulo">
+   <label class="label" for="org-descricao">Descrição</label><textarea id="org-descricao" name="descricao" class="field w-full" rows="6" required maxlength="4000" [(ngModel)]="dados.descricao"></textarea>
+   <label class="label" for="org-status">Status</label><select id="org-status" name="status" class="field" required [(ngModel)]="dados.status">@for(s of estados;track s){<option [value]="s">{{rotulos[s]}}</option>}</select>
+   <label class="label" for="org-prazo">{{tipo==='mural'?'Data de referência (opcional)':'Prazo (opcional)'}}</label><app-campo-data idCampo="org-prazo" name="prazo" [(ngModel)]="dados.prazo" />
+   @if(tipo==='tarefas') {<label class="label" for="org-equipe">Equipe responsável (opcional)</label><input id="org-equipe" name="equipe" class="field w-full" maxlength="120" [(ngModel)]="dados.equipe">}
+   </fieldset>
+   <p class="text-sm text-slate-500">{{tipo==='mural'?'Arquivar retira o aviso da lista de publicados.':'Atualize o status para acompanhar o trabalho. Não há notificações ou atribuição a contas de usuário nesta versão.'}}</p>
+  </section>
+  @if(contratado() && pode(id ? '_ALTERAR' : '_CRIAR')) {<app-rodape-form [carregando]="salvando()" (cancelar)="cancelar()" />} @else {<button type="button" class="btn-secondary" (click)="cancelar()">Voltar</button>}
+ </form>
+ } @else {
+ <form (ngSubmit)="buscar()" class="card flex flex-wrap items-end gap-3 p-4">
+  <div class="flex-1"><label class="label" for="org-busca">Buscar por título</label><input id="org-busca" class="field w-full" name="busca" maxlength="160" [(ngModel)]="busca"></div>
+  <div><label class="label" for="org-filtro">Status</label><select id="org-filtro" class="field" name="status" [(ngModel)]="status"><option value="">Todos</option>@for(s of estados;track s){<option [value]="s">{{rotulos[s]}}</option>}</select></div>
+  <button type="submit" class="btn-secondary" [disabled]="carregando()">Buscar</button>
+ </form>
+ <div class="card tabela-rolagem"><table class="tabela w-full"><thead><tr><th>Título</th><th>Status</th><th>{{tipo==='mural'?'Referência':'Prazo'}}</th>@if(tipo==='tarefas'){<th>Equipe</th>}</tr></thead><tbody>
+ @for(r of itens();track r.id){<tr class="clicavel" tabindex="0" (click)="abrir(r)" (keydown.enter)="abrir(r)"><td>{{r.titulo}}</td><td><span class="badge" [class]="cores[r.status]">{{rotulos[r.status]}}</span></td><td>{{r.prazo ? (r.prazo | date:'dd/MM/yyyy':'UTC') : '—'}}</td>@if(tipo==='tarefas'){<td>{{r.equipe || '—'}}</td>}</tr>}
+ </tbody></table></div>
+ @if(carregando()){<p role="status">Carregando…</p>} @else if(!itens().length){<p>Nenhum registro encontrado.</p>}
+ <div class="flex items-center justify-between gap-3"><p>{{total()}} registros · Página {{pagina+1}}</p><div class="flex gap-2"><button class="btn-secondary" type="button" [disabled]="pagina===0 || carregando()" (click)="paginar(-1)">Anterior</button><button class="btn-secondary" type="button" [disabled]="(pagina+1)*30>=total() || carregando()" (click)="paginar(1)">Próxima</button></div></div>
+ }
+</div>
