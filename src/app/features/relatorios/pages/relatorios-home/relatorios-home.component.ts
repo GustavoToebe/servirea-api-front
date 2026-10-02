@@ -1,6 +1,7 @@
 import { OrientacaoToggleComponent } from '../../../../shared/components/orientacao-toggle/orientacao-toggle.component';
 import { Orientacao, lerOrientacao } from '../../../../shared/export/orientacao';
 import { Component, OnInit } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CabecalhoPaginaComponent } from '../../../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
 import { EscalaDetalhe, EscalaFilters, MESES } from '../../../escalas/models/escala.model';
@@ -21,10 +22,10 @@ interface Ranking {
 
 @Component({
     selector: 'app-relatorios-home',
-    imports: [FormsModule, CabecalhoPaginaComponent, OrientacaoToggleComponent],
+    imports: [RouterLink,FormsModule, CabecalhoPaginaComponent, OrientacaoToggleComponent],
     template: `
     <div class="space-y-6">
-      <app-cabecalho-pagina titulo="Relatórios e frequência" subtitulo="Presenças já lançadas nas escalas finalizadas, e o PDF ou PNG para a sacristia." />
+      <app-cabecalho-pagina titulo="Relatórios e frequência" subtitulo="Presenças já lançadas nas escalas finalizadas, e o PDF ou PNG para a sacristia."><a acoes routerLink="/relatorios/participacao" class="btn-secondary">Participação e CSV</a></app-cabecalho-pagina>
 
       <section class="card p-5">
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

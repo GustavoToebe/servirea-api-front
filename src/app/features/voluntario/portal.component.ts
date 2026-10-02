@@ -13,6 +13,7 @@ import { CampoDataComponent } from '../../shared/components/datas/campo-data.com
 const hoje=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 @Component({selector:'app-portal-voluntario',imports:[CommonModule,RouterLink,FormsModule,CabecalhoPaginaComponent,CampoDataComponent],changeDetection:ChangeDetectionStrategy.OnPush,template:`
  <div class="space-y-5"><app-cabecalho-pagina titulo="Meus compromissos" subtitulo="Suas escalas finalizadas e eventos em que você está inscrito. Horários de Brasília."><a acoes routerLink="/ajuda" [queryParams]="{tema:'portal'}" class="btn-secondary">Ajuda do portal</a></app-cabecalho-pagina>
+ <a routerLink="/portal/indisponibilidades" class="btn-secondary inline-block">Minha indisponibilidade</a>
  <a routerLink="/portal/trocas" class="btn-secondary inline-block">Trocas de escala</a>
  <a routerLink="/portal/vagas" class="btn-secondary inline-block">Vagas e candidaturas</a>
  @if(erro()){<div class="card bg-red-50 p-4 text-red-700" role="alert">{{erro()}}</div>}

@@ -10,8 +10,8 @@ describe('IndisponibilidadesComponent', () => {
 
   async function montar() {
     escalas = jasmine.createSpyObj<EscalasService>('EscalasService', ['indisponibilidades', 'salvarIndisponibilidades']);
-    escalas.indisponibilidades.and.resolveTo({ ano: 2026, mes: 10, itens: [], semRestricao: [] });
-    escalas.salvarIndisponibilidades.and.callFake(async (ano, mes, d) => ({ ano, mes, ...d }));
+    escalas.salvarIndisponibilidades.and.callFake(async (ano,mes,dados)=>({ano,mes,...dados,versao:dados.versao+1}));
+    escalas.indisponibilidades.and.resolveTo({ ano: 2026, mes: 10, itens: [], semRestricao: [], versao: 0 });
     TestBed.configureTestingModule({
       imports: [IndisponibilidadesComponent],
       providers: [
@@ -90,8 +90,13 @@ describe('IndisponibilidadesComponent', () => {
     await c.salvar();
     expect(escalas.salvarIndisponibilidades).toHaveBeenCalledWith(2026, 10, {
       itens: [{ voluntarioId: 'b', data: '2026-10-04', periodo: 'MANHA', observacao: null }],
-      semRestricao: ['a']
+      semRestricao: ['a'], versao: 0
     });
     expect(c.hasPendingChanges()).toBeFalse();
   });
+  it('preserva períodos múltiplos e observações do portal em datas não editadas',async()=>{
+    const f=await montar();escalas.indisponibilidades.and.resolveTo({ano:2026,mes:10,versao:6,semRestricao:[],itens:[{voluntarioId:'a',data:'2026-10-03',periodo:'MANHA',observacao:'Aviso da coordenação'},{voluntarioId:'a',data:'2026-10-03',periodo:'NOITE',observacao:null}]});await f.componentInstance.carregar();expect(f.componentInstance.corpo().itens.length).toBe(2);expect(f.componentInstance.corpo().itens[0].observacao).toBe('Aviso da coordenação');await f.componentInstance.salvar();expect(f.componentInstance.versao).toBe(7);
+  });
+  it('consulta de mês que falha não permite salvar dados do mês anterior',async()=>{const f=await montar();escalas.indisponibilidades.and.rejectWith(new Error('Sem conexão'));await f.componentInstance.trocarMes('2026-11');await f.componentInstance.salvar();expect(escalas.salvarIndisponibilidades).not.toHaveBeenCalled();});
+  it('resposta de mês anterior não substitui consulta nova',async()=>{const f=await montar();let resolver!:(v:any)=>void;escalas.indisponibilidades.and.returnValue(new Promise(r=>resolver=r));const antiga=f.componentInstance.carregar();escalas.indisponibilidades.and.resolveTo({ano:2026,mes:11,versao:8,itens:[],semRestricao:[]});await f.componentInstance.trocarMes('2026-11');resolver({ano:2026,mes:10,versao:1,itens:[],semRestricao:[]});await antiga;expect(f.componentInstance.versao).toBe(8);});
 });

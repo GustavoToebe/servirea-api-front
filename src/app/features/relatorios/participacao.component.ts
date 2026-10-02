@@ -1,0 +1,34 @@
+import { ChangeDetectionStrategy,Component,OnInit,OnDestroy,inject,signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { SessaoAtual } from '../../core/layout/sessao-atual';
+import { mensagemApi } from '../../core/api/api-error';
+import { CabecalhoPaginaComponent } from '../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
+import { BarraFiltrosComponent } from '../../shared/components/barra-filtros/barra-filtros.component';
+import { EstadoListaComponent } from '../../shared/components/estado-lista/estado-lista.component';
+import { CampoDataComponent } from '../../shared/components/datas/campo-data.component';
+import { ParticipacaoApiService,FiltrosParticipacao,LinhaParticipacao } from './participacao-api.service';
+import { FUNCOES_ESCALA, FUNCOES_LABEL } from '../voluntarios/models/voluntario.model';
+@Component({selector:'app-relatorio-participacao',imports:[CommonModule,FormsModule,RouterLink,CabecalhoPaginaComponent,BarraFiltrosComponent,EstadoListaComponent,CampoDataComponent],changeDetection:ChangeDetectionStrategy.OnPush,template:`
+ <div class="space-y-5"><app-cabecalho-pagina titulo="Relatório de participação" subtitulo="Somente escalas finalizadas e vagas ocupadas. A resposta de participação é separada da presença."><div acoes class="flex gap-2"><a routerLink="/relatorios" class="btn-secondary">Resumo e impressão</a>@if(podeExportar()){<button type="button" class="btn-primary" [disabled]="exportando()||carregando()" (click)="exportar()">Exportar CSV</button>}</div></app-cabecalho-pagina>
+ @if(erro()){<p class="card p-4 bg-red-50 text-red-700" role="alert">{{erro()}}</p>}
+ <app-barra-filtros [(termo)]="filtros.busca" placeholder="Buscar pessoa" (buscar)="buscar()"><div><label class="label" for="rep-de">De</label><app-campo-data idCampo="rep-de" [(ngModel)]="filtros.de" /></div><div><label class="label" for="rep-ate">Até</label><app-campo-data idCampo="rep-ate" [(ngModel)]="filtros.ate" /></div><div><label class="label" for="rep-presenca">Presença</label><select id="rep-presenca" class="field" [(ngModel)]="filtros.presenca"><option value="">Todas</option><option value="FALTOU">Faltou</option><option value="PRESENTE">Presente</option><option value="PENDENTE">Pendente de registro</option></select></div><div><label class="label" for="rep-resposta">Participação</label><select id="rep-resposta" class="field" [(ngModel)]="filtros.resposta"><option value="">Todas</option><option value="PENDENTE">Pendente de resposta</option><option value="CONFIRMADA">Confirmada</option><option value="RECUSADA">Recusada</option></select></div><div><label class="label" for="rep-funcao">Função</label><select id="rep-funcao" class="field" [(ngModel)]="filtros.funcao"><option value="">Todas</option>@for(f of funcoes;track f){<option [value]="f">{{rotulos[f]}}</option>}</select></div></app-barra-filtros>
+ <p class="text-sm text-slate-500">{{total()}} registros · Página {{pagina+1}}. Exportação: até 5.000 linhas em até 366 dias; contém nomes e deve ser compartilhada somente com pessoas autorizadas.</p>
+ <div class="card tabela-rolagem"><table class="tabela w-full"><thead><tr><th>Quando</th><th>Escala / celebração</th><th>Pessoa</th><th>Função</th><th>Presença</th><th>Participação</th></tr></thead><tbody>@for(i of itens();track i.vagaId){<tr><td>{{i.data | date:'dd/MM/yyyy':'UTC'}} {{i.horario}}</td><td>{{i.escala}} / {{i.celebracao}}</td><td>{{i.pessoa}}</td><td>{{i.funcao}}</td><td>{{rotulo(i.presenca)}}</td><td>{{rotulo(i.resposta)}}</td></tr>}</tbody></table></div><app-estado-lista [carregando]="carregando()" [vazio]="!itens().length" />
+ <div class="flex gap-2"><button type="button" class="btn-secondary" [disabled]="pagina===0||carregando()" (click)="paginar(-1)">Anterior</button><button type="button" class="btn-secondary" [disabled]="(pagina+1)*30>=total()||carregando()" (click)="paginar(1)">Próxima</button></div></div>`})
+export class ParticipacaoComponent implements OnInit,OnDestroy {
+ private readonly api=inject(ParticipacaoApiService);private readonly sessao=inject(SessaoAtual);private leitura?:Subscription;private escrita?:Subscription;private destruido=false;
+ readonly funcoes=FUNCOES_ESCALA;readonly rotulos=FUNCOES_LABEL;readonly itens=signal<LinhaParticipacao[]>([]);readonly total=signal(0);readonly erro=signal('');readonly carregando=signal(false);readonly exportando=signal(false);pagina=0;
+ filtros:FiltrosParticipacao={de:new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit'}).format(new Date())+'-01',ate:new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),busca:'',presenca:'',resposta:'',funcao:''};
+ private aplicados:FiltrosParticipacao={...this.filtros};
+ ngOnInit(){this.buscar();}podeExportar(){return this.sessao.permissoes().includes('AUDITORIA')&&this.sessao.permissoes().includes('RELATORIO_EXPORTAR');}
+ buscar(){this.pagina=0;this.aplicados={...this.filtros};this.carregar();}
+ carregar(){this.leitura?.unsubscribe();this.carregando.set(true);this.erro.set('');this.itens.set([]);this.total.set(0);this.leitura=this.api.listar(this.aplicados,this.pagina).subscribe({next:p=>{this.itens.set(p.itens);this.total.set(p.total);this.carregando.set(false);},error:e=>{this.carregando.set(false);this.erro.set(mensagemApi(e,'Não foi possível consultar o relatório.'));}});}
+ paginar(delta:number){this.pagina+=delta;this.carregar();}
+ exportar(){if(!this.podeExportar()||this.exportando()||this.carregando())return;this.exportando.set(true);this.erro.set('');this.escrita=this.api.exportar(this.aplicados).subscribe({next:b=>{let url='';try{url=URL.createObjectURL(b);const link=document.createElement('a');link.href=url;link.download='participacao.csv';link.click();}catch{this.erro.set('Não foi possível baixar o arquivo.');}finally{if(url)URL.revokeObjectURL(url);this.exportando.set(false);}},error:async e=>{if(e.error instanceof Blob){try{const detalhe=JSON.parse(await e.error.text());if(this.destruido)return;this.exportando.set(false);this.erro.set(mensagemApi(new HttpErrorResponse({status:e.status,error:detalhe}),'Não foi possível exportar.'));return;}catch{}}if(this.destruido)return;this.exportando.set(false);this.erro.set(mensagemApi(e,'Não foi possível exportar.'));}});}
+ rotulo(s:string){return ({PENDENTE:'Pendente',FALTOU:'Faltou',PRESENTE:'Presente',CONFIRMADA:'Confirmada',RECUSADA:'Recusada'} as Record<string,string>)[s]||s;}
+ ngOnDestroy(){this.destruido=true;this.leitura?.unsubscribe();this.escrita?.unsubscribe();}
+}

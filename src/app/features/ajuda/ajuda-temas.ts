@@ -12,7 +12,7 @@ export const TEMAS:readonly TemaAjuda[] = [
     'Cuidados pessoais aparecem somente para perfis autorizados. Informe apenas o necessário para acolher e cuidar da pessoa.']},
   {id:'escalas',titulo:'Montar uma escala',permissao:'ESCALA',url:'/escalas',passos:[
     'Cadastre as celebrações e as funções necessárias. Confira o mês e os horários antes de distribuir as pessoas.',
-    'Consulte indisponibilidades e funções habilitadas ao preencher as vagas. Confira os avisos e conflitos apresentados.',
+    'O voluntário pode informar suas datas pelo portal em Minha indisponibilidade. Consulte indisponibilidades e funções habilitadas ao preencher as vagas. Confira os avisos e conflitos apresentados.',
     'Revise a escala antes de compartilhar ou exportar. Confirmar a participação e registrar a presença são ações diferentes.']},
   {id:'eventos',titulo:'Eventos e inscrições',permissao:'EVENTO',url:'/eventos',passos:[
     'Crie o evento com título, data, local e vagas. Revise as informações e publique antes de inscrever pessoas.',
@@ -67,8 +67,8 @@ export const TEMAS:readonly TemaAjuda[] = [
     'Arquive o aviso quando ele deixar de ser atual.',
     'Publicar no mural não envia e-mail ou WhatsApp automaticamente e não registra confirmação de leitura.']},
   {id:'tarefas',titulo:'Tarefas e solicitações',permissao:'TAREFA',url:'/tarefas',passos:[
-    'Registre título, prazo e equipe para organizar uma tarefa, conforme as permissões do seu perfil.',
-    'Atualize a situação conforme o andamento e confira as tarefas pendentes.',
+    'Registre título, prazo, equipe e uma conta responsável da paróquia, conforme as permissões do seu perfil.',
+    'Atualize a situação e filtre por responsável, por minhas tarefas ou por tarefas pendentes. A atribuição não concede acesso nem envia mensagens.',
     'O nome da equipe é uma referência de organização. Ele não concede acesso nem envia uma notificação automática.']},
   {id:'importacao',titulo:'Importar pessoas por CSV',permissao:['PESSOA','PESSOA_CRIAR'],url:'/pessoas',passos:[
     'Em Pessoas, abra Importar se seu perfil permitir criar pessoas. Use o modelo CSV oferecido pela tela.',

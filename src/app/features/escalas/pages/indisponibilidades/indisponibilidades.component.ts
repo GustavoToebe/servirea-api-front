@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HasPendingChanges } from '../../../../core/guards/pending-changes.guard';
@@ -40,7 +40,7 @@ export function fimDeSemanaDoMes(ano: number, mes: number): Coluna[] {
         <h1 class="text-2xl font-black text-slate-900">Indisponibilidades — {{ meses[mes - 1] }} {{ ano }}</h1>
         <div class="flex flex-wrap items-end gap-2">
           <div><label class="label">Mês</label>
-            <app-campo-competencia [ngModel]="competencia" (ngModelChange)="trocarMes($event)" [limpavel]="false" /></div>
+            <app-campo-competencia [ngModel]="competencia" (ngModelChange)="trocarMes($event)" [limpavel]="false" [disabled]="salvando" /></div>
           <div><label class="label" for="ind-busca">Buscar</label>
             <input id="ind-busca" class="field" placeholder="Nome" [(ngModel)]="busca"></div>
           <div><label class="label" for="ind-tipo">Tipo</label>
@@ -76,7 +76,7 @@ export function fimDeSemanaDoMes(ano: number, mes: number): Coluna[] {
                     @if (marca(v.id, c.data); as m) {
                       <div class="relative mx-auto flex h-10 w-16 items-center justify-center rounded-lg bg-rose-50 dark:bg-rose-950/40 px-1 text-xs font-bold leading-tight text-rose-700 dark:text-rose-300 ring-1 ring-rose-200 dark:ring-rose-800"
                            [attr.data-marcada]="v.id + '|' + c.data">
-                        {{ m.periodo ? rotuloPeriodo[m.periodo] : 'Dia inteiro' }}
+                        {{ m.rotulo }}
                         <!-- O seletor fica por cima, invisível: o clique no quadrinho abre as opções. -->
                         <select class="absolute inset-0 h-full w-full cursor-pointer opacity-0" [ngModel]="m.periodo ?? ''" (ngModelChange)="trocarPeriodo(v.id, c.data, $event)" aria-label="Período">
                           <option value="">Dia inteiro</option>
@@ -110,13 +110,13 @@ export function fimDeSemanaDoMes(ano: number, mes: number): Coluna[] {
       <div class="fixed bottom-0 left-0 right-0 z-20 border-t border-[var(--line)] bg-[var(--card)] px-4 py-3 backdrop-blur">
         <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
           <p class="text-sm text-[var(--muted)]"><strong class="text-amber-600 dark:text-amber-400">{{ contagem.COM_RESTRICAO }}</strong> com restrição · <strong class="text-emerald-600 dark:text-emerald-400">{{ contagem.SEM_RESTRICAO }}</strong> sem restrição · <strong class="text-[var(--ink)]">{{ contagem.PENDENTE }}</strong> pendentes</p>
-          <button type="button" class="btn-primary" [disabled]="salvando" (click)="salvar()" data-salvar>{{ salvando ? 'Salvando...' : 'Salvar' }}</button>
+          <button type="button" class="btn-primary" [disabled]="salvando || carregando || !consultaPronta" (click)="salvar()" data-salvar>{{ salvando ? 'Salvando...' : 'Salvar' }}</button><button type="button" class="btn-secondary" [disabled]="salvando || carregando" (click)="recarregar()">Recarregar mês</button>
         </div>
       </div>
     </div>
   `
 })
-export class IndisponibilidadesComponent implements OnInit, HasPendingChanges {
+export class IndisponibilidadesComponent implements OnInit, OnDestroy, HasPendingChanges {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private escalas = inject(EscalasService);
@@ -133,12 +133,17 @@ export class IndisponibilidadesComponent implements OnInit, HasPendingChanges {
     PENDENTE: 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold'
   };
 
+  private geracao=0;private destruido=false;
+  consultaPronta=false;
+  versao = 0;
   ano = new Date().getFullYear();
   mes = new Date().getMonth() + 1;
   colunas: Coluna[] = [];
   voluntarios: Voluntario[] = [];
   /** voluntarioId → (data → período ou null = dia inteiro). */
   marcas = new Map<string, Map<string, PeriodoDia | null>>();
+  private originais: Indisponibilidade[]=[];
+  private datasEditadas = new Set<string>();
   semRestricao = new Set<string>();
   busca = '';
   tipo: '' | 'COROINHA' | 'ACOLITO' = '';
@@ -184,35 +189,41 @@ export class IndisponibilidadesComponent implements OnInit, HasPendingChanges {
   }
 
   async trocarMes(valor: string | null) {
-    if (!valor || valor === this.competencia) return;
+    if (!valor || valor === this.competencia || this.salvando || this.destruido) return;
     if (this.alterado && !await this.dialogo.confirmar({
       titulo: 'Trocar de mês?', mensagem: 'As marcações deste mês ainda não foram salvas.', confirmar: 'Trocar sem salvar', perigo: true
     })) return;
+    if(this.destruido||this.salvando)return;
     [this.ano, this.mes] = valor.split('-').map(Number);
     void this.router.navigate([], { queryParams: { ano: this.ano, mes: this.mes }, replaceUrl: true });
     await this.carregar();
   }
 
   async carregar() {
+    if(this.destruido||this.salvando)return;this.consultaPronta=false;const geracao=++this.geracao;const ano=this.ano;const mes=this.mes;
     this.colunas = fimDeSemanaDoMes(this.ano, this.mes);
     this.carregando = true;
     try {
-      const dados = await this.escalas.indisponibilidades(this.ano, this.mes);
+      const dados = await this.escalas.indisponibilidades(ano, mes);
+      if(this.destruido||geracao!==this.geracao)return;
+      this.versao = dados.versao;this.originais=dados.itens;this.datasEditadas.clear();
       this.marcas = new Map();
       for (const i of dados.itens) this.definir(i.voluntarioId, i.data, i.periodo);
       this.semRestricao = new Set(dados.semRestricao);
+      this.consultaPronta=true;
       this.alterado = false;
       this.error = '';
     } catch (e: any) {
-      this.error = e?.message;
+      if(!this.destruido&&geracao===this.geracao)this.error = e?.message;
     } finally {
-      this.carregando = false;
+      if(!this.destruido&&geracao===this.geracao)this.carregando = false;
     }
   }
 
-  marca(voluntarioId: string, data: string): { periodo: PeriodoDia | null } | null {
+  marca(voluntarioId: string, data: string): { periodo: PeriodoDia | null;rotulo:string } | null {
     const m = this.marcas.get(voluntarioId);
-    return m && m.has(data) ? { periodo: m.get(data)! } : null;
+    if(!m?.has(data))return null;const periodo=m.get(data)!;const originais=this.originais.filter(i=>i.voluntarioId===voluntarioId&&i.data===data);
+    const rotulo=!this.datasEditadas.has(voluntarioId+'|'+data)&&originais.length>1?originais.map(i=>i.periodo?this.rotuloPeriodo[i.periodo]:'Dia inteiro').join(' + '):periodo?this.rotuloPeriodo[periodo]:'Dia inteiro';return {periodo,rotulo};
   }
 
   situacao(voluntarioId: string): SituacaoResposta {
@@ -222,6 +233,7 @@ export class IndisponibilidadesComponent implements OnInit, HasPendingChanges {
 
   /** Marcar uma data tira o "sem restrição" da linha. */
   marcar(voluntarioId: string, data: string) {
+    this.datasEditadas.add(voluntarioId+'|'+data);
     this.definir(voluntarioId, data, null);
     this.semRestricao.delete(voluntarioId);
     this.alterado = true;
@@ -235,6 +247,7 @@ export class IndisponibilidadesComponent implements OnInit, HasPendingChanges {
   }
 
   trocarPeriodo(voluntarioId: string, data: string, valor: string) {
+    this.datasEditadas.add(voluntarioId+'|'+data);
     if (valor === 'TIRAR') {
       const m = this.marcas.get(voluntarioId);
       m?.delete(data);
@@ -265,20 +278,28 @@ export class IndisponibilidadesComponent implements OnInit, HasPendingChanges {
     this.alterado = true;
   }
 
-  corpo(): { itens: Indisponibilidade[]; semRestricao: string[] } {
+  corpo(): { itens: Indisponibilidade[]; semRestricao: string[]; versao:number } {
     const itens: Indisponibilidade[] = [];
     for (const [voluntarioId, datas] of this.marcas) {
-      for (const [data, periodo] of datas) itens.push({ voluntarioId, data, periodo, observacao: null });
+      for (const [data, periodo] of datas) {
+        const originais=this.originais.filter(i=>i.voluntarioId===voluntarioId&&i.data===data);
+        if(!this.datasEditadas.has(voluntarioId+'|'+data)&&originais.length)itens.push(...originais);
+        else itens.push({voluntarioId,data,periodo,observacao:null});
+      }
     }
     itens.sort((a, b) => a.data.localeCompare(b.data) || a.voluntarioId.localeCompare(b.voluntarioId));
-    return { itens, semRestricao: [...this.semRestricao] };
+    return { itens, semRestricao: [...this.semRestricao], versao:this.versao };
   }
 
+  async recarregar(){if(this.destruido||this.salvando||this.carregando)return;if(this.alterado&&!await this.dialogo.confirmar({titulo:'Recarregar mês?',mensagem:'Descartar suas marcações não salvas e carregar as respostas atuais?',confirmar:'Recarregar',perigo:true}))return;await this.carregar();}
+
   async salvar() {
+    if(this.salvando||this.carregando||!this.consultaPronta)return;
     this.salvando = true;
     this.aviso = '';
     try {
-      await this.escalas.salvarIndisponibilidades(this.ano, this.mes, this.corpo());
+      const salvo = await this.escalas.salvarIndisponibilidades(this.ano, this.mes, this.corpo());
+      this.versao = salvo.versao;this.originais=salvo.itens;this.datasEditadas.clear();
       this.alterado = false;
       this.aviso = 'Indisponibilidades salvas.';
       this.error = '';
@@ -288,6 +309,8 @@ export class IndisponibilidadesComponent implements OnInit, HasPendingChanges {
       this.salvando = false;
     }
   }
+
+  ngOnDestroy(){this.destruido=true;++this.geracao;}
 
   private definir(voluntarioId: string, data: string, periodo: PeriodoDia | null) {
     const m = this.marcas.get(voluntarioId) ?? new Map<string, PeriodoDia | null>();

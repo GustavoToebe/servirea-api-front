@@ -80,6 +80,7 @@ export interface Indisponibilidade {
 }
 
 export interface IndisponibilidadesMes {
+  versao: number;
   ano: number;
   mes: number;
   itens: Indisponibilidade[];

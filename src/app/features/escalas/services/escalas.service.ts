@@ -144,7 +144,7 @@ export class EscalasService {
     }
   }
 
-  async salvarIndisponibilidades(ano: number, mes: number, dados: Pick<IndisponibilidadesMes, 'itens' | 'semRestricao'>): Promise<IndisponibilidadesMes> {
+  async salvarIndisponibilidades(ano: number, mes: number, dados: Pick<IndisponibilidadesMes, 'itens' | 'semRestricao' | 'versao'>): Promise<IndisponibilidadesMes> {
     const params = new HttpParams().set('ano', ano).set('mes', mes);
     try {
       return await firstValueFrom(this.http.put<IndisponibilidadesMes>(`${this.base}/indisponibilidades`, dados, { params }));

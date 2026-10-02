@@ -141,3 +141,7 @@ Pessoas/inscrições/eventos usam contratos de [listas paginadas](docs/listas-pa
 - V064: docs/trocas-escala.md. PORTAL_TROCAR para pedidos próprios/aceite; VAGA_TROCA_LER/DECIDIR para coordenação. Original permanece até aprovação. Locks paróquia→escala, versão/ciclo/prazo/vínculos/elegibilidade revalidados. Substituição de uma vaga; sem permuta bilateral/notificações. Diretório mínimo limitado a contas vinculadas, sem contatos.
 
 - Ajuda: docs/ajuda.md, features/ajuda/ajuda-temas.ts. Conteúdo estático de uso, busca local, sem dados de negócio/HTML dinâmico. Revisar orientações ao mudar fluxos. Parâmetro tema usa apenas IDs do catálogo; Servirea filtra por permissões.
+
+- [Fontes e retomada](docs/desenvolvimento/fontes-e-retomada.md): precedência, histórico e registro de evidências.
+
+- V065: docs/tarefas-relatorios-disponibilidade.md. Responsável é usuario_id com FK composta do vínculo; diretório mínimo de 30. Relatórios projetam vagas ocupadas finalizadas; CSV limitado a 5.000, AUDITORIA + RELATORIO_EXPORTAR. Portal próprio PORTAL_DISPONIBILIDADE; versão mensal sob lock da paróquia compartilhada com a coordenação. PUT mensal exige versao.

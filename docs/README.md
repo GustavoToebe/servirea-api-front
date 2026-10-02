@@ -1,5 +1,7 @@
 # Documentos do servire-api-front
 
+- [Fontes e retomada](desenvolvimento/fontes-e-retomada.md): precedência, estado atual e histórico.
+
 Índice. As instruções de quem mexe no código ficam na raiz, porque as ferramentas leem esses arquivos ali.
 
 | Arquivo | Para quê |
@@ -36,3 +38,5 @@ O dump `DOCUMENTACAO-COMPLETA-PARA-IA.md` descrevia o front falando direto com o
 - [Candidaturas a vagas](candidaturas-vagas.md): portal, decisão da coordenação, elegibilidade e concorrência.
 
 - [Trocas de escala com aceite e aprovação](trocas-escala.md).
+
+- [Tarefas, relatórios e indisponibilidade](tarefas-relatorios-disponibilidade.md): responsável, CSV autorizado e portal próprio (V065).

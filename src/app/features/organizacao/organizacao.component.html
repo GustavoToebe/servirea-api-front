@@ -12,22 +12,23 @@
    <label class="label" for="org-descricao">Descrição</label><textarea id="org-descricao" name="descricao" class="field w-full" rows="6" required maxlength="4000" [(ngModel)]="dados.descricao"></textarea>
    <label class="label" for="org-status">Status</label><select id="org-status" name="status" class="field" required [(ngModel)]="dados.status">@for(s of estados;track s){<option [value]="s">{{rotulos[s]}}</option>}</select>
    <label class="label" for="org-prazo">{{tipo==='mural'?'Data de referência (opcional)':'Prazo (opcional)'}}</label><app-campo-data idCampo="org-prazo" name="prazo" [(ngModel)]="dados.prazo" />
-   @if(tipo==='tarefas') {<label class="label" for="org-equipe">Equipe responsável (opcional)</label><input id="org-equipe" name="equipe" class="field w-full" maxlength="120" [(ngModel)]="dados.equipe">}
+   @if(tipo==='tarefas') {<label class="label" for="org-equipe">Equipe (opcional)</label><input id="org-equipe" name="equipe" class="field w-full" maxlength="120" [(ngModel)]="dados.equipe">
+   <div class="flex flex-wrap items-end gap-2"><div><label class="label" for="org-busca-responsavel">Buscar responsável</label><input id="org-busca-responsavel" name="buscaResponsavel" class="field" maxlength="160" [(ngModel)]="buscaResponsavel"></div><button type="button" class="btn-secondary" (click)="buscarResponsaveis()">Buscar contas</button></div>
+   <label class="label" for="org-responsavel">Responsável (opcional)</label><select id="org-responsavel" name="responsavel" class="field w-full" [(ngModel)]="dados.responsavelUsuarioId"><option [ngValue]="null">Sem responsável</option>@if(responsavelSelecionado();as r){<option [ngValue]="r.id">{{r.nome}}</option>}@for(r of responsaveis();track r.id){@if(r.id!==responsavelSelecionado()?.id){<option [ngValue]="r.id">{{r.nome}}</option>}}</select><p class="text-xs text-slate-500">Até 30 contas por busca. A atribuição não concede permissões.</p>}
    </fieldset>
-   <p class="text-sm text-slate-500">{{tipo==='mural'?'Arquivar retira o aviso da lista de publicados.':'Atualize o status para acompanhar o trabalho. Não há notificações ou atribuição a contas de usuário nesta versão.'}}</p>
+   <p class="text-sm text-slate-500">{{tipo==='mural'?'Arquivar retira o aviso da lista de publicados.':'Atualize o status para acompanhar o trabalho. O responsável é uma conta desta paróquia. Não há notificações automáticas.'}}</p>
   </section>
   @if(contratado() && pode(id ? '_ALTERAR' : '_CRIAR')) {<app-rodape-form [carregando]="salvando()" (cancelar)="cancelar()" />} @else {<button type="button" class="btn-secondary" (click)="cancelar()">Voltar</button>}
  </form>
  } @else {
- <form (ngSubmit)="buscar()" class="card flex flex-wrap items-end gap-3 p-4">
-  <div class="flex-1"><label class="label" for="org-busca">Buscar por título</label><input id="org-busca" class="field w-full" name="busca" maxlength="160" [(ngModel)]="busca"></div>
-  <div><label class="label" for="org-filtro">Status</label><select id="org-filtro" class="field" name="status" [(ngModel)]="status"><option value="">Todos</option>@for(s of estados;track s){<option [value]="s">{{rotulos[s]}}</option>}</select></div>
-  <button type="submit" class="btn-secondary" [disabled]="carregando()">Buscar</button>
- </form>
- <div class="card tabela-rolagem"><table class="tabela w-full"><thead><tr><th>Título</th><th>Status</th><th>{{tipo==='mural'?'Referência':'Prazo'}}</th>@if(tipo==='tarefas'){<th>Equipe</th>}</tr></thead><tbody>
- @for(r of itens();track r.id){<tr class="clicavel" tabindex="0" (click)="abrir(r)" (keydown.enter)="abrir(r)"><td>{{r.titulo}}</td><td><span class="badge" [class]="cores[r.status]">{{rotulos[r.status]}}</span></td><td>{{r.prazo ? (r.prazo | date:'dd/MM/yyyy':'UTC') : '—'}}</td>@if(tipo==='tarefas'){<td>{{r.equipe || '—'}}</td>}</tr>}
+ <app-barra-filtros [(termo)]="busca" placeholder="Buscar por título" (buscar)="buscar()">
+  <div><label class="label" for="org-filtro">Status</label><select id="org-filtro" class="field" [(ngModel)]="status"><option value="">Todos</option>@for(s of estados;track s){<option [value]="s">{{rotulos[s]}}</option>}</select></div>
+  @if(tipo==='tarefas'){<label class="label"><input type="checkbox" [(ngModel)]="minhas" (ngModelChange)="filtroResponsavel=''"> Minhas tarefas</label><div><label class="label" for="org-filtro-responsavel">Responsável</label><select id="org-filtro-responsavel" class="field" [(ngModel)]="filtroResponsavel" (ngModelChange)="minhas=false"><option value="">Todos</option>@for(r of responsaveis();track r.id){<option [value]="r.id">{{r.nome}}</option>}</select></div><div><label class="label" for="org-filtro-busca-conta">Buscar conta pelo nome</label><input id="org-filtro-busca-conta" class="field" maxlength="160" [(ngModel)]="buscaResponsavel"><button class="btn-secondary" type="button" (click)="buscarResponsaveis()">Buscar contas</button></div>}
+ </app-barra-filtros>
+ <div class="card tabela-rolagem"><table class="tabela w-full"><thead><tr><th>Título</th><th>Status</th><th>{{tipo==='mural'?'Referência':'Prazo'}}</th>@if(tipo==='tarefas'){<th>Equipe</th><th>Responsável</th>}</tr></thead><tbody>
+ @for(r of itens();track r.id){<tr class="clicavel" tabindex="0" (click)="abrir(r)" (keydown.enter)="abrir(r)"><td>{{r.titulo}}</td><td><span class="badge" [class]="cores[r.status]">{{rotulos[r.status]}}</span></td><td>{{r.prazo ? (r.prazo | date:'dd/MM/yyyy':'UTC') : '—'}}</td>@if(tipo==='tarefas'){<td>{{r.equipe || '—'}}</td><td>{{r.responsavelNome || '—'}}</td>}</tr>}
  </tbody></table></div>
- @if(carregando()){<p role="status">Carregando…</p>} @else if(!itens().length){<p>Nenhum registro encontrado.</p>}
+ <app-estado-lista [carregando]="carregando()" [vazio]="!itens().length" />
  <div class="flex items-center justify-between gap-3"><p>{{total()}} registros · Página {{pagina+1}}</p><div class="flex gap-2"><button class="btn-secondary" type="button" [disabled]="pagina===0 || carregando()" (click)="paginar(-1)">Anterior</button><button class="btn-secondary" type="button" [disabled]="(pagina+1)*30>=total() || carregando()" (click)="paginar(1)">Próxima</button></div></div>
  }
 </div>
