@@ -43,6 +43,9 @@ function senhasIguais(grupo: AbstractControl): ValidationErrors | null {
                 <label class="label" for="confirmacao">Repita a senha</label>
                 <div class="relative"><input #campoConfirmacao id="confirmacao" class="field pr-11" type="password" formControlName="confirmacao" autocomplete="new-password"><app-olho-senha [campo]="campoConfirmacao" /></div>
               </div>
+              <div><label class="label" for="reset-mfa">Código do autenticador ou de recuperação</label>
+                <input id="reset-mfa" class="field" formControlName="codigoMfa" autocomplete="one-time-code" maxlength="64">
+                <span class="text-xs text-slate-500">Obrigatório para contas com verificação em duas etapas.</span></div>
               @if (senhaForm.hasError('diferentes')) {
                 <p class="text-sm text-red-700">As senhas não são iguais.</p>
               }
@@ -97,7 +100,8 @@ export class DefinirSenhaComponent {
 
   senhaForm = this.fb.nonNullable.group({
     senha: ['', [Validators.required, Validators.minLength(8)]],
-    confirmacao: ['', [Validators.required]]
+    confirmacao: ['', [Validators.required]],
+    codigoMfa: ['']
   }, { validators: senhasIguais });
 
   emailForm = this.fb.nonNullable.group({
@@ -111,8 +115,10 @@ export class DefinirSenhaComponent {
     try {
       await firstValueFrom(this.http.post(`${environment.apiUrl}/auth/reset-password`, {
         token: this.token,
-        novaSenha: this.senhaForm.controls.senha.value
+        novaSenha: this.senhaForm.controls.senha.value,
+        ...(this.senhaForm.controls.codigoMfa.value.trim() ? {codigoMfa:this.senhaForm.controls.codigoMfa.value.trim()} : {})
       }));
+      this.senhaForm.reset();
       this.concluido = true;
     } catch (erro) {
       this.erro = mensagemApi(erro, 'Link inválido ou expirado. Peça um novo ao administrador da paróquia.');

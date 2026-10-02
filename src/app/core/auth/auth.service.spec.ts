@@ -62,6 +62,15 @@ describe('AuthService', () => {
     expect(service.isLoggedIn()).toBeTrue();
   });
 
+  it('envia o segundo fator sem guardar uma sessão recusada', async () => {
+    const promise=service.login('mae@paroquia.com','senha123',' 123456 ');
+    const req=http.expectOne(`${environment.apiUrl}/auth/login`);
+    expect(req.request.body.codigoMfa).toBe('123456');
+    req.flush({message:'Informe o segundo fator.',codigo:'MFA_INVALIDO'},{status:401,statusText:'Unauthorized'});
+    await expectAsync(promise).toBeRejected();
+    expect(service.token()).toBeNull();
+  });
+
   it('não grava token quando ainda falta escolher a paróquia', async () => {
     const promise = service.login('mae@paroquia.com', 'senha123');
     http.expectOne(`${environment.apiUrl}/auth/login`).flush(loginOk({

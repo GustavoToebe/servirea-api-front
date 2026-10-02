@@ -70,11 +70,11 @@ export class AuthService {
     }
   }
 
-  async login(email: string, senha: string): Promise<LoginResponse> {
+  async login(email: string, senha: string, codigoMfa?: string): Promise<LoginResponse> {
     try {
       const resposta = await firstValueFrom(this.http.post<LoginResponse>(
         `${environment.apiUrl}/auth/login`,
-        { email, senha },
+        { email, senha, ...(codigoMfa?.trim() ? {codigoMfa: codigoMfa.trim()} : {}) },
         { withCredentials: true }
       ));
       sessionStorage.setItem(EMAIL_KEY, email.trim());

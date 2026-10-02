@@ -23,7 +23,7 @@ function criar(token: string | null) {
 describe('DefinirSenhaComponent', () => {
   it('com token, envia a nova senha para /auth/reset-password', async () => {
     const { componente, http } = criar('tok-123');
-    componente.senhaForm.setValue({ senha: 'senha-forte', confirmacao: 'senha-forte' });
+    componente.senhaForm.setValue({ senha: 'senha-forte', confirmacao: 'senha-forte', codigoMfa: '' });
 
     const envio = componente.definir();
     const req = http.expectOne(`${environment.apiUrl}/auth/reset-password`);
@@ -37,7 +37,7 @@ describe('DefinirSenhaComponent', () => {
 
   it('não envia se as senhas forem diferentes', () => {
     const { componente, http } = criar('tok-123');
-    componente.senhaForm.setValue({ senha: 'senha-forte', confirmacao: 'outra-senha' });
+    componente.senhaForm.setValue({ senha: 'senha-forte', confirmacao: 'outra-senha', codigoMfa: '' });
 
     expect(componente.senhaForm.invalid).toBeTrue();
     componente.definir();

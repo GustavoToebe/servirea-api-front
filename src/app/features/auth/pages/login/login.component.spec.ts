@@ -46,7 +46,7 @@ describe('LoginComponent', () => {
   });
 
   it('vai ao dashboard quando o login já tem paróquia', async () => {
-    component.form.setValue({ email: 'mae@paroquia.com', senha: 'senha12' });
+    component.form.setValue({ email: 'mae@paroquia.com', senha: 'senha12', codigoMfa: '' });
     auth.login.and.resolveTo(loginOk());
     await component.submit();
     expect(router.navigate).toHaveBeenCalledWith(['/dashboard']);
@@ -54,7 +54,7 @@ describe('LoginComponent', () => {
   });
 
   it('mostra as paróquias quando o login pede escolha', async () => {
-    component.form.setValue({ email: 'mae@paroquia.com', senha: 'senha12' });
+    component.form.setValue({ email: 'mae@paroquia.com', senha: 'senha12', codigoMfa: '' });
     auth.login.and.resolveTo(loginOk({
       precisaSelecionarTenant: true,
       accessToken: null,
@@ -70,7 +70,7 @@ describe('LoginComponent', () => {
   });
 
   it('mostra o erro da API', async () => {
-    component.form.setValue({ email: 'mae@paroquia.com', senha: 'senha12' });
+    component.form.setValue({ email: 'mae@paroquia.com', senha: 'senha12', codigoMfa: '' });
     auth.login.and.rejectWith(new Error('Senha inválida.'));
     await component.submit();
     expect(component.error).toBe('Senha inválida.');

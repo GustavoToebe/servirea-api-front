@@ -28,6 +28,11 @@ import { TenantResumo } from '../../../../core/auth/auth.models';
               <label class="label">Senha</label>
               <div class="relative"><input #campoSenha class="field pr-11" type="password" formControlName="senha" autocomplete="current-password"><app-olho-senha [campo]="campoSenha" /></div>
             </div>
+            <div>
+              <label class="label" for="codigo-mfa">Código do autenticador ou de recuperação</label>
+              <input id="codigo-mfa" class="field" type="text" formControlName="codigoMfa" autocomplete="one-time-code" maxlength="64">
+              <span class="text-xs text-slate-500">Preencha se ativou a verificação em duas etapas.</span>
+            </div>
             @if (error) {
               <div class="rounded-xl bg-red-50 p-3 text-sm text-red-700">{{ error }}</div>
             }
@@ -68,7 +73,8 @@ export class LoginComponent {
   tokenSelecao = '';
   form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
-    senha: ['', [Validators.required, Validators.minLength(6)]]
+    senha: ['', [Validators.required, Validators.minLength(6)]],
+    codigoMfa: ['']
   });
 
   constructor(private fb: FormBuilder, private auth: AuthService, private router: Router) {}
@@ -78,7 +84,7 @@ export class LoginComponent {
     this.loading = true;
     this.error = '';
     try {
-      const resposta = await this.auth.login(this.form.controls.email.value, this.form.controls.senha.value);
+      const resposta = await this.auth.login(this.form.controls.email.value, this.form.controls.senha.value, this.form.controls.codigoMfa.value || undefined);
       if (resposta.precisaSelecionarTenant) {
         this.tokenSelecao = resposta.tokenSelecaoTenant || '';
         this.tenants = resposta.tenantsDisponiveis || [];

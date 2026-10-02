@@ -73,7 +73,7 @@ export class AcessoApiService {
     return this.http.get<MeuPerfil>(`${this.api}/me`);
   }
 
-  salvarEu(corpo: { nome: string; tipoTelefone: string | null; telefone: string | null; senha: string | null }) {
+  salvarEu(corpo: { nome: string; tipoTelefone: string | null; telefone: string | null; senha: string | null; senhaAtual?: string | null; codigoMfa?: string | null }) {
     return this.http.put<MeuPerfil>(`${this.api}/me`, corpo);
   }
 }

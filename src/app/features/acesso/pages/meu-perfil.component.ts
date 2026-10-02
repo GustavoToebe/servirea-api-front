@@ -1,5 +1,8 @@
+import { AuthService } from '../../../core/auth/auth.service';
+import { Router } from '@angular/router';
+import { MfaComponent } from './mfa.component';
 import { OlhoSenhaComponent } from '../../../shared/components/olho-senha/olho-senha.component';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { mensagemApi } from '../../../core/api/api-error';
 import { MascaraDirective } from '../../../shared/directives/mascara.directive';
@@ -10,7 +13,7 @@ import { AcessoApiService } from '../acesso-api.service';
 
 @Component({
   selector: 'app-meu-perfil',
-  imports: [FormsModule, MascaraDirective, OlhoSenhaComponent, CabecalhoPaginaComponent, RodapeFormComponent],
+  imports: [MfaComponent, FormsModule, MascaraDirective, OlhoSenhaComponent, CabecalhoPaginaComponent, RodapeFormComponent],
   template: `
     <div class="mx-auto max-w-3xl space-y-6">
       <app-cabecalho-pagina titulo="Meu perfil" [subtitulo]="perfilNome" />
@@ -45,21 +48,30 @@ import { AcessoApiService } from '../acesso-api.service';
                 <div class="relative"><input #campoSenha id="mp-senha" class="field pr-11" type="password" name="senha" [(ngModel)]="senha"
                   autocomplete="new-password"><app-olho-senha [campo]="campoSenha" /></div>
                 <span class="mt-1 block text-xs text-slate-500">Deixe em branco para manter a atual.</span></div>
+              <div><label class="label" for="mp-atual">Senha atual para trocar a senha</label>
+                <div class="relative"><input #atualCampo id="mp-atual" class="field pr-11" type="password" name="senhaAtual" [(ngModel)]="senhaAtual" autocomplete="current-password"><app-olho-senha [campo]="atualCampo" /></div></div>
+              <div><label class="label" for="mp-codigo">Código do autenticador ou recuperação, se ativo</label>
+                <input id="mp-codigo" class="field" name="codigoMfa" [(ngModel)]="codigoMfa" autocomplete="one-time-code" maxlength="64"></div>
             </div>
           </section>
           <app-rodape-form voltarUrl="/dashboard" [carregando]="salvando" />
         </form>
+        <app-mfa />
       }
     </div>
   `
 })
-export class MeuPerfilComponent implements OnInit {
+export class MeuPerfilComponent implements OnInit, OnDestroy {
   private api = inject(AcessoApiService);
+  private auth=inject(AuthService);
+  private router=inject(Router);
 
   nome = '';
   email = '';
   telefone = '';
   senha = '';
+  senhaAtual = '';
+  codigoMfa = '';
   perfilNome = '';
   erro = '';
   aviso = '';
@@ -80,6 +92,8 @@ export class MeuPerfilComponent implements OnInit {
     });
   }
 
+  ngOnDestroy(): void {this.senha='';this.senhaAtual='';this.codigoMfa='';}
+
   salvar(): void {
     this.aviso = '';
     if (this.telefone.trim() && !telefoneValido(this.telefone)) {
@@ -88,20 +102,26 @@ export class MeuPerfilComponent implements OnInit {
     }
     this.salvando = true;
     this.erro = '';
+    const trocouSenha=!!this.senha;
     this.api.salvarEu({
       nome: this.nome,
       tipoTelefone: this.telefone ? 'CELULAR' : null,
       telefone: this.telefone || null,
-      senha: this.senha || null
+      senha: this.senha || null,
+      senhaAtual:this.senhaAtual || null,
+      codigoMfa:this.codigoMfa || null
     }).subscribe({
       next: eu => {
         this.salvando = false;
         this.senha = '';
+        this.senhaAtual='';this.codigoMfa='';
         this.perfilNome = eu.perfil;
-        this.aviso = 'Perfil atualizado.';
+        this.aviso = trocouSenha ? 'Senha alterada. Entre novamente.' : 'Perfil atualizado.';
+        if(trocouSenha) void this.auth.logout().then(()=>this.router.navigate(['/login']));
       },
       error: erro => {
         this.salvando = false;
+        this.senha='';this.senhaAtual='';this.codigoMfa='';
         this.erro = mensagemApi(erro, 'Não foi possível salvar.');
       }
     });

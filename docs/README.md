@@ -60,3 +60,7 @@ O dump `DOCUMENTACAO-COMPLETA-PARA-IA.md` descrevia o front falando direto com o
 - [testes-navegacao ](testes-navegacao.md).
 
 - [Importação CSV/XLSX de pessoas](importacao-pessoas.md): abas, mapeamento, prévia, atomicidade e limites (F08).
+
+- [Ambiente local atual](ambiente-local-atual.md): bases novas e portas 8070/8071/4210/4211.
+
+- [MFA dos usuários](mfa-usuarios.md): proteção da conta global, recuperação e revogação de sessões.

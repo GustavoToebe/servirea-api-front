@@ -151,3 +151,5 @@ Pessoas/inscrições/eventos usam contratos de [listas paginadas](docs/listas-pa
 - Rodada 6–10: mural com público/leitura versionada, arraste com teclado, aniversário com opt-in específico e agendador desligado por padrão, página pública por snapshot explícito. Contratos em docs/mural-publico-leituras.md, docs/arraste-escala.md, docs/aniversarios.md e docs/site-publico.md. Histórico de consumo sob demanda: docs/historico-consumo.md; não gerar zeros para consultas ausentes nem gravar dados pessoais.
 
 - Rodada 11–17: docs/liturgia.md, docs/indicadores-participacao.md, docs/estoque-patrimonio.md e docs/seletores-escala.md. Nenhuma geração de conteúdo; estoque só muda por movimento com chave/versão.
+
+- [MFA da conta](docs/mfa-usuarios.md): TOTP e recuperação globais, rotas próprias sem permissão de domínio, suporte recusado, versão de credenciais nos tokens. Nunca contornar por redefinição por e-mail.

@@ -42,7 +42,7 @@ export const parishAuthInterceptor: HttpInterceptorFn = (req, next) => {
   return next(authed).pipe(
     catchError((error: HttpErrorResponse) => {
       const ehRotaDoCookie = caminho === '/auth/refresh' || caminho === '/auth/logout';
-      if (error.status !== 401 || publica || ehRotaDoCookie) {
+      if (error.status !== 401 || publica || ehRotaDoCookie || String(error.error?.codigo || "").startsWith("MFA_")) {
         return throwError(() => error);
       }
       const tenantId = sessionStorage.getItem(TENANT_KEY);

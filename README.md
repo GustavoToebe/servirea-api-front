@@ -191,3 +191,5 @@ Módulo simples em `/financeiro`: contas/bancos, categorias, entradas, saídas, 
 ## Importação de pessoas — F08
 
 CSV UTF-8 e XLSX, seleção de aba, mapeamento de nome/papel/contatos e prévia normalizada antes da confirmação atômica. Até 100 pessoas, 30 colunas e 512 KiB. Sem mesclar fichas; [contrato e limites](docs/importacao-pessoas.md). Backend/frontend precisam ser implantados juntos; prévias anteriores devem ser refeitas. Sem migration nova (Servirea V074).
+
+- [Ambiente local atual](docs/ambiente-local-atual.md): bases novas e portas 8070/8071/4210/4211.

@@ -26,5 +26,9 @@
     ],
     "limite_pessoas": 100,
     "mesclagem": false
+  },
+  "ambiente_local_atual": {
+    "manual": "docs/ambiente-local-atual.md",
+    "bases_novas": true
   }
 }
