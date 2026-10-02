@@ -34,3 +34,5 @@ O dump `DOCUMENTACAO-COMPLETA-PARA-IA.md` descrevia o front falando direto com o
 - [Respostas de participação](respostas-escala.md): confirmar/recusar, prazo, histórico e consulta da coordenação.
 
 - [Candidaturas a vagas](candidaturas-vagas.md): portal, decisão da coordenação, elegibilidade e concorrência.
+
+- [Trocas de escala com aceite e aprovação](trocas-escala.md).

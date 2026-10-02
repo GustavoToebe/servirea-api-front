@@ -48,6 +48,8 @@ export const routes: Routes = [
       { path: 'escalas/:id/candidaturas', loadComponent: () => import('./features/voluntario/candidaturas.component').then(m => m.CandidaturasComponent) },
       { path: 'escalas/:id/respostas', loadComponent: () => import('./features/voluntario/respostas-coordenacao.component').then(m => m.RespostasCoordenacaoComponent) },
       { path: 'escalas/:id', data: { larguraTotal: true }, canDeactivate: [pendingChangesGuard], loadComponent: () => import('./features/escalas/pages/escala-builder/escala-builder.component').then(m => m.EscalaBuilderComponent) },
+      { path: 'portal/trocas', canActivate: [funcionalidadePlanoGuard('PORTAL_VOLUNTARIO')], loadComponent: () => import('./features/voluntario/trocas.component').then(m => m.TrocasComponent) },
+      { path: 'escalas/:id/trocas', loadComponent: () => import('./features/voluntario/trocas.component').then(m => m.TrocasComponent) },
       { path: 'portal/vagas', canActivate: [funcionalidadePlanoGuard('PORTAL_VOLUNTARIO')], loadComponent: () => import('./features/voluntario/candidaturas.component').then(m => m.CandidaturasComponent) },
       { path: 'portal', canActivate: [funcionalidadePlanoGuard('PORTAL_VOLUNTARIO')], loadComponent: () => import('./features/voluntario/portal.component').then(m => m.PortalComponent) },
       { path: 'pastorais', loadComponent: () => import('./features/pastorais/pastorais.component').then(m => m.PastoraisComponent) },

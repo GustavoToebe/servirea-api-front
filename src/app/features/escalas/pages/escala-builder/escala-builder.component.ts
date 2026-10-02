@@ -60,6 +60,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
           <h1 class="mt-1 text-2xl font-black">{{ id ? 'Montagem da escala' : 'Nova escala' }}<app-numero [numero]="currentDetail?.sequencial" /></h1></div>
         @if (id) {
           <div class="flex flex-wrap items-center gap-2"><span class="badge" [ngClass]="statusClass(status)">{{ statusLabel(status) }}</span>
+            @if (sessaoRespostas.permissoes().includes('VAGA_TROCA_LER')) {<a class="btn-secondary !py-2" [routerLink]="['/escalas',id,'trocas']">Trocas</a>}
             @if (sessaoRespostas.permissoes().includes('VAGA_CANDIDATURA_LER')) {<a class="btn-secondary !py-2" [routerLink]="['/escalas',id,'candidaturas']">Candidaturas</a>}
             @if (sessaoRespostas.permissoes().includes('VAGA_RESPOSTA_LER')) {<a class="btn-secondary !py-2" [routerLink]="['/escalas',id,'respostas']">Respostas de participação</a>}
             @if (status==='FINALIZADA') {
