@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { environment } from '../../../environments/environment';
 
-export type OrigemNotificacao = 'ESCALA' | 'MURAL';
+export type OrigemNotificacao = 'ESCALA' | 'MURAL' | 'ESCALA_LEMBRETE';
 export type CanalNotificacao = 'EMAIL' | 'WHATSAPP';
 export interface ConfigNotificacao { origem: OrigemNotificacao; canal: CanalNotificacao; ativo: boolean; versao: number; }
 export interface EntregaNotificacao {

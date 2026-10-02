@@ -52,6 +52,7 @@ import {
             <option value="">Todas as origens</option>
             <option value="ESCALA">Escalas</option>
             <option value="MURAL">Mural</option>
+            <option value="ESCALA_LEMBRETE">Lembretes de escala</option>
           </select>
         </div>
         <div class="tabela-rolagem">
@@ -102,7 +103,7 @@ export class EntregasComponent implements OnInit, OnDestroy {
   private escrita?: Subscription;
 
   pode(codigo: string) { return this.sessao.permissoes().includes(codigo); }
-  rotuloOrigem(o: OrigemNotificacao) { return o === 'ESCALA' ? 'Escala' : 'Mural'; }
+  rotuloOrigem(o: OrigemNotificacao) { return ({ ESCALA: 'Escala finalizada', MURAL: 'Mural', ESCALA_LEMBRETE: 'Lembrete de escala' })[o]; }
   rotuloCanal(c: CanalNotificacao) { return c === 'EMAIL' ? 'E-mail' : 'WhatsApp'; }
 
   ngOnInit() {
