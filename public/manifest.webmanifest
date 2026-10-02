@@ -3,7 +3,7 @@
   "short_name": "Servirea",
   "description": "Escalas, compromissos e avisos da paróquia.",
   "lang": "pt-BR",
-  "start_url": "/portal",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

@@ -74,3 +74,5 @@ O dump `DOCUMENTACAO-COMPLETA-PARA-IA.md` descrevia o front falando direto com o
 - [Privacidade](privacidade.md): F09, histórico, exportação e retenção.
 
 - [Check-in e PWA](checkin-pwa.md): F15/F16, telas de check-in e instalação sem cache de dados sensíveis.
+
+- [Contrato da API](contrato-api.md): T17, conferência das chamadas do front contra o contrato versionado.

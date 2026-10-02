@@ -166,3 +166,5 @@ Dependentes exigem autorização explícita e conta ligada à pessoa; parentesco
 - F15/F16: docs/checkin-pwa.md. /escalas/:id/checkin e /portal/checkin; PWA com sw.js que só guarda a página offline (nunca cachear API/portal/documentos).
 
 - T05: início usa VoluntariosService.painel() e a grade de indisponibilidades usa ativosLeves() (projeção paginada); não voltar a carregar a lista completa de voluntários nessas telas.
+
+- T17: docs/contrato-api.md. Depois de mexer em serviços de API rode `python scripts/verificar-contrato-api.py` (lê o contrato do back vizinho).
