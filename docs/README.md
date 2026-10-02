@@ -58,3 +58,5 @@ O dump `DOCUMENTACAO-COMPLETA-PARA-IA.md` descrevia o front falando direto com o
 - [estoque-patrimonio ](estoque-patrimonio.md).
 - [seletores-escala ](seletores-escala.md).
 - [testes-navegacao ](testes-navegacao.md).
+
+- [Importação CSV/XLSX de pessoas](importacao-pessoas.md): abas, mapeamento, prévia, atomicidade e limites (F08).

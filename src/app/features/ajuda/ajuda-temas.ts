@@ -70,11 +70,11 @@ export const TEMAS:readonly TemaAjuda[] = [
     'Registre título, prazo, equipe e uma conta responsável da paróquia, conforme as permissões do seu perfil.',
     'Atualize a situação e filtre por responsável, por minhas tarefas ou por tarefas pendentes. A atribuição não concede acesso nem envia mensagens.',
     'O nome da equipe é uma referência de organização. Ele não concede acesso nem envia uma notificação automática.']},
-  {id:'importacao',titulo:'Importar pessoas por CSV',permissao:['PESSOA','PESSOA_CRIAR'],url:'/pessoas',passos:[
+  {id:'importacao',titulo:'Importar pessoas por CSV ou XLSX',permissao:['PESSOA','PESSOA_CRIAR'],url:'/pessoas',passos:[
     'Em Pessoas, abra Importar se seu perfil permitir criar pessoas. Use o modelo CSV oferecido pela tela.',
     'Revise a prévia, os erros e os possíveis duplicados antes de confirmar.',
-    'Confira os limites do plano antes de concluir o lote. CSV confirmado conta como uma importação mensal.',
-    'A prévia não cria pessoas. XLSX e mapeamento livre de colunas ainda não estão disponíveis.']},
+    'Confira os limites do plano antes de concluir o lote. Um lote CSV/XLSX confirmado conta como uma importação mensal.',
+    'Selecione CSV ou XLSX, leia as colunas, escolha a aba e mapeie nome/papel e contatos opcionais. CPF e telefone no Excel precisam estar como texto. A prévia não cria pessoas; duplicidades bloqueiam o lote, sem mesclar fichas.']},
   {id:'limites',titulo:'Meu plano, limites e consumo',permissao:null,url:null,passos:[
     'Abra Minha conta no menu do perfil para consultar o plano, recursos e consumo disponíveis.',
     'Limite do plano e permissão do usuário são controles diferentes. Uma funcionalidade incluída também pode exigir autorização no perfil.',

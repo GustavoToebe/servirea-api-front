@@ -21,4 +21,12 @@ describe('Importações CSV de pessoas: contrato', () => {
     expect(req.request.params.get('chave')).toBe('chave');expect(req.request.params.get('hash')).toBe('hash');
     req.flush({id:'id',quantidade:1,repetida:false});expect(cache.invalidarPrefixo).toHaveBeenCalledWith('pessoas');expect(cache.invalidarPrefixo).toHaveBeenCalledWith('voluntarios');
   });
+  it('envia aba e mapeamento idênticos na prévia e confirmação de XLSX', () => {
+    const xlsx=new File(['xlsx'],'origem.xlsx');const opcoes={aba:1,nome:2,papel:0,cpf:-1,email:3,telefone:-1};
+    api.estrutura(xlsx,1).subscribe();const estrutura=http.expectOne(r => r.url.endsWith('/estrutura'));
+    expect(estrutura.request.params.get('aba')).toBe('1');expect(estrutura.request.body.get('arquivo')).toEqual(xlsx);estrutura.flush({});
+    api.previa(xlsx,opcoes).subscribe();const previa=http.expectOne(r => r.url.endsWith('/previa'));expect(previa.request.params.get('cpf')).toBe('-1');expect(previa.request.params.get('nome')).toBe('2');previa.flush({});
+    api.confirmar(xlsx,'chave','hash',opcoes).subscribe();const confirmar=http.expectOne(r => r.url.endsWith('/confirmar'));
+    for(const [campo,valor] of Object.entries(opcoes)) expect(confirmar.request.params.get(campo)).toBe(String(valor));confirmar.flush({});
+  });
 });

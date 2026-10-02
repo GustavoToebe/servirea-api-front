@@ -17,5 +17,14 @@
     "rota": "/ajuda",
     "temas": 17,
     "conteudo": "Estático, versionado com os fluxos da aplicação."
+  },
+  "importacao_pessoas": {
+    "manual": "docs/importacao-pessoas.md",
+    "formatos": [
+      "CSV UTF-8",
+      "XLSX"
+    ],
+    "limite_pessoas": 100,
+    "mesclagem": false
   }
 }
