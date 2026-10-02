@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy,Component,OnInit,OnDestroy,inject,signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
@@ -10,8 +11,9 @@ import { DialogoService } from '../../shared/services/dialogo.service';
 import { CabecalhoPaginaComponent } from '../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
 import { CampoDataComponent } from '../../shared/components/datas/campo-data.component';
 const hoje=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
-@Component({selector:'app-portal-voluntario',imports:[CommonModule,FormsModule,CabecalhoPaginaComponent,CampoDataComponent],changeDetection:ChangeDetectionStrategy.OnPush,template:`
+@Component({selector:'app-portal-voluntario',imports:[CommonModule,RouterLink,FormsModule,CabecalhoPaginaComponent,CampoDataComponent],changeDetection:ChangeDetectionStrategy.OnPush,template:`
  <div class="space-y-5"><app-cabecalho-pagina titulo="Meus compromissos" subtitulo="Suas escalas finalizadas e eventos em que você está inscrito. Horários de Brasília." />
+ <a routerLink="/portal/vagas" class="btn-secondary inline-block">Vagas e candidaturas</a>
  @if(erro()){<div class="card bg-red-50 p-4 text-red-700" role="alert">{{erro()}}</div>}
  <form class="card flex flex-wrap items-end gap-3 p-4" (ngSubmit)="carregar()"><div><label class="label" for="portal-de">De</label><app-campo-data idCampo="portal-de" name="de" [(ngModel)]="de" /></div><div><label class="label" for="portal-ate">Até</label><app-campo-data idCampo="portal-ate" name="ate" [(ngModel)]="ate" /></div><button type="submit" class="btn-secondary" [disabled]="carregando()">Consultar</button></form>
  @if(carregando()){<p role="status">Carregando seus compromissos…</p>}

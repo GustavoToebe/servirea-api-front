@@ -135,3 +135,5 @@ Pessoas/inscrições/eventos usam contratos de [listas paginadas](docs/listas-pa
 - Portal/calendário/pastorais: docs/portal-calendario-pastorais.md. Token de calendário só em memória, limpar ao destruir tela. /portal exige recurso explícito até para consulta. Vínculo pessoa/usuário configurado por administrador; não inferir identidade; confirmação/recusa V062, trocas/dependentes ainda pendentes. Coordenador do grupo não altera permissões.
 
 - V062: docs/respostas-escala.md. PORTAL_RESPONDER só para pessoa própria; prazo no início da celebração, servidor Brasília→UTC. Recusa não desaloca/presença. Reabrir/trocar pessoa invalida decisão. @Version vaga; lock paróquia→escala para resposta, escala para edição/alocação. Histórico mantém UUIDs após exclusão. VAGA_RESPOSTA_LER para consulta da coordenação.
+
+- V063: docs/candidaturas-vagas.md, portal/Candidatura*. PORTAL_CANDIDATAR para própria pessoa; VAGA_CANDIDATURA_LER/DECIDIR para coordenação. Criar exige PORTAL_VOLUNTARIO; decidir também ESCALAS. Locks paróquia→escala→vaga. Reabrir/cancelar expira pendentes e reabertura avança versão da vaga. Aprovação não confirma presença/intenção; histórico sem cascata.

@@ -32,3 +32,5 @@ O dump `DOCUMENTACAO-COMPLETA-PARA-IA.md` descrevia o front falando direto com o
 - [Portal, calendário e pastorais](portal-calendario-pastorais.md): configuração, identidade pessoal, assinatura privada e equipes simples.
 
 - [Respostas de participação](respostas-escala.md): confirmar/recusar, prazo, histórico e consulta da coordenação.
+
+- [Candidaturas a vagas](candidaturas-vagas.md): portal, decisão da coordenação, elegibilidade e concorrência.
