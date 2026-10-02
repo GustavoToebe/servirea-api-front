@@ -65,7 +65,7 @@ import { VoluntariosApiService } from '../services/voluntarios-api.service';
         }
         @if (pessoa.dependentes.length) {
           <section class="card p-6">
-            <h2 class="mb-4 text-lg font-black text-[var(--ink)]">Dependentes</h2>
+            <h2 class="mb-4 text-lg font-black text-[var(--ink)]">Dependentes</h2><a class="btn-secondary" [routerLink]="['/pessoas',pessoa.id,'acessos-dependentes']">Autorizações de acesso</a>
             <div class="space-y-2">
               @for (r of pessoa.dependentes; track r) {
                 <a [routerLink]="['/pessoas', r.pessoaId]" class="block rounded-2xl border border-[var(--line)] bg-[var(--card)] p-4 hover:border-[var(--brand)] transition-all shadow-2xs">

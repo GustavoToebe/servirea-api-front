@@ -64,3 +64,5 @@ O dump `DOCUMENTACAO-COMPLETA-PARA-IA.md` descrevia o front falando direto com o
 - [Ambiente local atual](ambiente-local-atual.md): bases novas e portas 8070/8071/4210/4211.
 
 - [MFA dos usuários](mfa-usuarios.md): proteção da conta global, recuperação e revogação de sessões.
+
+- [Responsáveis e coordenação própria](acessos-responsaveis-coordenacao.md): autorização explícita, escopo e revogação.

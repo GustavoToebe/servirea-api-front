@@ -9,6 +9,9 @@ export interface Compromisso {id:string;tipo:string;titulo:string;inicio:string;
 export interface Portal {vinculado:boolean;compromissos:Compromisso[];}
 @Injectable({providedIn:'root'}) export class VoluntarioApiService {
  private readonly http=inject(HttpClient);private readonly base=environment.apiUrl;
+ dependentes(pagina:number){return this.http.get<{pessoaId:string;nome:string;podeResponder:boolean}[]>(`${this.base}/portal/dependentes`,{params:{pagina}});}
+ consultarDependente(id:string,de:string,ate:string){return this.http.get<Portal>(`${this.base}/portal/dependentes/${id}/compromissos`,{params:{de,ate}});}
+ responderDependente(id:string,vagaId:string,resposta:'CONFIRMADA'|'RECUSADA',versao:number){return this.http.put(`${this.base}/portal/dependentes/${id}/vagas/${vagaId}/resposta`,{resposta,versao});}
  consultar(de:string,ate:string){return this.http.get<Portal>(`${this.base}/portal/compromissos`,{params:{de,ate}});}
  responder(vagaId:string,resposta:'CONFIRMADA'|'RECUSADA',versao:number){return this.http.put(`${this.base}/portal/vagas/${vagaId}/resposta`,{resposta,versao});}
  historico(vagaId:string,pagina:number){return this.http.get<Pagina<HistoricoResposta>>(`${this.base}/portal/vagas/${vagaId}/respostas`,{params:{pagina}});}

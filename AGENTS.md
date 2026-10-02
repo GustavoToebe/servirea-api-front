@@ -153,3 +153,6 @@ Pessoas/inscrições/eventos usam contratos de [listas paginadas](docs/listas-pa
 - Rodada 11–17: docs/liturgia.md, docs/indicadores-participacao.md, docs/estoque-patrimonio.md e docs/seletores-escala.md. Nenhuma geração de conteúdo; estoque só muda por movimento com chave/versão.
 
 - [MFA da conta](docs/mfa-usuarios.md): TOTP e recuperação globais, rotas próprias sem permissão de domínio, suporte recusado, versão de credenciais nos tokens. Nunca contornar por redefinição por e-mail.
+
+## Acessos pessoais
+Dependentes exigem autorização explícita e conta ligada à pessoa; parentesco não concede acesso. Coordenação própria revalida membro ativo COORDENADOR a cada operação e não autoriza nomear coordenadores. Contratos em docs/acessos-responsaveis-coordenacao.md.
