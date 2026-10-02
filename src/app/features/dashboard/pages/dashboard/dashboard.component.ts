@@ -6,8 +6,8 @@ import { AniversariantesCardComponent } from '../../components/aniversariantes-c
 import { VoluntariosService } from '../../../voluntarios/services/voluntarios.service';
 import { EscalasService } from '../../../escalas/services/escalas.service';
 import { EscalaDetalhe, EscalaEvento, STATUS_LABEL, StatusEscala } from '../../../escalas/models/escala.model';
-import { FUNCOES_LABEL, mandatoNoPrazo } from '../../../pessoas/models/pessoa.model';
-import { Voluntario } from '../../../voluntarios/models/voluntario.model';
+import { FUNCOES_LABEL } from '../../../pessoas/models/pessoa.model';
+import { PainelVoluntarios } from '../../../pessoas/services/voluntarios-api.service';
 import { rotuloDia, tempoLiturgico } from '../../../escalas/data/calendario-liturgico';
 
 interface MissaVista {
@@ -172,12 +172,12 @@ export class DashboardComponent implements OnInit {
     const mes = hoje.getMonth() + 1;
     const seguinte = mes === 12 ? { ano: ano + 1, mes: 1 } : { ano, mes: mes + 1 };
     try {
-      const [voluntarios, esteMes, proximoMes] = await Promise.all([
-        this.volunteers.active(),
+      const [painel, esteMes, proximoMes] = await Promise.all([
+        this.volunteers.painel(),
         this.scales.list({ ano, mes }),
         this.scales.list({ ano: seguinte.ano, mes: seguinte.mes })
       ]);
-      this.contarPessoas(voluntarios);
+      this.contarPessoas(painel);
       const missas = [...esteMes, ...proximoMes]
         .filter(escala => escala.status !== 'CANCELADA')
         .flatMap(escala => this.missasDe(escala))
@@ -202,12 +202,12 @@ export class DashboardComponent implements OnInit {
     return s === 'FINALIZADA' ? 'bg-emerald-50 text-emerald-700' : s === 'CANCELADA' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700';
   }
 
-  private contarPessoas(voluntarios: Voluntario[]) {
-    this.activeCount = voluntarios.length;
-    this.coroinhas = voluntarios.filter(v => v.tipo === 'COROINHA' || v.tipo === 'AMBOS').length;
-    this.acolitos = voluntarios.filter(v => v.tipo === 'ACOLITO' || v.tipo === 'AMBOS').length;
-    this.mesc = voluntarios.filter(v => v.tipo === 'MESC').length;
-    this.mandatosAVencer = voluntarios.filter(v => mandatoNoPrazo(v.mandato_fim)).length;
+  private contarPessoas(painel: PainelVoluntarios) {
+    this.activeCount = painel.ativos;
+    this.coroinhas = painel.coroinhas;
+    this.acolitos = painel.acolitos;
+    this.mesc = painel.mesc;
+    this.mandatosAVencer = painel.mandatosAVencer;
   }
 
   private missasDe(escala: EscalaDetalhe): MissaVista[] {

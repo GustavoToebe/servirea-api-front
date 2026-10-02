@@ -8,6 +8,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { TipoVoluntario, VoluntarioLista } from '../models/pessoa.model';
 
 export interface VoluntarioOpcao {id:string;nomeCompleto:string;tipo:TipoVoluntario;ativo:boolean;funcoesHabilitadas:VoluntarioLista['funcoesHabilitadas'];}
+export interface PainelVoluntarios {ativos:number;coroinhas:number;acolitos:number;mesc:number;mandatosAVencer:number;}
 export interface PaginaOpcoes {itens:VoluntarioOpcao[];pagina:number;tamanho:number;temMais:boolean;}
 interface VoluntarioResponse {
   id: string;
@@ -33,6 +34,9 @@ export class VoluntariosApiService {
 
   opcoes(nome='',pagina=0,tipo:TipoVoluntario|''=''):Observable<PaginaOpcoes> {
     return this.http.get<PaginaOpcoes>(`${this.base}/opcoes`, {params:{nome,pagina,...(tipo?{tipo}:{})}});
+  }
+  painel():Promise<PainelVoluntarios> {
+    return firstValueFrom(this.http.get<PainelVoluntarios>(`${this.base}/painel`));
   }
   resolverOpcoes(ids:string[]):Promise<VoluntarioOpcao[]> {
     return firstValueFrom(this.http.post<VoluntarioOpcao[]>(`${this.base}/opcoes/ids`,{ids}));

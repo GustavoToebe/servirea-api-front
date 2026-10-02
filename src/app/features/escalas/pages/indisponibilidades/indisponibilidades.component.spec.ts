@@ -18,7 +18,7 @@ describe('IndisponibilidadesComponent', () => {
         provideRouter([]),
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({ ano: '2026', mes: '10' }) } } },
         { provide: EscalasService, useValue: escalas },
-        { provide: VoluntariosService, useValue: { active: () => Promise.resolve([
+        { provide: VoluntariosService, useValue: { ativosLeves: () => Promise.resolve([
           { id: 'a', nome_completo: 'Ana', tipo: 'COROINHA', ativo: true },
           { id: 'b', nome_completo: 'Bruno', tipo: 'ACOLITO', ativo: true }
         ]) } }

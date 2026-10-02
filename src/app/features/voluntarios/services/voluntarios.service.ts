@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import {map} from 'rxjs';
-import {VoluntarioOpcao} from '../../pessoas/services/voluntarios-api.service';
+import {firstValueFrom, map} from 'rxjs';
+import {PainelVoluntarios,VoluntarioOpcao} from '../../pessoas/services/voluntarios-api.service';
 import { VoluntariosApiService } from '../../pessoas/services/voluntarios-api.service';
 import { TipoVoluntario, VoluntarioLista } from '../../pessoas/models/pessoa.model';
 import { Voluntario, VoluntarioFilters } from '../models/voluntario.model';
@@ -26,6 +26,25 @@ export class VoluntariosService {
     for(let i=0;i<unicos.length;i+=100) rows.push(...(await this.api.resolverOpcoes(unicos.slice(i,i+100))).map(paraOpcao));
     return rows;
   }
+  /** Composição dos ativos calculada no servidor; não carrega a lista de voluntários. */
+  painel(): Promise<PainelVoluntarios> {
+    return this.api.painel();
+  }
+
+  /**
+   * Todos os ativos pela projeção leve e paginada (id, nome, tipo, funções), em páginas de 30. Para telas que precisam
+   * da paróquia inteira (grade mensal) sem a ficha completa. Limite de páginas evita laço sem fim.
+   */
+  async ativosLeves(maxPaginas = 60): Promise<Voluntario[]> {
+    const todos: Voluntario[] = [];
+    for (let pagina = 0; pagina < maxPaginas; pagina++) {
+      const r = await firstValueFrom(this.opcoes('', pagina));
+      todos.push(...r.itens);
+      if (!r.temMais) return todos;
+    }
+    throw new Error('Há mais voluntários ativos do que a grade consegue carregar.');
+  }
+
   async active(): Promise<Voluntario[]> {
     return this.list({ status: 'ATIVO' });
   }

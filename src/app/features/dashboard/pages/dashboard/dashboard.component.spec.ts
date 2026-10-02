@@ -19,7 +19,7 @@ describe('DashboardComponent', () => {
       providers: [
         provideRouter([]),
         { provide: AcessoApiService, useValue: acesso },
-        { provide: VoluntariosService, useValue: { active: () => Promise.resolve([]) } },
+        { provide: VoluntariosService, useValue: { painel: () => Promise.resolve({ ativos: 0, coroinhas: 0, acolitos: 0, mesc: 0, mandatosAVencer: 0 }) } },
         { provide: EscalasService, useValue: { list: () => Promise.resolve([]) } },
         { provide: AniversariantesService, useValue: { doMes: () => of([{ id: 'a', nome: 'Ana', dia: 5 }]) } }
       ]

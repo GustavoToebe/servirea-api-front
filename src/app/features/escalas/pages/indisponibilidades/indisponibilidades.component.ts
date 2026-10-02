@@ -176,7 +176,7 @@ export class IndisponibilidadesComponent implements OnInit, OnDestroy, HasPendin
     const mes = Number(q.get('mes'));
     if (ano >= 2020 && mes >= 1 && mes <= 12) { this.ano = ano; this.mes = mes; }
     try {
-      this.voluntarios = (await this.voluntariosService.active())
+      this.voluntarios = (await this.voluntariosService.ativosLeves())
         .slice().sort((a, b) => (a.nome_completo || '').localeCompare(b.nome_completo || '', 'pt-BR'));
     } catch (e: any) {
       this.error = e?.message || 'Não foi possível carregar os voluntários.';
