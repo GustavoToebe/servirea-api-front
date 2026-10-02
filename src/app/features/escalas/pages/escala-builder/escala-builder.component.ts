@@ -73,6 +73,9 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
         }
       </div>
 
+      @if(!readOnly&&podeArrastar()){
+      <section class="card space-y-3 p-4"><h2 class="secao-titulo">Alocar por arraste ou teclado</h2><p class="text-sm text-slate-500">Arraste uma pessoa para a vaga, ou selecione aqui e use “Aplicar pessoa selecionada” na vaga. Altera apenas o rascunho; salve depois. Para substituir uma pessoa, será pedida confirmação.</p><label class="label" for="busca-arraste">Buscar voluntário ativo</label><input id="busca-arraste" class="field" [(ngModel)]="buscaArraste" (ngModelChange)="filtrarArraste()"><div class="flex flex-wrap gap-2">@for(v of pessoasArraste;track v.id){<button type="button" class="btn-secondary" [draggable]="!saving&&!arrasteOcupado" [disabled]="saving||arrasteOcupado" [attr.aria-pressed]="pessoaArraste===v.id" (dragstart)="iniciarArraste($event,v.id)" (dragend)="encerrarArraste()" (click)="pessoaArraste=v.id">{{v.nome_completo}}</button>}</div><p role="status">{{avisoArraste}}</p><button type="button" class="btn-secondary" (click)="pessoaArraste=null">Limpar seleção</button></section>
+      }
       @if (loading) {
         <div class="space-y-3" aria-label="Carregando escala">
           <div class="h-16 animate-pulse rounded-2xl bg-slate-200"></div>
@@ -265,8 +268,8 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
                                           {{ slot.voluntario?.nome_completo || '—' }}
                                         </span>
                                       } @else {
-                                        <app-volunteer-picker [volunteers]="volunteers" [selectedId]="slot.voluntario_id" [excludeIds]="l.usados"
-                                          (selectedIdChange)="selectVolunteer(l.evento, slot, $event)" />
+                                        <div class="rounded-lg border border-transparent focus-within:border-[var(--brand)]" (dragover)="permitirArraste($event)" (drop)="soltarPessoa($event,l.evento,slot)"><app-volunteer-picker [volunteers]="volunteers" [selectedId]="slot.voluntario_id" [excludeIds]="l.usados"
+                                          (selectedIdChange)="selectVolunteer(l.evento, slot, $event)" />@if(pessoaArraste&&podeArrastar()){<button type="button" class="btn-secondary mt-1 text-xs" [disabled]="saving||arrasteOcupado" (click)="aplicarArraste(l.evento,slot)">Aplicar pessoa selecionada</button>}</div>
                                       }
                                     </div>
                                   </div>
@@ -341,7 +344,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
                                 @if (readOnly) {
                                   <span class="block truncate rounded-lg px-2 py-1.5" [class.font-semibold]="!!slot.voluntario_id" [class.text-slate-400]="!slot.voluntario_id">{{ slot.voluntario?.nome_completo || '—' }}</span>
                                 } @else {
-                                  <app-volunteer-picker [volunteers]="volunteers" [selectedId]="slot.voluntario_id" [excludeIds]="l.usados" (selectedIdChange)="selectVolunteer(l.evento, slot, $event)" />
+                                  <div class="rounded-lg border border-transparent focus-within:border-[var(--brand)]" (dragover)="permitirArraste($event)" (drop)="soltarPessoa($event,l.evento,slot)"><app-volunteer-picker [volunteers]="volunteers" [selectedId]="slot.voluntario_id" [excludeIds]="l.usados" (selectedIdChange)="selectVolunteer(l.evento, slot, $event)" />@if(pessoaArraste&&podeArrastar()){<button type="button" class="btn-secondary mt-1 text-xs" [disabled]="saving||arrasteOcupado" (click)="aplicarArraste(l.evento,slot)">Aplicar pessoa selecionada</button>}</div>
                                 }
                               }
                             </td>
@@ -405,8 +408,8 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
                                         {{ slot.voluntario?.nome_completo || '—' }}
                                       </span>
                                     } @else {
-                                      <app-volunteer-picker [volunteers]="volunteers" [selectedId]="slot.voluntario_id" [excludeIds]="l.usados" [marcadores]="l.marcadores"
-                                        (selectedIdChange)="selectVolunteer(l.evento, slot, $event)" />
+                                      <div class="rounded-lg border border-transparent focus-within:border-[var(--brand)]" (dragover)="permitirArraste($event)" (drop)="soltarPessoa($event,l.evento,slot)"><app-volunteer-picker [volunteers]="volunteers" [selectedId]="slot.voluntario_id" [excludeIds]="l.usados" [marcadores]="l.marcadores"
+                                        (selectedIdChange)="selectVolunteer(l.evento, slot, $event)" />@if(pessoaArraste&&podeArrastar()){<button type="button" class="btn-secondary mt-1 text-xs" [disabled]="saving||arrasteOcupado" (click)="aplicarArraste(l.evento,slot)">Aplicar pessoa selecionada</button>}</div>
                                     }
                                   </div>
                                 </div>
@@ -680,7 +683,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
     } catch { /* sem localStorage: painel aberto */ }
     try {
       
-      this.volunteers = await this.volunteersService.active();
+      this.volunteers = await this.volunteersService.active();this.filtrarArraste();
       this.layouts = await this.layoutsService.listar();
 
       
@@ -900,6 +903,30 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
   }
 
 
+  buscaArraste='';pessoasArraste:Voluntario[]=[];pessoaArraste:string|null=null;avisoArraste='';arrasteOcupado=false;private arrastada:string|null=null;
+  podeArrastar(){return this.sessaoRespostas.permissoes().includes(this.id?'ESCALA_ALTERAR':'ESCALA_CRIAR');}
+  filtrarArraste(){const q=this.buscaArraste.trim().toLocaleLowerCase('pt-BR');this.pessoasArraste=this.volunteers.filter(v=>v.ativo&&v.nome_completo.toLocaleLowerCase('pt-BR').includes(q)).slice(0,30);}
+  iniciarArraste(e:DragEvent,id:string){if(this.readOnly||this.saving||this.arrasteOcupado||!this.podeArrastar()||!this.volunteers.some(v=>v.id===id&&v.ativo)){e.preventDefault();return;}this.arrastada=id;this.pessoaArraste=id;e.dataTransfer?.setData('application/x-servirea-voluntario',id);if(e.dataTransfer)e.dataTransfer.effectAllowed='copy';}
+  encerrarArraste(){this.arrastada=null;}
+  permitirArraste(e:DragEvent){if(this.arrastada&&!this.readOnly&&!this.saving&&this.podeArrastar())e.preventDefault();}
+  soltarPessoa(e:DragEvent,event:EscalaEvento,slot:EscalaVaga){e.preventDefault();const id=this.arrastada;this.arrastada=null;if(!id||e.dataTransfer?.getData('application/x-servirea-voluntario')!==id)return;this.pessoaArraste=id;void this.aplicarArraste(event,slot);}
+  private impedimentoArraste(event:EscalaEvento,slot:EscalaVaga,id:string):string|null{
+    if(this.readOnly||this.saving||!this.podeArrastar())return 'A escala não está disponível para edição.';
+    if(!this.events.includes(event)||!event.vagas.includes(slot)||event.referencia)return 'Escolha uma vaga deste rascunho, sem referência.';
+    const v=this.volunteers.find(v=>v.id===id);if(!v?.ativo)return 'Voluntário não está ativo.';
+    if(!v.funcoes_habilitadas?.includes(slot.funcao))return 'Voluntário não está habilitado para esta função.';
+    if(this.usedIds(event,slot.voluntario_id).includes(id))return 'Esta pessoa já está alocada em outra função nesta mesma missa.';
+    if(indisponivelEm(this.apoio,id,event.data,event.horario))return 'A pessoa informou indisponibilidade nesta data e período.';
+    if(this.events.some(e=>e!==event&&!e.referencia&&e.data===event.data&&e.horario.slice(0,5)===event.horario.slice(0,5)&&e.vagas.some(v=>v.voluntario_id===id)))return 'A pessoa já está em outra celebração deste rascunho no mesmo horário.';
+    return null;
+  }
+  async aplicarArraste(event:EscalaEvento,slot:EscalaVaga){const id=this.pessoaArraste;if(!id||this.arrasteOcupado)return;let erro=this.impedimentoArraste(event,slot,id);if(erro){this.avisoArraste=erro;return;}if(slot.voluntario_id===id)return;
+    this.arrasteOcupado=true;const anterior=slot.voluntario_id;
+    try{if(anterior&&!await this.dialogo.confirmar({mensagem:'Substituir a pessoa desta vaga no rascunho?',confirmar:'Substituir'}))return;
+      erro=this.impedimentoArraste(event,slot,id);if(erro||slot.voluntario_id!==anterior){this.avisoArraste=erro||'A vaga mudou. Confira novamente.';return;}
+      this.selectVolunteer(event,slot,id);this.avisoArraste='Pessoa alocada no rascunho. Salve para registrar.';this.pessoaArraste=null;
+    }finally{this.arrasteOcupado=false;}
+  }
   selectVolunteer(event: EscalaEvento, slot: EscalaVaga, id: string | null) {
     if (id && this.usedIds(event, slot.voluntario_id).includes(id)) { void this.dialogo.avisar('Esta pessoa já está alocada em outra função nesta mesma missa.'); return; }
     slot.voluntario_id=id; slot.voluntario=id?this.volunteers.find(v=>v.id===id)||null:null; this.eventsDirty=true;

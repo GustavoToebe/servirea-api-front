@@ -24,6 +24,7 @@ export class OrganizacaoComponent implements OnInit,OnDestroy {
  readonly rotulos: Record<string,string>={PUBLICADO:'Publicado',ARQUIVADO:'Arquivado',ABERTA:'Aberta',EM_ANDAMENTO:'Em andamento',CONCLUIDA:'Concluída',CANCELADA:'Cancelada'};
  readonly cores: Record<string,string>={PUBLICADO:'bg-emerald-50 text-emerald-700',CONCLUIDA:'bg-emerald-50 text-emerald-700',ABERTA:'bg-amber-50 text-amber-700',EM_ANDAMENTO:'bg-amber-50 text-amber-700',ARQUIVADO:'bg-slate-100 text-slate-600',CANCELADA:'bg-slate-100 text-slate-600'};
  readonly itens=signal<RegistroOrganizacao[]>([]);readonly total=signal(0);readonly carregando=signal(false);readonly salvando=signal(false);readonly erro=signal('');readonly contratado=signal(false);readonly editando=signal(false);
+ readonly contasMural=signal<{id:string;nome:string}[]>([]);readonly registroAtual=signal<RegistroOrganizacao|null>(null);buscaMural='';
  readonly responsaveis=signal<{id:string;nome:string}[]>([]);readonly responsavelSelecionado=signal<{id:string;nome:string}|null>(null);buscaResponsavel='';filtroResponsavel='';minhas=false;private diretorio?:Subscription;
  busca='';status='';pagina=0;id: string | null=null;dados: SalvarOrganizacao=this.vazio();private leitura?:Subscription;private direito?:Subscription;private escrita?:Subscription;
  ngOnInit() {this.carregar();if(this.tipo==='tarefas')this.buscarResponsaveis();this.direito=this.plano.consultar().subscribe({next:c=>this.contratado.set(c.includes(this.tipo==='mural'?'MURAL':'TAREFAS')),error:()=>this.contratado.set(false)});}
@@ -31,15 +32,18 @@ export class OrganizacaoComponent implements OnInit,OnDestroy {
  carregar() {this.leitura?.unsubscribe();this.carregando.set(true);this.erro.set('');this.leitura=(this.tipo==='tarefas'?this.api.listar(this.tipo,this.busca,this.status,this.pagina,this.filtroResponsavel,this.minhas):this.api.listar(this.tipo,this.busca,this.status,this.pagina)).subscribe({next:p=>{this.itens.set(p.itens);this.total.set(p.total);this.carregando.set(false);},error:e=>{this.itens.set([]);this.total.set(0);this.carregando.set(false);this.erro.set(mensagemApi(e,'Não foi possível carregar os registros.'));}});}
  buscar() {this.pagina=0;this.carregar();}
  paginar(delta:number) {this.pagina+=delta;this.carregar();}
- novo() {this.responsavelSelecionado.set(null);this.id=null;this.dados=this.vazio();this.erro.set('');this.editando.set(true);}
- abrir(r:RegistroOrganizacao) {this.responsavelSelecionado.set(r.responsavelUsuarioId?{id:r.responsavelUsuarioId,nome:r.responsavelNome||'Responsável anterior'}:null);this.id=r.id;this.dados={titulo:r.titulo,descricao:r.descricao,status:r.status,prazo:r.prazo,equipe:r.equipe,versao:r.versao,responsavelUsuarioId:r.responsavelUsuarioId||null};this.erro.set('');this.editando.set(true);}
+ novo() {this.registroAtual.set(null);this.responsavelSelecionado.set(null);this.id=null;this.dados=this.vazio();this.erro.set('');this.editando.set(true);}
+ abrir(r:RegistroOrganizacao) {this.registroAtual.set(r);this.responsavelSelecionado.set(r.responsavelUsuarioId?{id:r.responsavelUsuarioId,nome:r.responsavelNome||'Responsável anterior'}:null);this.id=r.id;this.dados={titulo:r.titulo,descricao:r.descricao,status:r.status,prazo:r.prazo,equipe:r.equipe,versao:r.versao,responsavelUsuarioId:r.responsavelUsuarioId||null,publico:r.publico||'TODOS',destinatarios:[...(r.destinatarios||[])]};this.erro.set('');this.editando.set(true);}
  cancelar() {if(!this.salvando()) this.editando.set(false);}
  salvar(form:NgForm) {if(this.salvando()||!this.contratado()||!this.pode(this.id?'_ALTERAR':'_CRIAR')) return;
   if(form.invalid) {form.control.markAllAsTouched();focarPrimeiroInvalido(this.host.nativeElement);return;}
   this.salvando.set(true);this.erro.set('');const dados={...this.dados,prazo:this.dados.prazo||null};if(this.tipo==='mural'){delete dados.equipe;delete dados.responsavelUsuarioId;}
   this.escrita=this.api.salvar(this.tipo,this.id,dados).subscribe({next:()=>{this.salvando.set(false);this.editando.set(false);this.carregar();},error:e=>{this.salvando.set(false);this.erro.set(mensagemApi(e,'Não foi possível salvar.'));}});
  }
- private vazio():SalvarOrganizacao {return {titulo:'',descricao:'',status:this.tipo==='mural'?'PUBLICADO':'ABERTA',prazo:null,equipe:null,versao:null,responsavelUsuarioId:null};}
+ private vazio():SalvarOrganizacao {return {titulo:'',descricao:'',status:this.tipo==='mural'?'PUBLICADO':'ABERTA',prazo:null,equipe:null,versao:null,responsavelUsuarioId:null,publico:'TODOS',destinatarios:[]};}
  buscarResponsaveis(){this.diretorio?.unsubscribe();this.diretorio=this.api.responsaveis(this.buscaResponsavel).subscribe({next:r=>this.responsaveis.set(r),error:e=>{this.responsaveis.set([]);this.erro.set(mensagemApi(e,'Não foi possível buscar responsáveis.'));}});}
+ buscarContasMural(){if(!this.pode('_CRIAR')&&!this.pode('_ALTERAR'))return;this.diretorio?.unsubscribe();this.diretorio=this.api.destinatarios(this.buscaMural).subscribe({next:r=>this.contasMural.set(r),error:e=>this.erro.set(mensagemApi(e,'Não foi possível buscar contas.'))});}
+ selecionarConta(id:string,selecionar:boolean){const ids=new Set(this.dados.destinatarios||[]);if(selecionar)ids.add(id);else ids.delete(id);this.dados.destinatarios=[...ids];}
+ confirmarLeitura(){const r=this.registroAtual();if(!r||this.salvando()||!this.contratado()||!this.pode('_CONFIRMAR')||r.status!=='PUBLICADO'||r.lido)return;this.salvando.set(true);this.escrita=this.api.confirmarLeitura(r.id,r.versao).subscribe({next:v=>{this.registroAtual.set(v);this.salvando.set(false);this.carregar();},error:e=>{this.salvando.set(false);this.erro.set(mensagemApi(e,'Não foi possível confirmar. Atualize o aviso.'))}});}
  ngOnDestroy() {this.leitura?.unsubscribe();this.direito?.unsubscribe();this.escrita?.unsubscribe();this.diretorio?.unsubscribe();}
 }

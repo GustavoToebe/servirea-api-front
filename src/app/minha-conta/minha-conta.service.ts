@@ -71,6 +71,7 @@ export class MinhaContaService {
     return this.http.get<MinhaContaDados>(`${this.api}/minha-conta`);
   }
 
+  historicoConsumo(){return this.http.get<{dia:string;consumo:ConsumoPlano}[]>(`${environment.apiUrl}/minha-conta/consumo/historico`);}
   consumo(): Observable<ConsumoPlano> {return this.http.get<ConsumoPlano>(`${this.api}/minha-conta/consumo`);}
   conferirArmazenamento(inicio=0): Observable<{conferidos:number; falhas:number; pendentes:number; proximoInicio?:number}> {return this.http.post<{conferidos:number; falhas:number; pendentes:number; proximoInicio?:number}>(`${this.api}/minha-conta/armazenamento/conferir`,{}, {params:{inicio}});}
 }

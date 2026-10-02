@@ -4,6 +4,7 @@ import { authGuard } from './core/auth/auth.guard';
 import { pendingChangesGuard } from './core/guards/pending-changes.guard';
 
 export const routes: Routes = [
+  {path:'p/:slug',loadComponent:()=>import('./features/site/site-publico.component').then(m=>m.SitePublicoComponent)},
   {
     path: 'login',
     loadComponent: () => import('./features/auth/pages/login/login.component').then(m => m.LoginComponent)
@@ -28,6 +29,8 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       { path: 'funcionalidade-indisponivel', loadComponent: () => import('./core/plano/funcionalidades-plano.component').then(m => m.FuncionalidadesPlanoComponent) },
       { path: 'ajuda', loadComponent: () => import('./features/ajuda/ajuda.component').then(m => m.AjudaComponent) },
+      {path:'aniversarios',loadComponent:()=>import('./features/aniversarios/aniversarios.component').then(m=>m.AniversariosComponent)},
+      {path:'site-paroquia',canDeactivate:[pendingChangesGuard],loadComponent:()=>import('./features/site/site.component').then(m=>m.SiteComponent)},
       { path: 'primeiros-passos', loadComponent: () => import('./features/onboarding/onboarding.component').then(m => m.OnboardingComponent) },
       { path: 'dashboard', loadComponent: () => import('./features/dashboard/pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
       { path: 'pessoas', loadComponent: () => import('./features/pessoas/pages/pessoas-list.component').then(m => m.PessoasListComponent) },

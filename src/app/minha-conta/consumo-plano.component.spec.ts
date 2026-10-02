@@ -8,7 +8,7 @@ describe('Consumo do plano', () => {
   const dados: ConsumoPlano = { planoNome:null, versaoDireitos:null, direitosConfirmadosEm:null, consultadoEm:'2026-10-01T00:00:00Z', itens:[{codigo:'pessoas',nome:'Pessoas cadastradas',usado:5,limite:5,disponivel:0,estado:'ATINGIDO'}] };
   let api: jasmine.SpyObj<MinhaContaService>;
   beforeEach(() => {
-    api=jasmine.createSpyObj('MinhaContaService',['consumo','conferirArmazenamento']); api.consumo.and.returnValue(of(dados));
+    api=jasmine.createSpyObj('MinhaContaService',['consumo','conferirArmazenamento','historicoConsumo']); api.consumo.and.returnValue(of(dados));
     TestBed.configureTestingModule({imports:[ConsumoPlanoComponent],providers:[{provide:MinhaContaService,useValue:api},{provide:SessaoAtual,useValue:{permissoes:() => ['PAROQUIA_ALTERAR']}}]});
   });
   it('mostra limite atingido e informa as cotas ainda não aplicadas', () => {
@@ -51,4 +51,6 @@ describe('Consumo do plano', () => {
     const f=TestBed.createComponent(ConsumoPlanoComponent);f.detectChanges();f.componentInstance.conferir();
     expect(api.conferirArmazenamento).not.toHaveBeenCalled();
   });
+  it('histórico é consultado sob demanda e ausência não vira zero',()=>{api.historicoConsumo.and.returnValue(of([]));const f=TestBed.createComponent(ConsumoPlanoComponent);f.detectChanges();expect(api.historicoConsumo).not.toHaveBeenCalled();f.componentInstance.buscarHistorico();f.detectChanges();expect(f.nativeElement.textContent).toContain('Nenhuma consulta registrada');expect(f.componentInstance.dados()).toEqual(dados);});
+  it('falha do histórico preserva consumo atual e não apresenta zero',()=>{api.historicoConsumo.and.returnValue(throwError(()=>new Error('falha')));const f=TestBed.createComponent(ConsumoPlanoComponent);f.detectChanges();f.componentInstance.buscarHistorico();expect(f.componentInstance.erroHistorico()).toBeTruthy();expect(f.componentInstance.dados()).toEqual(dados);});
 });

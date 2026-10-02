@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { SessaoAtual } from '../core/layout/sessao-atual';
 import { mensagemApi } from '../core/api/api-error';
 import { ConsumoPlano, MinhaContaService } from './minha-conta.service';
 
 @Component({
   selector: 'app-consumo-plano', changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe],
+  imports: [DecimalPipe,DatePipe],
   template: `
     <section class="card space-y-3 p-5" aria-labelledby="consumo-titulo">
       <h3 id="consumo-titulo" class="secao-titulo">Consumo do plano</h3>
@@ -32,6 +32,10 @@ import { ConsumoPlano, MinhaContaService } from './minha-conta.service';
         <p class="text-xs text-slate-500">Armazenamento inclui fotos vinculadas e anexos ainda retidos nos comunicados. Fotos compartilhadas contam uma vez. MB = 1.048.576 bytes; não representa toda a ocupação do provedor. Cotas mensais incluem mensagens da fila, confirmações e lembretes de eventos; ao atingir o teto, novos envios aguardam disponibilidade. Falhas também consomem a unidade reservada. E-mails de acesso e recuperação e teste técnico do WhatsApp ficam fora. Importação CSV de pessoas tem cota de lotes mensais. XLSX e importação de documentos gerais ainda não aplicadas.</p>
       } @else if (carregando()) { <p class="text-sm text-slate-500">Consultando consumo...</p> }
       <button type="button" class="btn-secondary" [disabled]="carregando()" (click)="buscar()">Atualizar consumo</button>
+      <button type="button" class="btn-secondary" [disabled]="carregandoHistorico()" (click)="buscarHistorico()">Ver histórico de 90 dias</button><p class="text-xs text-slate-500">Última consulta bem-sucedida de cada dia. Dias sem consulta não representam consumo zero. Limites e competências são os da data observada.</p>
+      @if(erroHistorico()){<p role="alert" class="text-red-700">{{erroHistorico()}}</p>}
+      @for(p of historico();track p.dia){<details class="border-b py-2"><summary>{{p.dia | date:'dd/MM/yyyy':'UTC'}} · {{p.consumo.planoNome||'Plano não informado'}}</summary>@for(i of p.consumo.itens;track i.codigo){<p>{{i.nome}}: {{i.unidade==='bytes'?(i.usado/1048576|number:'1.0-2'):i.usado}} {{i.unidade==='bytes'?'MB':'unidades'}} · {{i.estado}} @if(i.competencia){ · {{i.competencia}}}</p>}</details>}
+      @if(historicoConsultado()&&!historico().length&&!erroHistorico()){<p>Nenhuma consulta registrada neste período.</p>}
       @if (aviso()) { <p class="text-sm text-amber-700" role="status">{{ aviso() }}</p> }
     </section>
   `
@@ -41,6 +45,8 @@ export class ConsumoPlanoComponent implements OnInit, OnDestroy {
   private api = inject(MinhaContaService); private carga?: Subscription;
   dados = signal<ConsumoPlano | null>(null); erro = signal(''); carregando = signal(false);
   conferindo = signal(false); aviso=signal(''); private conferencia?:Subscription; private inicioConferencia=0;
+  readonly historico=signal<{dia:string;consumo:ConsumoPlano}[]>([]);readonly erroHistorico=signal('');readonly carregandoHistorico=signal(false);readonly historicoConsultado=signal(false);private historicoCarga?:Subscription;
+  buscarHistorico(){this.historicoCarga?.unsubscribe();this.erroHistorico.set('');this.carregandoHistorico.set(true);this.historicoCarga=this.api.historicoConsumo().subscribe({next:r=>{this.historico.set(r);this.carregandoHistorico.set(false);this.historicoConsultado.set(true);},error:e=>{this.historico.set([]);this.carregandoHistorico.set(false);this.erroHistorico.set(mensagemApi(e,'Histórico indisponível.'));}});}
   ngOnInit(): void {this.buscar();}
   buscar(): void {
     this.carga?.unsubscribe(); this.erro.set(''); this.carregando.set(true);
@@ -54,5 +60,5 @@ export class ConsumoPlanoComponent implements OnInit, OnDestroy {
       this.inicioConferencia=r.proximoInicio ?? 0; this.conferindo.set(false); this.aviso.set(`${r.conferidos} conferidas; ${r.falhas} falhas; ${r.pendentes} pendentes. Cada conferência verifica até 5 fotos. Se houver falhas, confira a configuração do Storage.`); this.buscar();
     }, error:e => {this.conferindo.set(false);this.erro.set(mensagemApi(e,'Não foi possível conferir as fotos antigas.'));}});
   }
-  ngOnDestroy(): void {this.carga?.unsubscribe();this.conferencia?.unsubscribe();}
+  ngOnDestroy(): void {this.carga?.unsubscribe();this.conferencia?.unsubscribe();this.historicoCarga?.unsubscribe();}
 }

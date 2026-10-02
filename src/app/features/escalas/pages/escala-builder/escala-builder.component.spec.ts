@@ -1,3 +1,5 @@
+import { SessaoAtual } from '../../../../core/layout/sessao-atual';
+import { Voluntario } from '../../../voluntarios/models/voluntario.model';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { VoluntariosService } from '../../../voluntarios/services/voluntarios.service';
@@ -42,6 +44,7 @@ describe('EscalaBuilderComponent', () => {
       imports: [EscalaBuilderComponent],
       providers: [
         provideRouter([]),
+        {provide:SessaoAtual,useValue:{permissoes:()=>['ESCALA_CRIAR','ESCALA_ALTERAR']}},
         { provide: EscalasService, useValue: escalas },
         { provide: VoluntariosService, useValue: { active: () => Promise.resolve([]) } },
         { provide: ExportService, useValue: { exportPdf: () => Promise.resolve(), exportPng: () => Promise.resolve() } },
@@ -223,4 +226,13 @@ describe('EscalaBuilderComponent', () => {
     expect(ev.vagas[1].voluntario_id).toBe('b');
     expect(component.linhas[0].marcadores!['a'].irmaoNaMissa).toBe('Bruno');
   });
+
+  function prepararArraste(){const ev=evento([{id:''}]);component.events=[ev];component.status='RASCUNHO';component.volunteers=[{id:'a',nome_completo:'Pessoa',ativo:true,funcoes_habilitadas:['VELA']} as Voluntario];component.pessoaArraste='a';return ev;}
+  it('alternativa de teclado aloca apenas no rascunho',async()=>{const ev=prepararArraste();await component.aplicarArraste(ev,ev.vagas[0]);expect(ev.vagas[0].voluntario_id).toBe('a');expect(component.eventsDirty).toBeTrue();expect(escalas.save).not.toHaveBeenCalled();});
+  it('arraste bloqueia função não habilitada',async()=>{const ev=prepararArraste();component.volunteers[0].funcoes_habilitadas=['MISSAL'];await component.aplicarArraste(ev,ev.vagas[0]);expect(ev.vagas[0].voluntario_id).toBeNull();expect(component.avisoArraste).toContain('habilitado');});
+  it('arraste bloqueia pessoa inativa e escala finalizada',async()=>{const ev=prepararArraste();component.volunteers[0].ativo=false;await component.aplicarArraste(ev,ev.vagas[0]);expect(ev.vagas[0].voluntario_id).toBeNull();component.volunteers[0].ativo=true;component.status='FINALIZADA';await component.aplicarArraste(ev,ev.vagas[0]);expect(ev.vagas[0].voluntario_id).toBeNull();});
+  it('arraste bloqueia duplicação na celebração',async()=>{const ev=prepararArraste();ev.vagas.push({funcao:'VELA',posicao:2,voluntario_id:'a'});await component.aplicarArraste(ev,ev.vagas[0]);expect(ev.vagas[0].voluntario_id).toBeNull();expect(component.avisoArraste).toContain('mesma missa');});
+  it('substituição cancelada mantém a pessoa anterior',async()=>{const ev=prepararArraste();ev.vagas[0].voluntario_id='b';spyOn(TestBed.inject(DialogoService),'confirmar').and.resolveTo(false);await component.aplicarArraste(ev,ev.vagas[0]);expect(ev.vagas[0].voluntario_id).toBe('b');expect(component.eventsDirty).toBeFalse();});
+  it('revalida a vaga após confirmação assíncrona',async()=>{const ev=prepararArraste();ev.vagas[0].voluntario_id='b';spyOn(TestBed.inject(DialogoService),'confirmar').and.callFake(async()=>{ev.vagas[0].voluntario_id='c';return true;});await component.aplicarArraste(ev,ev.vagas[0]);expect(ev.vagas[0].voluntario_id).toBe('c');expect(component.avisoArraste).toContain('vaga mudou');});
+  it('não aceita arraste iniciado fora do componente',()=>{const ev=prepararArraste();const aplicar=spyOn(component,'aplicarArraste');component.soltarPessoa({preventDefault:()=>{},dataTransfer:{getData:()=> 'a'}} as unknown as DragEvent,ev,ev.vagas[0]);expect(aplicar).not.toHaveBeenCalled();});
 });
