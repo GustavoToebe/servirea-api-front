@@ -12,5 +12,10 @@
     "npm test",
     "npm run build:prod",
     "python scripts/verificar-docs.py"
-  ]
+  ],
+  "ajuda": {
+    "rota": "/ajuda",
+    "temas": 17,
+    "conteudo": "Estático, versionado com os fluxos da aplicação."
+  }
 }

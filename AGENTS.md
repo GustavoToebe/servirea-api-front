@@ -139,3 +139,5 @@ Pessoas/inscrições/eventos usam contratos de [listas paginadas](docs/listas-pa
 - V063: docs/candidaturas-vagas.md, portal/Candidatura*. PORTAL_CANDIDATAR para própria pessoa; VAGA_CANDIDATURA_LER/DECIDIR para coordenação. Criar exige PORTAL_VOLUNTARIO; decidir também ESCALAS. Locks paróquia→escala→vaga. Reabrir/cancelar expira pendentes e reabertura avança versão da vaga. Aprovação não confirma presença/intenção; histórico sem cascata.
 
 - V064: docs/trocas-escala.md. PORTAL_TROCAR para pedidos próprios/aceite; VAGA_TROCA_LER/DECIDIR para coordenação. Original permanece até aprovação. Locks paróquia→escala, versão/ciclo/prazo/vínculos/elegibilidade revalidados. Substituição de uma vaga; sem permuta bilateral/notificações. Diretório mínimo limitado a contas vinculadas, sem contatos.
+
+- Ajuda: docs/ajuda.md, features/ajuda/ajuda-temas.ts. Conteúdo estático de uso, busca local, sem dados de negócio/HTML dinâmico. Revisar orientações ao mudar fluxos. Parâmetro tema usa apenas IDs do catálogo; Servirea filtra por permissões.

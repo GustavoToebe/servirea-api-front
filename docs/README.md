@@ -20,7 +20,7 @@ O dump `DOCUMENTACAO-COMPLETA-PARA-IA.md` descrevia o front falando direto com o
 
 - [Listas paginadas](listas-paginadas.md): contratos, ordenação, seleção por página e compatibilidade.
 
-- [Ajuda](ajuda.md): conteúdo por módulo e atalhos contextuais sem IA.
+- [Ajuda](ajuda.md): 17 temas por permissão e atalhos contextuais, incluindo portal/candidaturas/trocas, sem IA.
 
 - [Consumo do plano](cotas-plano.md): comportamento, contratos e limitações.
 
@@ -36,3 +36,4 @@ O dump `DOCUMENTACAO-COMPLETA-PARA-IA.md` descrevia o front falando direto com o
 - [Candidaturas a vagas](candidaturas-vagas.md): portal, decisão da coordenação, elegibilidade e concorrência.
 
 - [Trocas de escala com aceite e aprovação](trocas-escala.md).
+
