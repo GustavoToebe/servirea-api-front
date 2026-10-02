@@ -1,5 +1,6 @@
 import { OrientacaoToggleComponent } from '../../../../shared/components/orientacao-toggle/orientacao-toggle.component';
 import { Orientacao, lerOrientacao } from '../../../../shared/export/orientacao';
+import { SessaoAtual } from '../../../../core/layout/sessao-atual';
 import { CommonModule } from '@angular/common';
 import { NumeroComponent } from '../../../../shared/components/numero/numero.component';
 import { CampoDataComponent } from '../../../../shared/components/datas/campo-data.component';
@@ -59,6 +60,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
           <h1 class="mt-1 text-2xl font-black">{{ id ? 'Montagem da escala' : 'Nova escala' }}<app-numero [numero]="currentDetail?.sequencial" /></h1></div>
         @if (id) {
           <div class="flex flex-wrap items-center gap-2"><span class="badge" [ngClass]="statusClass(status)">{{ statusLabel(status) }}</span>
+            @if (sessaoRespostas.permissoes().includes('VAGA_RESPOSTA_LER')) {<a class="btn-secondary !py-2" [routerLink]="['/escalas',id,'respostas']">Respostas de participação</a>}
             @if (status==='FINALIZADA') {
               <app-orientacao-toggle chave="escala" [(valor)]="orientacao" />
               <button type="button" class="btn-secondary !py-2" (click)="gerarPrevia()">Gerar prévia (PDF)</button>
@@ -611,6 +613,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
 
   private dialogo = inject(DialogoService);
   private authService = inject(AuthService);
+  readonly sessaoRespostas = inject(SessaoAtual);
 
   get linhasCelebracaoLayout(): { index: number; elementos: ColunaEscala[] }[] {
     const celBlocos = (this.colunas || []).filter(c => (c.escopo || 'CELEBRACAO') === 'CELEBRACAO');

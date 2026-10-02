@@ -132,4 +132,6 @@ Pessoas/inscrições/eventos usam contratos de [listas paginadas](docs/listas-pa
 
 - Nova rodada de produto: docs/funcionalidades-plano.md e docs/mural-tarefas.md. Recursos explícitos, leitura preservada, mutações protegidas; tabelas V060, histórico versionado, sem HTML/notificações.
 
-- Portal/calendário/pastorais: docs/portal-calendario-pastorais.md. Token de calendário só em memória, limpar ao destruir tela. /portal exige recurso explícito até para consulta. Vínculo pessoa/usuário configurado por administrador; não inferir identidade nem oferecer confirmação/troca/dependentes ainda. Coordenador do grupo não altera permissões.
+- Portal/calendário/pastorais: docs/portal-calendario-pastorais.md. Token de calendário só em memória, limpar ao destruir tela. /portal exige recurso explícito até para consulta. Vínculo pessoa/usuário configurado por administrador; não inferir identidade; confirmação/recusa V062, trocas/dependentes ainda pendentes. Coordenador do grupo não altera permissões.
+
+- V062: docs/respostas-escala.md. PORTAL_RESPONDER só para pessoa própria; prazo no início da celebração, servidor Brasília→UTC. Recusa não desaloca/presença. Reabrir/trocar pessoa invalida decisão. @Version vaga; lock paróquia→escala para resposta, escala para edição/alocação. Histórico mantém UUIDs após exclusão. VAGA_RESPOSTA_LER para consulta da coordenação.

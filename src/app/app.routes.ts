@@ -45,6 +45,7 @@ export const routes: Routes = [
       { path: 'escalas/layouts/novo', canActivate: [funcionalidadePlanoGuard('ESCALAS')], loadComponent: () => import('./features/escalas/pages/layouts/layout-form.component').then(m => m.LayoutFormComponent) },
       { path: 'escalas/layouts/:id', loadComponent: () => import('./features/escalas/pages/layouts/layout-form.component').then(m => m.LayoutFormComponent) },
       { path: 'escalas/nova', canActivate: [funcionalidadePlanoGuard('ESCALAS')], data: { larguraTotal: true }, canDeactivate: [pendingChangesGuard], loadComponent: () => import('./features/escalas/pages/escala-builder/escala-builder.component').then(m => m.EscalaBuilderComponent) },
+      { path: 'escalas/:id/respostas', loadComponent: () => import('./features/voluntario/respostas-coordenacao.component').then(m => m.RespostasCoordenacaoComponent) },
       { path: 'escalas/:id', data: { larguraTotal: true }, canDeactivate: [pendingChangesGuard], loadComponent: () => import('./features/escalas/pages/escala-builder/escala-builder.component').then(m => m.EscalaBuilderComponent) },
       { path: 'portal', canActivate: [funcionalidadePlanoGuard('PORTAL_VOLUNTARIO')], loadComponent: () => import('./features/voluntario/portal.component').then(m => m.PortalComponent) },
       { path: 'pastorais', loadComponent: () => import('./features/pastorais/pastorais.component').then(m => m.PastoraisComponent) },
