@@ -11,13 +11,13 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HasPendingChanges } from '../../../../core/guards/pending-changes.guard';
-import { Marcadores, VolunteerPickerComponent } from '../../../../shared/components/volunteer-picker/volunteer-picker.component';
+import { VolunteerPickerComponent } from '../../../../shared/components/volunteer-picker/volunteer-picker.component';
 import { FUNCOES_LABEL, FuncaoEscala, Voluntario } from '../../../voluntarios/models/voluntario.model';
 import { VoluntariosService } from '../../../voluntarios/services/voluntarios.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import {
-  ApoioEscala, ColunaEscala, COLUNAS_PADRAO_MENSAL, COLUNAS_PADRAO_SEMANAL, EscalaDetalhe, EscalaEvento,
-  EscalaVaga, LayoutEscala, MESES, STATUS_LABEL, StatusEscala, TipoEscala, vagasDoLayout, indisponivelEm
+  ApoioEscala, ColunaEscala, COLUNAS_PADRAO_SEMANAL, EscalaDetalhe, EscalaEvento,
+  EscalaVaga, LayoutEscala, MESES, STATUS_LABEL, StatusEscala, TipoEscala, vagasDoLayout
 } from '../../models/escala.model';
 import { TITULOS_CELEBRACAO } from '../../data/calendario-liturgico';
 import { EscalasService } from '../../services/escalas.service';
@@ -26,27 +26,15 @@ import { LayoutsEscalaService } from '../../services/layouts-escala.service';
 import { DialogoService } from '../../../../shared/services/dialogo.service';
 import { ReplicarDialogComponent } from '../replicar-dialog.component';
 import { AindaNaoEscaladosComponent } from '../../components/ainda-nao-escalados.component';
-import { dataCurta, dataLonga, diaDaSemana, diaEData } from './formatos-data';
-
-/** Uma linha da grade, calculada só quando os eventos mudam (PLANO-008). */
-interface Linha {
-  evento: EscalaEvento;
-  chave: string;
-  diaEData: string;
-  dataLonga: string;
-  diaSemana: string;
-  /** Semana do mês (segunda a domingo); 0 = fora do mês (referência). */
-  semana: number;
-  novaSemana: boolean;
-  hoje: boolean;
-  fimDeSemana: 'SAB' | 'DOM' | null;
-  vagasPorColuna: Record<string, EscalaVaga>;
-  /** "Vela 1", "Missal": rótulo de cada vaga do cartão da mensal. */
-  rotulos: Record<string, string>;
-  usados: ReadonlySet<string>;
-  marcadores: Marcadores | null;
-  preenchidas: number;
-}
+import { dataCurta, dataLonga, diaDaSemana } from './formatos-data';
+import { Linha, calcularGrade, hojeIso } from './grade-linhas';
+import {
+  adaptarVagasAoLayout, classeDeAlinhamento, colunasParaEscalaNova, linhasDaCelebracao, LinhaCelebracao, resolverMarcadores,
+  textosDoCabecalho, tituloPadrao,
+} from './colunas-layout';
+import {
+  idsEscalados, idsUsadosNoEvento, impedimentoDeAlocacao, posicaoDoPainel, primeiraVagaLivre, sugestaoDeIrmao,
+} from './regras-alocacao';
 
 interface Painel { top: number; left: number; }
 
@@ -148,58 +136,15 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
   }
   readonly sessaoRespostas = inject(SessaoAtual);
 
-  get linhasCelebracaoLayout(): { index: number; elementos: ColunaEscala[] }[] {
-    const celBlocos = (this.colunas || []).filter(c => (c.escopo || 'CELEBRACAO') === 'CELEBRACAO');
-    const temLinhas = celBlocos.some(c => c.linha !== undefined);
-    if (!temLinhas) {
-      const vagas = vagasDoLayout(this.colunas);
-      if (!vagas.length) return [];
-      const res: { index: number; elementos: ColunaEscala[] }[] = [];
-      res.push({ index: 0, elementos: [{ tipo: 'DATA', escopo: 'CELEBRACAO', linha: 0, coluna: 0, largura: 12, conteudo: '#DATA_HORA#' }] });
-      let lin = 1;
-      for (let i = 0; i < vagas.length; i += 3) {
-        const pedaco = vagas.slice(i, i + 3).map((v, col) => ({
-          ...v,
-          tipo: 'VAGA' as const,
-          escopo: 'CELEBRACAO' as const,
-          linha: lin,
-          coluna: col,
-          largura: 1
-        }));
-        res.push({ index: lin, elementos: pedaco });
-        lin++;
-      }
-      return res;
-    }
-    const maxLinha = celBlocos.reduce((max, e) => Math.max(max, e.linha || 0), -1);
-    const result: { index: number; elementos: ColunaEscala[] }[] = [];
-    for (let i = 0; i <= maxLinha; i++) {
-      const els = celBlocos.filter(e => (e.linha || 0) === i).sort((a, b) => (a.coluna || 0) - (b.coluna || 0));
-      if (els.length > 0) result.push({ index: i, elementos: els });
-    }
-    return result;
-  }
+  get linhasCelebracaoLayout(): LinhaCelebracao[] { return linhasDaCelebracao(this.colunas); }
 
-  get textosCabecalho(): ColunaEscala[] {
-    return (this.colunas || [])
-      .filter(c => c.escopo === 'DOCUMENTO' && c.tipo && c.tipo !== 'VAGA')
-      .sort((a, b) => (a.linha || 0) - (b.linha || 0) || (a.coluna || 0) - (b.coluna || 0));
-  }
+  get textosCabecalho(): ColunaEscala[] { return textosDoCabecalho(this.colunas); }
 
-  getAlignClass(align?: string) {
-    if (align === 'center') return 'text-center';
-    if (align === 'right') return 'text-right';
-    return 'text-left';
-  }
+  getAlignClass(align?: string) { return classeDeAlinhamento(align); }
 
   resolverTextoTag(texto?: string): string {
     const { titulo, mes, ano } = this.form.getRawValue();
-    const paroquia = this.authService.tenantNome() || 'Paróquia';
-    const mesAno = `${MESES[mes - 1]} ${ano}`;
-    return (texto || '')
-      .replaceAll('#TITULO_ESCALA#', titulo || '')
-      .replaceAll('#MES_ANO#', mesAno)
-      .replaceAll('#PAROQUIA#', paroquia);
+    return resolverMarcadores(texto, titulo, mes, ano, this.authService.tenantNome() || 'Paróquia');
   }
 
   constructor(private fb: FormBuilder, private route: ActivatedRoute, private router: Router, private service: EscalasService, private volunteersService: VoluntariosService, private exporter: ExportService, private layoutsService: LayoutsEscalaService) {}
@@ -234,12 +179,12 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
 
       } else {
         const type = this.form.controls.tipo.value; const year=this.form.controls.ano.value; const month=this.form.controls.mes.value;
-        this.form.controls.titulo.setValue(`Escala ${type==='SEMANAL'?'Semanal':'Mensal'} - ${MESES[month-1]} ${year}`);
+        this.form.controls.titulo.setValue(tituloPadrao(type, month, year));
         this.atualizarColunasNovo();
         this.events = this.service.buildDefaultEvents(type, year, month, (vagasDoLayout(this.colunas) as any));
       }
 
-      const ids=this.events.flatMap(e=>e.vagas.flatMap(v=>v.voluntario_id?[v.voluntario_id]:[]));
+      const ids=idsEscalados(this.events);
       const irmaos=(this.apoio?.voluntarios??[]).filter(v=>ids.includes(v.voluntarioId)).flatMap(v=>v.irmaos);
       for(const v of await this.volunteersService.resolverOpcoes([...ids,...irmaos]))this.lembrarVoluntario(v);
       this.form.markAsPristine(); this.eventsDirty=false;
@@ -262,87 +207,18 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
 
   /** Recalcula as linhas (textos, vagas por coluna, usados, marcadores e contagens). Só quando os eventos mudam. */
   recalcular() {
-    const anterior = new Map(this.linhas.map(l => [l.chave, l]));
-    const hoje = new Date();
-    const hojeIso = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
     const { ano, mes } = this.form.getRawValue();
-    const primeiroSeg = (new Date(ano, mes - 1, 1).getDay() + 6) % 7;
-    const vezes = this.vezesNoMes();
-    const nomes = new Map(this.volunteers.map(v => [v.id, v.nome_completo]));
-    let preenchidas = 0; let total = 0; let refs = 0;
-    const repetidas = new Map<string, number>();
-    this.linhas = this._events.map(evento => {
-      const base = `${evento.data}|${evento.horario}${evento.referencia ? '|ref' : ''}`;
-      const n = repetidas.get(base) ?? 0;
-      repetidas.set(base, n + 1);
-      const chave = n ? `${base}|${n}` : base;
-      const vagasPorColuna: Record<string, EscalaVaga> = {};
-      const rotulos: Record<string, string> = {};
-      const usados = new Set<string>();
-      let cheias = 0;
-      for (const v of evento.vagas) {
-        vagasPorColuna[`${v.funcao}-${v.posicao}`] = v;
-        rotulos[`${v.funcao}-${v.posicao}`] = this.funcaoLabel(v.funcao) + this.multiLabel(evento, v);
-        if (v.voluntario_id) { usados.add(v.voluntario_id); cheias++; }
-      }
-      if (evento.referencia) refs++; else { preenchidas += cheias; total += evento.vagas.length; }
-      const dia = Number(evento.data.slice(8, 10));
-      const doMes = Number(evento.data.slice(0, 4)) === ano && Number(evento.data.slice(5, 7)) === mes;
-      const dow = new Date(`${evento.data}T12:00:00`).getDay();
-      // Mantém o mesmo Set quando os usados não mudaram: o seletor não refaz nada.
-      const velho = anterior.get(chave);
-      const mesmos = !!velho && velho.usados.size === usados.size && [...usados].every(u => velho.usados.has(u));
-      const linha: Linha = {
-        evento, chave,
-        diaEData: diaEData(evento.data), dataLonga: dataLonga(evento.data), diaSemana: diaDaSemana(evento.data),
-        semana: doMes && !evento.referencia ? Math.floor((dia - 1 + primeiroSeg) / 7) + 1 : 0,
-        novaSemana: false,
-        hoje: evento.data === hojeIso,
-        fimDeSemana: dow === 6 ? 'SAB' : dow === 0 ? 'DOM' : null,
-        vagasPorColuna,
-        rotulos,
-        usados: mesmos ? velho!.usados : usados,
-        marcadores: this.marcadoresDo(evento, usados, vezes, nomes),
-        preenchidas: cheias
-      };
-      return linha;
+    const grade = calcularGrade({
+      eventos: this._events, anteriores: this.linhas, ano, mes, hojeIso: hojeIso(),
+      nomesPorId: new Map(this.volunteers.map(v => [v.id, v.nome_completo])),
+      mensal: this.form.controls.tipo.value === 'MENSAL', apoio: this.apoio,
     });
-    const refsPrimeiro = [...this.linhas.filter(l => l.evento.referencia), ...this.linhas.filter(l => !l.evento.referencia)];
-    let semanaAnterior = 0;
-    for (const l of refsPrimeiro) {
-      l.novaSemana = l.semana > 1 && semanaAnterior > 0 && l.semana !== semanaAnterior;
-      if (l.semana) semanaAnterior = l.semana;
-    }
-    this.linhasSemanal = refsPrimeiro;
-    this.preenchidas = preenchidas;
-    this.total = total;
-    this.referenciasCount = refs;
+    this.linhas = grade.linhas;
+    this.linhasSemanal = grade.linhasSemanal;
+    this.preenchidas = grade.preenchidas;
+    this.total = grade.total;
+    this.referenciasCount = grade.referencias;
     this.revisao++;
-  }
-
-  /** Quantas vagas reais (não referência) de cada pessoa há no rascunho atual. */
-  private vezesNoMes(): Map<string, number> {
-    const m = new Map<string, number>();
-    for (const e of this._events) {
-      if (e.referencia) continue;
-      for (const v of e.vagas) if (v.voluntario_id) m.set(v.voluntario_id, (m.get(v.voluntario_id) ?? 0) + 1);
-    }
-    return m;
-  }
-
-  /** Marcas da mensal (PLANO-007): ⛔ indisponível na data/horário, "N× no mês" e irmão já nesta missa. */
-  private marcadoresDo(evento: EscalaEvento, usados: Set<string>, vezes: Map<string, number>, nomes: Map<string, string>): Marcadores | null {
-    if (!this.apoio || this.form.controls.tipo.value !== 'MENSAL') return null;
-    const m: Marcadores = {};
-    for (const v of this.apoio.voluntarios) {
-      const indisponivel = indisponivelEm(this.apoio, v.voluntarioId, evento.data, evento.horario);
-      const irmao = v.irmaos.find(i => usados.has(i));
-      const n = vezes.get(v.voluntarioId) ?? 0;
-      if (indisponivel || irmao || n) {
-        m[v.voluntarioId] = { indisponivel, vezesNoMes: n || undefined, irmaoNaMissa: irmao ? nomes.get(irmao) : undefined };
-      }
-    }
-    return m;
   }
 
   // ---- Ações da grade
@@ -356,7 +232,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
 
     if (!this.id && !this.eventsDirty) {
       this.events = this.service.buildDefaultEvents(tipo, ano, mes, (vagasDoLayout(this.colunas) as any));
-      this.form.controls.titulo.setValue(`Escala ${tipo === 'SEMANAL' ? 'Semanal' : 'Mensal'} - ${MESES[mes - 1]} ${ano}`);
+      this.form.controls.titulo.setValue(tituloPadrao(tipo, mes, ano));
     } else {
       this.adaptarVagasDosEventos();
     }
@@ -365,32 +241,11 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
 
   private atualizarColunasNovo() {
     const { tipo, layoutId } = this.form.getRawValue();
-    if (layoutId) {
-      const l = this.layouts.find(x => x.id === layoutId);
-      if (l && vagasDoLayout(l.colunas).length) {
-        this.colunas = l.colunas || [];
-        return;
-      }
-    }
-    const padrao = this.layouts.find(x => x.tipo === tipo && x.padrao && x.ativo)
-      ?? this.layouts.find(x => x.tipo === tipo && x.sistema && x.ativo);
-    this.colunas = padrao ? padrao.colunas : (tipo === 'MENSAL' ? COLUNAS_PADRAO_MENSAL : COLUNAS_PADRAO_SEMANAL);
+    this.colunas = colunasParaEscalaNova(this.layouts, tipo, layoutId);
   }
 
   private adaptarVagasDosEventos() {
-    const layoutVagas = vagasDoLayout(this.colunas);
-    this._events = this._events.map(e => {
-      const novasVagas: EscalaVaga[] = layoutVagas.map(lv => {
-        const existente = e.vagas.find(v => v.funcao === lv.funcao && v.posicao === (lv.posicao || 1));
-        return {
-          funcao: lv.funcao!,
-          posicao: lv.posicao || 1,
-          voluntario_id: existente?.voluntario_id || null,
-          voluntario: existente?.voluntario || null
-        };
-      });
-      return { ...e, vagas: novasVagas };
-    });
+    this._events = adaptarVagasAoLayout(this._events, this.colunas);
     this.recalcular();
   }
 
@@ -419,7 +274,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
     const { tipo, ano, mes, layoutId } = this.form.getRawValue();
     this.atualizarColunasNovo();
     this.events = this.service.buildDefaultEvents(tipo, ano, mes, vagasDoLayout(this.colunas) as any);
-    this.form.controls.titulo.setValue(`Escala ${tipo === 'SEMANAL' ? 'Semanal' : 'Mensal'} - ${MESES[mes - 1]} ${ano}`);
+    this.form.controls.titulo.setValue(tituloPadrao(tipo, mes, ano));
     this.eventsDirty = true;
     this.syncAddDate();
     const lNome = layoutId ? this.layouts.find(x => x.id === layoutId)?.nome : 'Padrão';
@@ -445,7 +300,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
   paginarArraste(d:number){if(this.buscandoArraste||this.paginaArraste+d<0||d>0&&!this.maisArraste)return;this.paginaArraste+=d;void this.carregarArraste();}
   async carregarArraste(){const rodada=++this.rodadaArraste;this.buscandoArraste=true;this.erroArraste='';
     try{const r=await firstValueFrom(this.volunteersService.opcoes(this.buscaArraste,this.paginaArraste));if(this.destruidoSeletores||rodada!==this.rodadaArraste)return;
-      const selecionados=new Set(this.events.flatMap(e=>e.vagas.flatMap(v=>v.voluntario_id?[v.voluntario_id]:[])));
+      const selecionados=new Set(idsEscalados(this.events));
       for(const a of this.apoio?.voluntarios??[])if(selecionados.has(a.voluntarioId))for(const id of a.irmaos)selecionados.add(id);
       this.volunteers=this.volunteers.filter(v=>selecionados.has(v.id)||v.id===this.pessoaArraste);for(const v of r.itens)this.lembrarVoluntario(v);this.pessoasArraste=r.itens;this.maisArraste=r.temMais;
     }catch{if(rodada===this.rodadaArraste){this.pessoasArraste=[];this.maisArraste=false;this.erroArraste='Busca indisponível. Tente novamente.';}}
@@ -458,15 +313,11 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
   encerrarArraste(){this.arrastada=null;}
   permitirArraste(e:DragEvent){if(this.arrastada&&!this.readOnly&&!this.saving&&this.podeArrastar())e.preventDefault();}
   soltarPessoa(e:DragEvent,event:EscalaEvento,slot:EscalaVaga){e.preventDefault();const id=this.arrastada;this.arrastada=null;if(!id||e.dataTransfer?.getData('application/x-servirea-voluntario')!==id)return;this.pessoaArraste=id;void this.aplicarArraste(event,slot);}
-  private impedimentoArraste(event:EscalaEvento,slot:EscalaVaga,id:string):string|null{
-    if(this.readOnly||this.saving||!this.podeArrastar())return 'A escala não está disponível para edição.';
-    if(!this.events.includes(event)||!event.vagas.includes(slot)||event.referencia)return 'Escolha uma vaga deste rascunho, sem referência.';
-    const v=this.volunteers.find(v=>v.id===id);if(!v?.ativo)return 'Voluntário não está ativo.';
-    if(!v.funcoes_habilitadas?.includes(slot.funcao))return 'Voluntário não está habilitado para esta função.';
-    if(this.usedIds(event,slot.voluntario_id).includes(id))return 'Esta pessoa já está alocada em outra função nesta mesma missa.';
-    if(indisponivelEm(this.apoio,id,event.data,event.horario))return 'A pessoa informou indisponibilidade nesta data e período.';
-    if(this.events.some(e=>e!==event&&!e.referencia&&e.data===event.data&&e.horario.slice(0,5)===event.horario.slice(0,5)&&e.vagas.some(v=>v.voluntario_id===id)))return 'A pessoa já está em outra celebração deste rascunho no mesmo horário.';
-    return null;
+  private impedimentoArraste(event: EscalaEvento, slot: EscalaVaga, id: string): string | null {
+    return impedimentoDeAlocacao({
+      edicaoIndisponivel: this.readOnly || this.saving || !this.podeArrastar(),
+      eventos: this.events, evento: event, vaga: slot, pessoaId: id, voluntarios: this.volunteers, apoio: this.apoio,
+    });
   }
   async aplicarArraste(event:EscalaEvento,slot:EscalaVaga){const id=this.pessoaArraste;if(!id||this.arrasteOcupado)return;let erro=this.impedimentoArraste(event,slot,id);if(erro){this.avisoArraste=erro;return;}if(slot.voluntario_id===id)return;
     this.arrasteOcupado=true;const anterior=slot.voluntario_id;
@@ -484,23 +335,13 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
 
   /** Irmão fora desta missa: só sugere, com botão; nunca coloca sozinho. */
   private sugerirIrmao(event: EscalaEvento, id: string | null) {
-    this.sugestaoIrmao = null;
-    if (!id || !this.apoio) return;
-    const irmaos = this.apoio.voluntarios.find(v => v.voluntarioId === id)?.irmaos ?? [];
-    const usados = new Set(event.vagas.map(v => v.voluntario_id).filter(Boolean));
-    const fora = irmaos.find(i => !usados.has(i) && this.volunteers.some(v => v.id === i));
-    if (!fora) return;
-    this.sugestaoIrmao = {
-      chave: this.linhas.find(l => l.evento === event)?.chave ?? '',
-      irmaoId: fora,
-      nomeIrmao: this.volunteers.find(v => v.id === fora)?.nome_completo ?? '',
-      nomePessoa: this.volunteers.find(v => v.id === id)?.nome_completo ?? ''
-    };
+    const s = sugestaoDeIrmao(event, id, this.apoio, this.volunteers);
+    this.sugestaoIrmao = s && { chave: this.linhas.find(l => l.evento === event)?.chave ?? '', ...s };
   }
 
   /** Primeira vaga livre do evento, na ordem das colunas. */
   vagaLivre(event: EscalaEvento): EscalaVaga | null {
-    return event.vagas.find(v => !v.voluntario_id) ?? null;
+    return primeiraVagaLivre(event);
   }
 
   colocarIrmao(event: EscalaEvento) {
@@ -511,7 +352,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
     this.selectVolunteer(event, vaga, s.irmaoId);
   }
 
-  usedIds(event: EscalaEvento, current: string | null) { return event.vagas.map(v=>v.voluntario_id).filter((x):x is string=>!!x && x!==current); }
+  usedIds(event: EscalaEvento, current: string | null) { return idsUsadosNoEvento(event, current); }
   changeTime(e: EscalaEvento, ev: Event){e.horario=(ev.target as HTMLInputElement).value;this.eventsDirty=true;this.recalcular();}
   changeCelebration(e: EscalaEvento, ev: Event){e.celebracao=(ev.target as HTMLInputElement).value;this.eventsDirty=true;this.recalcular();}
   setAddTime(ev: Event){this.addTime=(ev.target as HTMLInputElement).value;}
@@ -554,9 +395,7 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
 
   private posicao(evento: Event): Painel {
     const r = (evento.currentTarget as HTMLElement).getBoundingClientRect();
-    const left = Math.max(8, Math.min(r.left, window.innerWidth - 300));
-    const top = r.bottom + 330 > window.innerHeight ? Math.max(8, r.top - 330) : r.bottom + 4;
-    return { top, left };
+    return posicaoDoPainel(r, { largura: window.innerWidth, altura: window.innerHeight });
   }
 
   abrirEdicao(linha: Linha, evento: Event) { this.fecharPaineis(); this.edicao = linha; this.painelAtivo = this.posicao(evento); }
