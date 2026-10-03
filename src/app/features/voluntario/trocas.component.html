@@ -1,5 +1,5 @@
 <div class="space-y-4">
- <app-cabecalho-pagina [titulo]="coordenacao?'Trocas da escala':'Minhas trocas'" subtitulo="Substituição de uma vaga, com aceite e aprovação. Horários de Brasília."> <a acoes routerLink="/ajuda" [queryParams]="{tema:'trocas'}" class="btn-secondary">Como funciona</a></app-cabecalho-pagina>
+ <app-cabecalho-pagina [titulo]="coordenacao?'Trocas da escala':'Minhas trocas'" subtitulo="Substituição de uma vaga, com aceite e aprovação. Horários de Brasília."></app-cabecalho-pagina>
  @if(erro()){<p class="card p-4 text-red-600" role="alert">{{erro()}}</p>}
  @if(!coordenacao){
   <a routerLink="/portal" class="btn-secondary inline-block">Meus compromissos</a>

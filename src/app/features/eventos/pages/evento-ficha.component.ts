@@ -32,7 +32,7 @@ export const OPCOES_LEMBRETE = [
   template: `
     <div class="mx-auto max-w-5xl space-y-6">
       <app-cabecalho-pagina [titulo]="evento()?.titulo || 'Novo evento'" [subtitulo]="evento() ? quando(evento()!.inicio) : 'Preencha, salve e publique para começar as inscrições.'">
-        <a acoes routerLink="/ajuda" [queryParams]="{tema:'eventos'}" class="btn-secondary">Ajuda</a>
+        
         <div acoes class="flex flex-wrap items-center gap-2">
           @if (evento(); as e) {
             <span class="badge {{ situacao().tom }}" data-campo="situacao">{{ situacao().texto }}</span>

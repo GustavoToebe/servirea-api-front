@@ -1,3 +1,4 @@
+import { AjudaLinkComponent } from '../../../shared/components/ajuda-link/ajuda-link.component';
 
 import { NumeroComponent } from '../../../shared/components/numero/numero.component';
 import { CONDICAO_LABEL } from '../../../shared/components/cuidados/condicoes';
@@ -11,12 +12,13 @@ import { DuplicidadesDialogComponent } from './duplicidades-dialog.component';
 
 @Component({
     selector: 'app-inscricao-detail',
-    imports: [RouterLink, ConfirmDialogComponent, NumeroComponent, DuplicidadesDialogComponent],
+    imports: [RouterLink, ConfirmDialogComponent, NumeroComponent, DuplicidadesDialogComponent, AjudaLinkComponent],
     template: `
     <app-duplicidades-dialog [open]="dialogOpen" [itens]="duplicidades" acao="aprovar" (fechar)="dialogOpen = false" (continuar)="confirmarApprove()" />
     @if (inscricao) {
       <div class="mx-auto max-w-4xl space-y-6">
         <a routerLink="/pessoas" [queryParams]="{ aba: inscricao.status === 'PENDENTE' ? 'aguardando' : 'historico' }" class="text-sm font-semibold text-brand-blue">← Voltar</a>
+        <div class="flex justify-end"><app-ajuda-link /></div>
         <section class="card p-6">
           <h1 class="text-3xl font-black">{{ inscricao.nomeCompleto }}<app-numero [numero]="inscricao.sequencial" /></h1>
           <p class="text-slate-500">{{ tipoLabel[inscricao.tipo] }} · {{ inscricao.status }}</p>

@@ -22,7 +22,7 @@ O dump `DOCUMENTACAO-COMPLETA-PARA-IA.md` descrevia o front falando direto com o
 
 - [Listas paginadas](listas-paginadas.md): contratos, ordenação, seleção por página e compatibilidade.
 
-- [Ajuda](ajuda.md): 17 temas por permissão e atalhos contextuais, incluindo portal/candidaturas/trocas, sem IA.
+- [Ajuda](ajuda.md): 33 temas por seção e permissão, com cuidados e perguntas frequentes, botão Ajuda em toda tela, sem IA.
 
 - [Consumo do plano](cotas-plano.md): comportamento, contratos e limitações.
 

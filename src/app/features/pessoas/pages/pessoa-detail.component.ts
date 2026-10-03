@@ -1,3 +1,4 @@
+import { AjudaLinkComponent } from '../../../shared/components/ajuda-link/ajuda-link.component';
 
 import { CommonModule } from '@angular/common';
 import { NumeroComponent } from '../../../shared/components/numero/numero.component';
@@ -11,7 +12,7 @@ import { VoluntariosApiService } from '../services/voluntarios-api.service';
 
 @Component({
     selector: 'app-pessoa-detail',
-    imports: [CommonModule, RouterLink, NumeroComponent],
+    imports: [CommonModule, RouterLink, NumeroComponent, AjudaLinkComponent],
     template: `
     @if (pessoa) {
       <div class="mx-auto max-w-5xl space-y-6">
@@ -30,6 +31,7 @@ import { VoluntariosApiService } from '../services/voluntarios-api.service';
             <div>
               <div class="flex flex-wrap gap-2">
                 <h1 class="text-3xl font-black text-[var(--ink)]">{{ pessoa.nomeCompleto }}<app-numero [numero]="pessoa.sequencial" /></h1>
+                <app-ajuda-link />
                 @for (p of pessoa.papeis; track p) {
                   <span class="badge" [ngClass]="p === 'VOLUNTARIO' ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold' : 'bg-indigo-500/15 border border-indigo-500/30 text-indigo-700 dark:text-indigo-300 font-bold'">
                     {{ p === 'VOLUNTARIO' ? 'Voluntário' : 'Responsável' }}

@@ -1,3 +1,4 @@
+import { AjudaLinkComponent } from '../../../../shared/components/ajuda-link/ajuda-link.component';
 import {firstValueFrom} from 'rxjs';
 import { NotificacoesApiService, CanalNotificacao } from '../../../notificacoes/notificacoes-api.service';
 import { mensagemApi } from '../../../../core/api/api-error';
@@ -42,7 +43,7 @@ const CHAVE_PAINEL = 'servire.painelEscalados';
 
 @Component({
     selector: 'app-escala-builder',
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, OrientacaoToggleComponent, VolunteerPickerComponent, NumeroComponent, CampoDataComponent,
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, AjudaLinkComponent, OrientacaoToggleComponent, VolunteerPickerComponent, NumeroComponent, CampoDataComponent,
       ReplicarDialogComponent, AindaNaoEscaladosComponent],
     templateUrl: './escala-builder.component.html'
 })

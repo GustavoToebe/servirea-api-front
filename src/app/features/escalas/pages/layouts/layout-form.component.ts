@@ -1,3 +1,4 @@
+import { AjudaLinkComponent } from '../../../../shared/components/ajuda-link/ajuda-link.component';
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
@@ -15,7 +16,7 @@ export interface LinhaGrade {
 @Component({
   selector: 'app-layout-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, AjudaLinkComponent],
   templateUrl: './layout-form.component.html'
 })
 export class LayoutFormComponent implements OnInit {

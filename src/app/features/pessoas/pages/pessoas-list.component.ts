@@ -30,7 +30,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
 
     <div class="space-y-6">
       <app-cabecalho-pagina titulo="Pessoas e ministérios" subtitulo="Coroinhas, acólitos e responsáveis. A ficha guarda função, idade e contato.">
-        <a acoes routerLink="/ajuda" [queryParams]="{tema:'pessoas'}" class="btn-secondary">Ajuda</a>
+        
         @if (podeImportar) {<a acoes routerLink="/pessoas/importar" class="btn-secondary">Importar pessoas</a>}
         <a acoes routerLink="/pessoas/nova" class="btn-primary">＋ Novo cadastro</a>
       </app-cabecalho-pagina>

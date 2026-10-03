@@ -12,7 +12,7 @@ import { CabecalhoPaginaComponent } from '../../shared/components/cabecalho-pagi
 import { CampoDataComponent } from '../../shared/components/datas/campo-data.component';
 const hoje=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 @Component({selector:'app-portal-voluntario',imports:[CommonModule,RouterLink,FormsModule,CabecalhoPaginaComponent,CampoDataComponent],changeDetection:ChangeDetectionStrategy.OnPush,template:`
- <div class="space-y-5"><app-cabecalho-pagina titulo="Meus compromissos" subtitulo="Suas escalas finalizadas e eventos em que você está inscrito. Horários de Brasília."><a acoes routerLink="/ajuda" [queryParams]="{tema:'portal'}" class="btn-secondary">Ajuda do portal</a></app-cabecalho-pagina>
+ <div class="space-y-5"><app-cabecalho-pagina titulo="Meus compromissos" subtitulo="Suas escalas finalizadas e eventos em que você está inscrito. Horários de Brasília."></app-cabecalho-pagina>
  @if(sessao.permissoes().includes('PORTAL_DEPENDENTES')){<a routerLink="/portal/dependentes" class="btn-secondary inline-block">Dependentes</a>}
  <a routerLink="/portal/indisponibilidades" class="btn-secondary inline-block">Minha indisponibilidade</a>
  <a routerLink="/portal/checkin" class="btn-secondary inline-block">Registrar presença</a>

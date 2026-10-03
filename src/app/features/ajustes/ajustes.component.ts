@@ -1,3 +1,4 @@
+import { AjudaLinkComponent } from '../../shared/components/ajuda-link/ajuda-link.component';
 import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { podeVer } from '../../core/layout/menu';
@@ -7,13 +8,14 @@ import { CONTRASTES, FONTES, PALETAS, ThemeService } from '../../core/theme/them
 
 @Component({
     selector: 'app-ajustes',
-    imports: [RouterLink],
+    imports: [RouterLink, AjudaLinkComponent],
     template: `
     <div class="mx-auto max-w-3xl space-y-6">
       <div>
         <div class="text-xs font-extrabold uppercase tracking-wider text-brand-blue">Preferências</div>
         <h1 class="text-2xl font-black text-slate-900">Ajustes visuais</h1>
         <p class="text-sm text-slate-500">A cor, o modo noturno e o tamanho do texto ficam neste navegador. A coordenação pode ler a escala na secretaria ou na sacristia.</p>
+        <div class="mt-2"><app-ajuda-link /></div>
       </div>
 
       <section class="space-y-3">

@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SessaoAtual } from '../../../../core/layout/sessao-atual';
+import { AjudaLinkComponent } from '../../../../shared/components/ajuda-link/ajuda-link.component';
 import { AniversariantesCardComponent } from '../../components/aniversariantes-card.component';
 import { VoluntariosService } from '../../../voluntarios/services/voluntarios.service';
 import { EscalasService } from '../../../escalas/services/escalas.service';
@@ -24,13 +25,14 @@ interface MissaVista {
 
 @Component({
     selector: 'app-dashboard',
-    imports: [CommonModule, RouterLink, AniversariantesCardComponent],
+    imports: [CommonModule, RouterLink, AniversariantesCardComponent, AjudaLinkComponent],
     template: `
     <div class="space-y-6">
       <div>
         <div class="inline-flex rounded-md bg-indigo-600 text-white px-2.5 py-1 text-xs font-black uppercase tracking-wider shadow-xs">{{ liturgia }}</div>
         <h1 class="mt-3 text-2xl font-black text-[var(--ink)]">Paz e Bem</h1>
         <p class="text-sm text-[var(--muted)]">O que está pronto para as próximas celebrações e o que ainda tem vaga.</p>
+        <div class="mt-2"><app-ajuda-link /></div>
       </div>
 
       @if(veOnboarding()){<section class="card p-5"><h2 class="text-lg font-bold">Primeiros passos</h2><p class="text-sm text-[var(--muted)]">Configure a paróquia e registre o progresso da equipe.</p><a routerLink="/primeiros-passos" class="btn-secondary mt-3 inline-block">Abrir checklist e retomar</a></section>}
