@@ -23,7 +23,7 @@ import { PrivacidadeApiService, Retencao } from './privacidade-api.service';
       @if (erro()) { <p class="card p-4 text-red-600" role="alert" data-erro>{{ erro() }}</p> }
       @if (resultado()) { <p class="card p-4 text-emerald-700" role="status" data-resultado>{{ resultado() }}</p> }
       @if (dados(); as r) {
-        <section class="card secao-form">
+        <section class="card secao-form p-6">
           <h2 class="secao-titulo">Comunicados enviados</h2>
           <label class="label">Guardar por (dias; vazio = não aplicar retenção)
             <input class="field" type="number" min="30" max="3650" name="dias" [(ngModel)]="dias" [disabled]="!pode('PRIVACIDADE_RETENCAO') || ocupado()"></label>

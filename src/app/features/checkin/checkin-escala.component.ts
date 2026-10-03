@@ -27,14 +27,15 @@ export function linkDeCheckin(origem: string, token: string) {
   template: `
     <div class="space-y-4">
       <app-cabecalho-pagina titulo="Check-in dos encontros"
-        subtitulo="Abra um código por celebração. Cada pessoa escalada registra a própria presença uma única vez." />
-      <a [routerLink]="['/escalas', escalaId]" class="btn-secondary inline-block">Voltar à escala</a>
+        subtitulo="Abra um código por celebração. Cada pessoa escalada registra a própria presença uma única vez.">
+        <a acoes [routerLink]="['/escalas', escalaId]" class="btn-secondary">Voltar à escala</a>
+      </app-cabecalho-pagina>
       @if (erro()) { <p class="card p-4 text-red-600" role="alert" data-erro>{{ erro() }}</p> }
       @if (!pode('CHECKIN')) {
         <p class="card p-4 text-red-600" role="alert">Seu perfil não permite consultar o check-in.</p>
       }
       @for (e of eventos(); track e.id) {
-        <section class="card secao-form" [attr.data-evento]="e.id">
+        <section class="card secao-form p-6" [attr.data-evento]="e.id">
           <h2 class="secao-titulo">{{ e.data | date: 'dd/MM/yyyy' }} {{ e.horario.slice(0, 5) }} · {{ e.celebracao }}</h2>
           @if (estados()[e.id!]; as s) {
             <p class="text-sm">{{ s.presentes }} presentes de {{ s.escalados }} escalados.

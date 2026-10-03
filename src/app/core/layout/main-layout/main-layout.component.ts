@@ -25,10 +25,10 @@ import { FuncionalidadesPlanoComponent } from '../../plano/funcionalidades-plano
         <div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto [scrollbar-color:rgba(255,255,255,0.35)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/30">
         <nav class="space-y-1 p-4" data-menu="lateral">
           @for (item of menu().barra; track item.url) {
-            <a [routerLink]="item.url" routerLinkActive="!bg-brand-blue !text-white"
+            <a [routerLink]="item.url"
               [title]="recolhido ? item.label : ''"
               class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-violet-100/80 hover:bg-white/10 hover:text-white"
-              [ngClass]="recolhido ? 'justify-center px-0' : ''">
+              [ngClass]="(recolhido ? 'justify-center px-0 ' : '') + (itemAtivo() === item.url ? '!bg-brand-blue !text-white' : '')">
               <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 @switch (item.url) {
                   @case ('/dashboard') { <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/> }
@@ -223,9 +223,16 @@ export class MainLayoutComponent implements OnInit {
     return ((partes[0]?.[0] || 'S') + (partes[1]?.[0] || '')).toUpperCase();
   }
 
+  /** URL do item do menu que corresponde à rota atual: a mais longa que seja a própria rota ou prefixo dela (/portal não "rouba" /portal/dependentes). */
+  itemAtivo(): string | null {
+    const rota = this.router.url.split(/[?#(]/)[0];
+    const candidatos = [...BARRA, ...CONTA].filter(item => rota === item.url || rota.startsWith(item.url + '/'));
+    return candidatos.sort((a, b) => b.url.length - a.url.length)[0]?.url ?? null;
+  }
+
   titulo(): string {
-    const url = this.router.url;
-    return [...BARRA, ...CONTA].find(item => url.startsWith(item.url))?.label || 'Escalas';
+    const ativa = this.itemAtivo();
+    return [...BARRA, ...CONTA].find(item => item.url === ativa)?.label || 'Escalas';
   }
 
   abrirMinhaConta() {

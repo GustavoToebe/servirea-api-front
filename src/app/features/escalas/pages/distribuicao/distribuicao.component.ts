@@ -20,13 +20,14 @@ import { DistribuicaoApiService, PreviaDistribuicao, RegrasDistribuicao } from '
   template: `
     <div class="space-y-4">
       <app-cabecalho-pagina titulo="Distribuir por regras"
-        subtitulo="Sugere pessoas para as vagas vazias. Nada é gravado até você aplicar." />
-      <a [routerLink]="['/escalas', escalaId]" class="btn-secondary inline-block">Voltar à escala</a>
+        subtitulo="Sugere pessoas para as vagas vazias. Nada é gravado até você aplicar.">
+        <a acoes [routerLink]="['/escalas', escalaId]" class="btn-secondary">Voltar à escala</a>
+      </app-cabecalho-pagina>
       @if (erro()) { <p class="card p-4 text-red-600" role="alert" data-erro>{{ erro() }}</p> }
       @if (!pode('VAGA_DISTRIBUIR')) {
         <p class="card p-4 text-red-600" role="alert">Seu perfil não permite distribuir por regras.</p>
       } @else {
-        <section class="card secao-form">
+        <section class="card secao-form p-6">
           <h2 class="secao-titulo">Regras</h2>
           <div class="grade-form">
             <label class="label">Máximo de participações por pessoa

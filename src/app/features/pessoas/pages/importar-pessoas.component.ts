@@ -19,7 +19,7 @@ import { ImportacoesPessoasService, PreviaImportacao, EstruturaImportacao, Opcoe
       @if (!permitido) { <div class="card p-5" role="alert">É necessário acesso a Pessoas e permissão para criar cadastros.</div> }
       @else {
         <form ngNoForm (submit)="$event.preventDefault();confirmar()" class="space-y-6">
-          <section class="card secao-form">
+          <section class="card secao-form p-6">
             <h2 class="secao-titulo">Arquivo CSV ou XLSX</h2>
             <p class="text-sm">Até 100 pessoas, 30 colunas e 512 KiB por lote. CSV em UTF-8, separado por ponto e vírgula ou vírgula. No XLSX, selecione uma aba. A primeira linha preenchida será o cabeçalho (nas primeiras 20 linhas).</p>
             <p class="mt-2 text-sm">Papel: RESPONSAVEL, COROINHA, ACOLITO, AMBOS ou MESC. CPF, e-mail e telefone são opcionais. No Excel, mantenha CPF e telefone como texto desde a origem, preservando zeros. Substitua fórmulas por valores; remova macros, vínculos externos e células mescladas.</p>
@@ -30,7 +30,7 @@ import { ImportacoesPessoasService, PreviaImportacao, EstruturaImportacao, Opcoe
             <button type="button" class="btn-secondary mt-3" [disabled]="!arquivo || ocupado()" (click)="analisar()">{{ ocupado() ? 'Processando...' : 'Ler colunas' }}</button>
           </section>
           @if (estrutura(); as e) {
-            <section class="card secao-form">
+            <section class="card secao-form p-6">
               <h2 class="secao-titulo">Mapear colunas</h2>
               @if (e.linhaCabecalho) {<p class="text-sm mb-3">Cabeçalho na linha {{ e.linhaCabecalho }}. Confira a sugestão e escolha uma coluna diferente para cada campo. Colunas não selecionadas serão ignoradas.</p>}
               @else {<p class="text-sm mb-3">Esta aba está vazia. Selecione outra aba com cabeçalho e pessoas.</p>}

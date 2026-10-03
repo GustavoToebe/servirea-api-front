@@ -34,7 +34,7 @@ export function extrairCodigo(texto: string): string {
           <a routerLink="/portal" class="btn-secondary mt-4 inline-block">Meus compromissos</a>
         </section>
       } @else {
-        <form class="card secao-form" (ngSubmit)="registrar()">
+        <form class="card secao-form p-6" (ngSubmit)="registrar()">
           <label class="label" for="ck-codigo">Código ou link do check-in</label>
           <input id="ck-codigo" name="codigo" class="field w-full" autocomplete="off" autocapitalize="off" spellcheck="false"
             [(ngModel)]="codigo" required>

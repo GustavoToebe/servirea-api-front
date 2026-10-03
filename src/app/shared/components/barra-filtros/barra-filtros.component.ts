@@ -29,8 +29,8 @@ export interface FiltroAtivo {
                  (keyup.enter)="emitirBuscar()" data-busca>
         </div>
 
-        <!-- Botões Opções e Buscar -->
-        <div class="flex gap-2">
+        <!-- Botões Opções e Buscar: sem campo de busca ficam no canto direito -->
+        <div class="flex gap-2" [class.ml-auto]="semBusca" [class.self-end]="semBusca">
           <!-- Opções -->
           <div *ngIf="opcoes.length > 0" class="relative">
             <button type="button" class="btn-secondary h-full" (click)="menuAberto = !menuAberto" data-opcoes>
@@ -51,7 +51,7 @@ export interface FiltroAtivo {
 
           <!-- Botão de Ação: Cancelar/Buscar com seta -->
           <div class="flex rounded shadow-sm">
-            <button type="button" class="btn rounded-r-none h-full"
+            <button type="button" class="btn h-full" [class.rounded-r-none]="temFiltros"
                     [ngClass]="aberto ? 'btn-secondary' : 'btn-primary'"
                     (click)="acaoPrincipal()" data-buscar>
               {{ aberto ? 'Cancelar' : 'Buscar' }}

@@ -104,6 +104,11 @@ button, input, select, textarea { font: inherit; }
     top: 0;
     z-index: 1;
   }
+  /* Texto de "nenhum registro" e paginação soltos dentro do cartão da tabela: dão um respiro em vez de colar no cabeçalho. */
+  .tabela-rolagem > p { padding: 1.5rem 1rem; text-align: center; color: var(--muted, #64748b); }
+  .tabela-rolagem > .flex.gap-3 { padding: 0.75rem 1rem; }
+  /* Rodapé de paginação (Anterior · texto · Próxima): centraliza o texto na altura dos botões em qualquer tela. */
+  div.flex:has(> button.btn-secondary):has(> span, > p) { align-items: center; }
   .tabela tbody tr:nth-child(even) {
     background: color-mix(in srgb, var(--brand) 3%, transparent);
   }

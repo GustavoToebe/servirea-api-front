@@ -27,7 +27,7 @@ import {
         <a acoes routerLink="/comunicados" class="btn-secondary">Comunicados</a>
       </app-cabecalho-pagina>
       @if (erro()) { <p class="card p-4 text-red-600" role="alert" data-erro>{{ erro() }}</p> }
-      <section class="card secao-form">
+      <section class="card secao-form p-6">
         <h2 class="secao-titulo">Gatilhos automáticos</h2>
         <p class="mb-3 text-sm text-slate-500">
           Desligados por padrão. Só enviam para quem tem contato e, no WhatsApp, autorização. Cada versão é avisada uma única vez por canal.

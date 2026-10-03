@@ -10,8 +10,10 @@ import { RouterLink } from '@angular/router';
   standalone: true,
   imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Dentro de um modal o corpo já rola sozinho: o rodapé fica no fluxo (sem sticky, moldura nem sombra), senão sobrepõe o último campo.
+  styles: [`:host-context(app-modal) > div { position: static; box-shadow: none; border-width: 0; padding: 0; margin-top: 1rem; background: transparent; }`],
   template: `
-    <div class="sticky bottom-4 z-20 flex flex-wrap items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--card)] p-3 shadow-lg">
+    <div [class.sticky]="fixo" [class.bottom-4]="fixo" class="z-20 flex flex-wrap items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--card)] p-3 shadow-lg">
       @if (voltarUrl) {
         <a class="btn-secondary" [routerLink]="voltarUrl" data-cancelar>Cancelar</a>
       } @else {
@@ -23,6 +25,8 @@ import { RouterLink } from '@angular/router';
   `
 })
 export class RodapeFormComponent {
+  /** Flutua colado ao rodapé da janela (padrão, para formulários longos); em páginas com vários formulários use `false`. */
+  @Input() fixo = true;
   @Input() voltarUrl: string | unknown[] | null = null;
   @Input() rotuloSalvar = 'Salvar';
   @Input() carregando = false;

@@ -107,7 +107,7 @@ export function fimDeSemanaDoMes(ano: number, mes: number): Coluna[] {
         </table>
       </div>
 
-      <div class="fixed bottom-0 left-0 right-0 z-20 border-t border-[var(--line)] bg-[var(--card)] px-4 py-3 backdrop-blur">
+      <div class="sticky bottom-16 z-20 rounded-2xl border border-[var(--line)] bg-[var(--card)] px-4 py-3 shadow-lg backdrop-blur lg:bottom-4">
         <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
           <p class="text-sm text-[var(--muted)]"><strong class="text-amber-600 dark:text-amber-400">{{ contagem.COM_RESTRICAO }}</strong> com restrição · <strong class="text-emerald-600 dark:text-emerald-400">{{ contagem.SEM_RESTRICAO }}</strong> sem restrição · <strong class="text-[var(--ink)]">{{ contagem.PENDENTE }}</strong> pendentes</p>
           <button type="button" class="btn-primary" [disabled]="salvando || carregando || !consultaPronta" (click)="salvar()" data-salvar>{{ salvando ? 'Salvando...' : 'Salvar' }}</button><button type="button" class="btn-secondary" [disabled]="salvando || carregando" (click)="recarregar()">Recarregar mês</button>

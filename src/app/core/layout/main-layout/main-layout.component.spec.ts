@@ -107,6 +107,21 @@ describe('MainLayoutComponent', () => {
     expect(el('[data-menu="folha"]')).toBeNull();
   });
 
+  it('só um item do menu fica ativo: a rota mais específica vence o prefixo', () => {
+    acesso.eu.and.returnValue(of(eu(['PORTAL_VOLUNTARIO', 'PORTAL_DEPENDENTES', 'ESCALA'])));
+    criar();
+    const router = TestBed.inject(Router);
+    const comp = fixture.componentInstance;
+    const url = spyOnProperty(router, 'url', 'get');
+    const em = (rota: string) => { url.and.returnValue(rota); return comp.itemAtivo(); };
+
+    expect(em('/portal/dependentes')).toBe('/portal/dependentes');
+    expect(em('/portal')).toBe('/portal');
+    expect(em('/portal/vagas?x=1')).toBe('/portal');
+    expect(em('/escalas/layouts')).toBe('/escalas');
+    expect(em('/rota-que-nao-existe')).toBeNull();
+  });
+
   it('todo item do menu lateral tem ícone desenhado', () => {
     const todas = BARRA.flatMap(item => (item.permissao === null ? [] : typeof item.permissao === 'string' ? [item.permissao] : [...item.permissao]));
     acesso.eu.and.returnValue(of(eu(todas)));

@@ -20,11 +20,12 @@ import { ConsentimentoItem, PrivacidadeApiService, ROTULO_CONSENTIMENTO } from '
   template: `
     <div class="space-y-4">
       <app-cabecalho-pagina titulo="Privacidade e dados pessoais"
-        subtitulo="Histórico de autorizações e exportação dos dados desta pessoa." />
-      <a [routerLink]="['/pessoas', pessoaId]" class="btn-secondary inline-block">Voltar à ficha</a>
+        subtitulo="Histórico de autorizações e exportação dos dados desta pessoa.">
+        <a acoes [routerLink]="['/pessoas', pessoaId]" class="btn-secondary">Voltar à ficha</a>
+      </app-cabecalho-pagina>
       @if (erro()) { <p class="card p-4 text-red-600" role="alert" data-erro>{{ erro() }}</p> }
       @if (pode('PRIVACIDADE_EXPORTAR')) {
-        <section class="card secao-form">
+        <section class="card secao-form p-6">
           <h2 class="secao-titulo">Exportar dados</h2>
           <p class="mb-3 text-sm text-slate-500">
             Gera um arquivo com cadastro, contatos, participações em escalas, histórico de autorizações e a lista de comunicações
