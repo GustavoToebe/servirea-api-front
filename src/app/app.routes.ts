@@ -72,6 +72,7 @@ export const routes: Routes = [
       { path: 'usuarios/vinculos', loadComponent: () => import('./features/voluntario/vinculos.component').then(m => m.VinculosComponent) },
       { path: 'mural', data: { modulo: 'mural' }, loadComponent: () => import('./features/organizacao/organizacao.component').then(m => m.OrganizacaoComponent) },
       { path: 'tarefas', data: { modulo: 'tarefas' }, loadComponent: () => import('./features/organizacao/organizacao.component').then(m => m.OrganizacaoComponent) },
+      { path: 'contas-bancarias', canDeactivate: [pendingChangesGuard], loadComponent: () => import('./features/financeiro/contas-bancarias.component').then(m => m.ContasBancariasComponent) },
       { path: 'financeiro', canDeactivate: [pendingChangesGuard], loadComponent: () => import('./features/financeiro/financeiro.component').then(m => m.FinanceiroComponent) },
       { path: 'relatorios/participacao', loadComponent: () => import('./features/relatorios/participacao.component').then(m => m.ParticipacaoComponent) },
       { path: 'relatorios', loadComponent: () => import('./features/relatorios/pages/relatorios-home/relatorios-home.component').then(m => m.RelatoriosHomeComponent) },

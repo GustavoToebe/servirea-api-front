@@ -2,7 +2,6 @@
   <app-cabecalho-pagina titulo="Financeiro" subtitulo="Entradas, saídas, contas e visão dos recursos da paróquia." icone="⇄">
     <div acoes>
       @if (aba === 'movimentos' && pode('FINANCEIRO_CRIAR')) { <button class="btn-primary" (click)="abrirMovimento()" [disabled]="carregando || !contasAtivas.length || !contasContabeisAtivas.length">Novo lançamento</button> }
-      @if (aba === 'contas' && pode('FINANCEIRO_CONFIGURAR')) { <button class="btn-primary" (click)="abrirConta()">Nova conta</button> }
       @if (aba === 'plano' && pode('FINANCEIRO_CONFIGURAR')) { <button class="btn-secondary" (click)="abrirGrupo()">Novo grupo</button><button class="btn-primary" (click)="abrirContaContabil()" [disabled]="!grupos.length">Nova conta contábil</button> }
     </div>
   </app-cabecalho-pagina>
@@ -17,7 +16,7 @@
     </div>
     <section class="card p-4"><h2 class="secao-titulo">Saldo por conta</h2><div class="flex flex-wrap gap-5">@for (c of resumo.contas; track c.id) { <p>{{ c.nome }}: <strong>{{ c.saldo | currency:'BRL' }}</strong></p> }</div><p class="text-xs text-slate-500 mt-2">Saldo inicial + entradas recebidas − saídas pagas até a data final. Pendentes não entram no saldo.</p></section>
   }
-  <h2 class="text-lg font-black text-slate-800" data-aba-titulo>{{ aba === 'movimentos' ? 'Banco/caixa' : aba === 'contas' ? 'Conta bancária' : 'Plano de contas' }}</h2>
+  <h2 class="text-lg font-black text-slate-800" data-aba-titulo>{{ aba === 'movimentos' ? 'Banco/caixa' : 'Plano de contas' }}</h2>
   <section class="card p-4 space-y-4">
     @if (aba === 'movimentos') {
       <app-barra-filtros placeholder="Buscar descrição" [(termo)]="filtro.nome" (termoChange)="buscarTexto()" (buscar)="buscar()" [temFiltros]="true">
@@ -43,10 +42,6 @@
       </tbody></table></div>
       <app-estado-lista [carregando]="carregando" [vazio]="!movimentos.length" />
       <div class="flex items-center justify-between gap-3"><span>{{ total }} lançamento(s) · página {{ filtro.pagina + 1 }}</span><div class="flex gap-2"><button class="btn-secondary" (click)="paginar(-1)" [disabled]="carregando || filtro.pagina === 0">Anterior</button><button class="btn-secondary" (click)="paginar(1)" [disabled]="carregando || (filtro.pagina + 1) * filtro.tamanho >= total">Próxima</button></div></div>
-    } @else if (aba === 'contas') {
-      <app-barra-filtros [semBusca]="true" [temFiltros]="false" (buscar)="carregar()" />
-      <div class="tabela-rolagem"><table class="tabela"><thead><tr><th>Conta / banco</th><th>Saldo inicial</th><th>Data inicial</th><th>Situação</th><th>Ações</th></tr></thead><tbody>@for (c of contas; track c.id) { <tr><td>{{ c.nome }}</td><td>{{ c.saldoInicial | currency:'BRL' }}</td><td>{{ c.dataSaldoInicial | date:'dd/MM/yyyy':'UTC' }}</td><td>{{ c.ativo ? 'Ativa' : 'Inativa' }}</td><td>@if (pode('FINANCEIRO_CONFIGURAR')) { <button class="btn-secondary" (click)="abrirConta(c)">Editar</button> }</td></tr> }</tbody></table></div>
-      <app-estado-lista [carregando]="carregando" [vazio]="!contas.length" />
     } @else {
       <p class="mb-3 text-sm text-slate-500">O plano de contas organiza entradas e saídas. O <strong>grupo</strong> agrupa (ex.: Despesas fixas); a <strong>conta contábil</strong> recebe os lançamentos (ex.: Energia elétrica) e herda o tipo do grupo.</p>
       <app-plano-contas-lista [categorias]="categorias" [podeConfigurar]="pode('FINANCEIRO_CONFIGURAR')" [carregando]="carregando"
@@ -55,7 +50,7 @@
   </section>
 </div>
 @if (modal) {
-<app-modal [aberto]="true" [titulo]="modal === 'baixa' ? 'Dar baixa' : (modal === 'movimento' ? 'Lançamento' : (modal === 'conta' ? 'Conta / banco' : (modal === 'grupo' ? (editandoId ? 'Editar grupo' : 'Novo grupo') : (editandoId ? 'Editar conta contábil' : 'Nova conta contábil'))))" (fechar)="fechar()">
+<app-modal [aberto]="true" [titulo]="modal === 'baixa' ? 'Dar baixa' : (modal === 'movimento' ? 'Lançamento' : (modal === 'grupo' ? (editandoId ? 'Editar grupo' : 'Novo grupo') : (editandoId ? 'Editar conta contábil' : 'Nova conta contábil')))" (fechar)="fechar()">
   <form #formulario="ngForm" (ngSubmit)="salvar(formulario)">
     <section class="secao-form space-y-3">
       @if (modal === 'movimento') {
@@ -64,12 +59,6 @@
         <div><label class="label" for="vencimento">Vencimento</label><app-campo-data idCampo="vencimento" name="vencimento" [(ngModel)]="movimentoForm.vencimento" required /></div>
         <div class="grade-form"><div><label class="label" for="conta">Conta</label><select id="conta" name="conta" class="field" [(ngModel)]="movimentoForm.contaId" required><option value="">Selecione</option>@for (c of contasAtivas; track c.id) { <option [value]="c.id">{{ c.nome }}</option> }</select></div><div><label class="label" for="categoria">Conta contábil</label><select id="categoria" name="categoria" class="field" [(ngModel)]="movimentoForm.categoriaId" required><option value="">Selecione</option>@for (g of contasParaLancamento(movimentoForm.tipo); track g.grupo.id) { <optgroup [label]="g.grupo.nome">@for (c of g.contas; track c.id) { <option [value]="c.id">{{ c.nome }}</option> }</optgroup> }</select></div></div>
         <div><label class="label" for="observacoes">Observações (opcional)</label><textarea id="observacoes" name="observacoes" class="field" [(ngModel)]="movimentoForm.observacoes" maxlength="1000"></textarea></div>
-      } @else if (modal === 'conta') {
-        <div><label class="label" for="nomeConta">Nome da conta / banco</label><input id="nomeConta" name="nome" class="field" [(ngModel)]="contaForm.nome" required maxlength="120" /></div>
-        <div><label class="label" for="saldoInicial">Saldo inicial (R$)</label><input id="saldoInicial" name="saldoInicial" class="field" type="number" inputmode="decimal" step="0.01" min="-999999999999.99" max="999999999999.99" [(ngModel)]="contaForm.saldoInicial" required /></div>
-        <div><label class="label" for="dataSaldo">Data do saldo inicial</label><app-campo-data idCampo="dataSaldo" name="dataSaldo" [(ngModel)]="contaForm.dataSaldoInicial" [max]="hoje" required /></div>
-        <p class="text-xs text-slate-500">Informe o saldo antes das primeiras baixas. Saldo e data inicial ficam protegidos depois do primeiro lançamento.</p>
-        <label class="flex gap-2"><input type="checkbox" name="ativo" [(ngModel)]="contaForm.ativo" /> Conta ativa</label>
       } @else if (modal === 'grupo') {
         <div><label class="label" for="nomeGrupo">Nome do grupo</label><input id="nomeGrupo" name="nome" class="field" [(ngModel)]="categoriaForm.nome" required maxlength="120" placeholder="Ex.: Despesas fixas" /></div>
         <div><label class="label" for="tipoGrupo">Tipo</label>

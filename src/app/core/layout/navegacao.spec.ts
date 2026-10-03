@@ -25,7 +25,7 @@ describe('Navegação por seções', () => {
     const grupos = agruparPorSecao(telasVisiveis(['FINANCEIRO']));
     expect(grupos.map(g => g.secao.id)).toEqual(['inicio', 'cadastro', 'financeiro', 'ajuda']);
     expect(grupos[2].telas.map(t => t.rotulo)).toEqual(['Financeiro', 'Banco/caixa', 'Plano de contas']);
-    expect(grupos[1].telas.map(t => t.rotulo)).toContain('Conta bancária');
+    expect(grupos[1].telas.map(t => t.rotulo)).toContain('Contas bancárias');
   });
 
   it('a busca ignora acento e caixa, exige todas as palavras e usa sinônimos', () => {

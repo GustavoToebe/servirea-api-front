@@ -63,7 +63,7 @@ import { FuncionalidadesPlanoComponent } from '../../plano/funcionalidades-plano
                     @case ('escalas/indisponibilidades') { <circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/> }
                     @case ('/financeiro') { <path d="M4 7h16m-4-4 4 4-4 4M20 17H4m4-4-4 4 4 4"/> }
                     @case ('financeiro?lancamentos') { <path d="M4 7h16m-4-4 4 4-4 4M20 17H4m4-4-4 4 4 4"/> }
-                    @case ('financeiro?contas') { <path d="M3 10 12 4l9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/> }
+                    @case ('/contas-bancarias') { <path d="M3 10 12 4l9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/> }
                     @case ('financeiro?plano') { <path d="M5 4h6v4H5zM13 10h6v4h-6zM13 16h6v4h-6zM8 8v10h5M8 12h5"/> }
                     @case ('/eventos') { <rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/><path d="m9 15 2 2 4-4"/> }
                     @case ('/paroquia') { <path d="M18 21v-8M6 21v-8M12 21v-4"/><path d="M3 9l9-6 9 6v12H3V9z"/> }

@@ -35,14 +35,12 @@ describe('Financeiro paroquial', () => {
   it('leitor vê resumo e não vê ações de escrita', () => {
     expect(fixture.nativeElement.textContent).toContain('Saldo por conta');
     expect(fixture.nativeElement.textContent).not.toContain('Novo lançamento');
-    fixture.componentInstance.abrirConta(); expect(fixture.componentInstance.modal).toBeNull();
     fixture.componentInstance.abrirMovimento(); expect(fixture.componentInstance.modal).toBeNull();
   });
   it('permissão de criar não concede configuração de contas', () => {
     permissoes.set(['FINANCEIRO','FINANCEIRO_CRIAR']); fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Novo lançamento');
     fixture.componentInstance.abrirMovimento(); expect(fixture.componentInstance.modal).toBe('movimento');
-    fixture.componentInstance.modal = null; fixture.componentInstance.abrirConta(); expect(fixture.componentInstance.modal).toBeNull();
   });
   it('falha de carga limpa saldo antigo e expõe erro com opção de tentar novamente', async () => {
     api.resumo.and.rejectWith(new Error('Sem conexão'));

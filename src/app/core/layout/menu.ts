@@ -40,9 +40,9 @@ export const BARRA: ItemMenu[] = [
   { label: 'Vínculos de pessoas', url: '/usuarios/vinculos', permissao: 'USUARIO_ALTERAR' },
   { label: 'Mural', url: '/mural', permissao: 'MURAL' },
   { label: 'Tarefas', url: '/tarefas', permissao: 'TAREFA' },
+  { label: 'Contas bancárias', url: '/contas-bancarias', permissao: 'FINANCEIRO' },
   { label: 'Financeiro', url: '/financeiro', permissao: 'FINANCEIRO', filhos: [
     { id: 'financeiro?lancamentos', label: 'Banco/caixa', consulta: { aba: 'lancamentos' } },
-    { id: 'financeiro?contas', label: 'Conta bancária', consulta: { aba: 'contas' }, secao: 'cadastro' },
     { id: 'financeiro?plano', label: 'Plano de contas', consulta: { aba: 'plano-de-contas' } },
   ] },
   { label: 'Eventos', url: '/eventos', permissao: 'EVENTO' },

@@ -359,7 +359,7 @@ export const TEMAS: readonly TemaAjuda[] = [
     id: 'financeiro', titulo: 'Financeiro: plano de contas, lançamentos e saldos', secao: 'financeiro', permissao: 'FINANCEIRO', url: '/financeiro',
     resumo: 'Controla o dinheiro da paróquia: contas ou bancos, plano de contas, entradas e saídas, baixas e saldo.',
     passos: [
-      'Em Cadastro › Conta bancária, cadastre o Caixa e as contas bancárias com o saldo inicial e a data dele.',
+      'Em Cadastro › Contas bancárias, cadastre o Caixa e as contas bancárias com o saldo inicial e a data dele.',
       'Em Plano de contas, crie os grupos (por exemplo Despesas fixas, Doações) e, dentro de cada grupo, as contas contábeis (Energia, Dízimo). Só a conta contábil recebe lançamento; ela herda o tipo do grupo (entrada ou saída).',
       'Em Lançamentos, crie a entrada ou a saída com valor, vencimento, a conta/banco e a conta contábil. Um lançamento pendente ainda não é dinheiro recebido ou pago.',
       'Quando o dinheiro for recebido ou pago, use Dar baixa e informe a data real. O saldo e o resultado do período usam a data da baixa.',
