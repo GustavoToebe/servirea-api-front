@@ -6,7 +6,7 @@ import { of, throwError } from 'rxjs';
 import { MeuPerfil } from '../../../features/acesso/acesso.models';
 import { AcessoApiService } from '../../../features/acesso/acesso-api.service';
 import { AuthService } from '../../auth/auth.service';
-import { montarMenu } from '../menu';
+import { BARRA, montarMenu } from '../menu';
 import { MainLayoutComponent } from './main-layout.component';
 
 function eu(permissoes: string[], perfil = 'Secretário'): MeuPerfil {
@@ -105,6 +105,17 @@ describe('MainLayoutComponent', () => {
     expect(texto('[data-menu="barra"]')).toContain('Mais');
     expect(texto('[data-menu="barra"]')).not.toContain('Relatórios');
     expect(el('[data-menu="folha"]')).toBeNull();
+  });
+
+  it('todo item do menu lateral tem ícone desenhado', () => {
+    const todas = BARRA.flatMap(item => (item.permissao === null ? [] : typeof item.permissao === 'string' ? [item.permissao] : [...item.permissao]));
+    acesso.eu.and.returnValue(of(eu(todas)));
+    criar();
+
+    const links = Array.from(fixture.nativeElement.querySelectorAll('[data-menu="lateral"] a')) as HTMLElement[];
+    expect(links.length).toBe(BARRA.length);
+    const semIcone = links.filter(a => (a.querySelector('svg')?.children.length ?? 0) === 0).map(a => a.getAttribute('href'));
+    expect(semIcone).toEqual([]);
   });
 
   it('no celular, a folha "Mais" traz Ajustes, Meu perfil e Sair', () => {
