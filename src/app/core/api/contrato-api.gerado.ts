@@ -211,6 +211,14 @@ export interface CatalogoPermissao_Secao {
   nome?: string | null;
 }
 
+export interface ChavePixDto {
+  chave?: string | null;
+  principal: boolean;
+  tipo?: ChavePixDto_TipoChavePix | null;
+}
+
+export type ChavePixDto_TipoChavePix = 'CPF' | 'CNPJ' | 'EMAIL' | 'TELEFONE' | 'ALEATORIA';
+
 export interface CheckinDtos_Aberto {
   expiraEm?: string | null;
   sessaoId?: string | null;
@@ -362,6 +370,8 @@ export interface ConsumoInstanciaService_Resposta {
   tenantId?: string | null;
   versaoContrato: number;
 }
+
+export type ContaFinanceira_TipoConta = 'CORRENTE' | 'POUPANCA' | 'CAIXA' | 'OUTRA';
 
 export interface ContagemVoluntarios {
   ativos: number;
@@ -823,18 +833,34 @@ export interface FinanceiroDtos_CategoriaResponse {
 }
 
 export interface FinanceiroDtos_ContaRequest {
+  agencia?: string | null;
   ativo: boolean;
+  banco?: string | null;
+  chavesPix?: ChavePixDto[] | null;
+  dataAbertura?: string | null;
+  dataEncerramento?: string | null;
   dataSaldoInicial?: string | null;
   nome?: string | null;
+  numeroConta?: string | null;
   saldoInicial?: number | null;
+  tipoConta?: ContaFinanceira_TipoConta | null;
+  titular?: string | null;
 }
 
 export interface FinanceiroDtos_ContaResponse {
+  agencia?: string | null;
   ativo: boolean;
+  banco?: string | null;
+  chavesPix?: ChavePixDto[] | null;
+  dataAbertura?: string | null;
+  dataEncerramento?: string | null;
   dataSaldoInicial?: string | null;
   id?: string | null;
   nome?: string | null;
+  numeroConta?: string | null;
   saldoInicial?: number | null;
+  tipoConta?: ContaFinanceira_TipoConta | null;
+  titular?: string | null;
 }
 
 export interface FinanceiroDtos_MovimentoRequest {

@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { mensagemApi } from '../../core/api/api-error';
-import { Categoria, CategoriaRequest, Conta, Filtros, Movimento, MovimentoRequest, Pagina, Resumo } from './financeiro.models';
+import { Categoria, CategoriaRequest, Conta, ContaRequest, Filtros, Movimento, MovimentoRequest, Pagina, Resumo } from './financeiro.models';
 
 @Injectable({ providedIn: 'root' })
 export class FinanceiroApiService {
@@ -17,7 +17,7 @@ export class FinanceiroApiService {
     return this.chamar(this.http.get<Pagina>(`${this.base}/movimentos`, { params }));
   }
   resumo(de: string, ate: string) { return this.chamar(this.http.get<Resumo>(`${this.base}/resumo`, { params: { de, ate } })); }
-  salvarConta(id: string | null, dados: Omit<Conta, 'id'>) { return this.salvar<Conta>('contas', id, dados); }
+  salvarConta(id: string | null, dados: ContaRequest) { return this.salvar<Conta>('contas', id, dados); }
   salvarCategoria(id: string | null, dados: CategoriaRequest) { return this.salvar<Categoria>('categorias', id, dados); }
   salvarMovimento(id: string | null, dados: MovimentoRequest) { return this.salvar<Movimento>('movimentos', id, dados); }
   baixar(m: Movimento, dataPagamento: string) { return this.chamar(this.http.post<Movimento>(`${this.base}/movimentos/${m.id}/baixar`, { versao: m.versao, dataPagamento })); }

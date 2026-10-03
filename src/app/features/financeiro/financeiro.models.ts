@@ -1,6 +1,17 @@
 export type Tipo = 'RECEITA' | 'DESPESA';
 export type Situacao = 'PENDENTE' | 'PAGO' | 'CANCELADO';
-export interface Conta { id: string; nome: string; saldoInicial: number; dataSaldoInicial: string; ativo: boolean; }
+export type TipoConta = 'CORRENTE' | 'POUPANCA' | 'CAIXA' | 'OUTRA';
+export type TipoChavePix = 'CPF' | 'CNPJ' | 'EMAIL' | 'TELEFONE' | 'ALEATORIA';
+export interface ChavePix { tipo: TipoChavePix; chave: string; principal: boolean; }
+export const ROTULO_TIPO_CONTA: Record<TipoConta, string> = { CORRENTE: 'Conta corrente', POUPANCA: 'Poupança', CAIXA: 'Caixa', OUTRA: 'Outra' };
+export const ROTULO_TIPO_CHAVE: Record<TipoChavePix, string> = { CPF: 'CPF', CNPJ: 'CNPJ', EMAIL: 'E-mail', TELEFONE: 'Telefone', ALEATORIA: 'Chave aleatória' };
+/** Conta bancária ou caixa. Os dados do banco são opcionais no caixa e em contas antigas. */
+export interface Conta {
+  id: string; nome: string; saldoInicial: number; dataSaldoInicial: string; ativo: boolean;
+  tipoConta?: TipoConta; banco?: string | null; agencia?: string | null; numeroConta?: string | null; titular?: string | null;
+  dataAbertura?: string | null; dataEncerramento?: string | null; chavesPix?: ChavePix[];
+}
+export type ContaRequest = Omit<Conta, 'id'> & { tipoConta: TipoConta; chavesPix: ChavePix[] };
 /** Plano de contas: grupo (organiza, `ehGrupo`) ou conta contábil (recebe lançamentos, tem `grupoId`). A conta tem o tipo do grupo. */
 export interface Categoria { id: string; nome: string; ativo: boolean; tipo: Tipo; grupoId: string | null; ehGrupo: boolean; }
 export type CategoriaRequest = Pick<Categoria, 'nome' | 'ativo' | 'tipo' | 'grupoId'>;
