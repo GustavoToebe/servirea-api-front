@@ -2,9 +2,9 @@
   <app-cabecalho-pagina titulo="Financeiro" subtitulo="Entradas, saídas, contas e visão dos recursos da paróquia." icone="⇄">
     <div acoes>
       <a routerLink="/ajuda" [queryParams]="{tema:'financeiro'}" class="btn-secondary">Ajuda</a>
-      @if (aba === 'movimentos' && pode('FINANCEIRO_CRIAR')) { <button class="btn-primary" (click)="abrirMovimento()" [disabled]="carregando || !contasAtivas.length || !categoriasAtivas.length">Novo lançamento</button> }
+      @if (aba === 'movimentos' && pode('FINANCEIRO_CRIAR')) { <button class="btn-primary" (click)="abrirMovimento()" [disabled]="carregando || !contasAtivas.length || !contasContabeisAtivas.length">Novo lançamento</button> }
       @if (aba === 'contas' && pode('FINANCEIRO_CONFIGURAR')) { <button class="btn-primary" (click)="abrirConta()">Nova conta</button> }
-      @if (aba === 'categorias' && pode('FINANCEIRO_CONFIGURAR')) { <button class="btn-primary" (click)="abrirCategoria()">Nova categoria</button> }
+      @if (aba === 'plano' && pode('FINANCEIRO_CONFIGURAR')) { <button class="btn-secondary" (click)="abrirGrupo()">Novo grupo</button><button class="btn-primary" (click)="abrirContaContabil()" [disabled]="!grupos.length">Nova conta contábil</button> }
     </div>
   </app-cabecalho-pagina>
   @if (erro) { <div class="card p-4 text-red-600" role="alert">{{ erro }} <button class="btn-secondary ml-3" (click)="carregar()">Tentar novamente</button></div> }
@@ -19,9 +19,9 @@
     <section class="card p-4"><h2 class="secao-titulo">Saldo por conta</h2><div class="flex flex-wrap gap-5">@for (c of resumo.contas; track c.id) { <p>{{ c.nome }}: <strong>{{ c.saldo | currency:'BRL' }}</strong></p> }</div><p class="text-xs text-slate-500 mt-2">Saldo inicial + entradas recebidas − saídas pagas até a data final. Pendentes não entram no saldo.</p></section>
   }
   <nav class="flex gap-2 flex-wrap" aria-label="Seções do financeiro">
-    <button class="btn-secondary" [class.selecionada]="aba === 'movimentos'" [attr.aria-pressed]="aba === 'movimentos'" (click)="aba = 'movimentos'">Lançamentos</button>
-    <button class="btn-secondary" [class.selecionada]="aba === 'contas'" [attr.aria-pressed]="aba === 'contas'" (click)="aba = 'contas'">Contas / bancos</button>
-    <button class="btn-secondary" [class.selecionada]="aba === 'categorias'" [attr.aria-pressed]="aba === 'categorias'" (click)="aba = 'categorias'">Categorias</button>
+    <button class="btn-secondary" [class.selecionada]="aba === 'movimentos'" [attr.aria-pressed]="aba === 'movimentos'" (click)="mudarAba('movimentos')">Lançamentos</button>
+    <button class="btn-secondary" [class.selecionada]="aba === 'contas'" [attr.aria-pressed]="aba === 'contas'" (click)="mudarAba('contas')">Contas / bancos</button>
+    <button class="btn-secondary" [class.selecionada]="aba === 'plano'" [attr.aria-pressed]="aba === 'plano'" (click)="mudarAba('plano')">Plano de contas</button>
   </nav>
   <section class="card p-4 space-y-4">
     @if (aba === 'movimentos') {
@@ -31,13 +31,13 @@
         <div><label class="label" for="situacao">Situação</label><select id="situacao" class="field" [(ngModel)]="filtro.situacao"><option value="">Todas</option><option value="PENDENTE">Pendente</option><option value="PAGO">Pago / recebido</option><option value="CANCELADO">Cancelado</option></select></div>
         <div><label class="label" for="tipo">Tipo</label><select id="tipo" class="field" [(ngModel)]="filtro.tipo"><option value="">Todos</option><option value="RECEITA">Entrada</option><option value="DESPESA">Saída</option></select></div>
         <div><label class="label" for="contaFiltro">Conta</label><select id="contaFiltro" class="field" [(ngModel)]="filtro.contaId"><option value="">Todas</option>@for (c of contas; track c.id) { <option [value]="c.id">{{ c.nome }}</option> }</select></div>
-        <div><label class="label" for="categoriaFiltro">Categoria</label><select id="categoriaFiltro" class="field" [(ngModel)]="filtro.categoriaId"><option value="">Todas</option>@for (c of categorias; track c.id) { <option [value]="c.id">{{ c.nome }}</option> }</select></div>
+        <div><label class="label" for="categoriaFiltro">Conta contábil</label><select id="categoriaFiltro" class="field" [(ngModel)]="filtro.categoriaId"><option value="">Todas</option>@for (c of categorias; track c.id) { @if (!c.ehGrupo) { <option [value]="c.id">{{ rotuloContaContabil(c.id) }}</option> } }</select></div>
       </app-barra-filtros>
       <p class="text-xs text-slate-500">A lista usa o vencimento; o resumo considera a data da baixa no mesmo período.</p>
-      @if (!carregando && (!contasAtivas.length || !categoriasAtivas.length)) { <p class="text-amber-700">Cadastre uma conta e uma categoria ativas antes do primeiro lançamento.</p> }
+      @if (!carregando && (!contasAtivas.length || !contasContabeisAtivas.length)) { <p class="text-amber-700">Cadastre uma conta/banco e, no Plano de contas, um grupo com uma conta contábil ativa antes do primeiro lançamento.</p> }
       <div class="tabela-rolagem"><table class="tabela"><thead><tr><th>Vencimento</th><th>Descrição</th><th>Conta / categoria</th><th>Valor</th><th>Situação</th><th>Ações</th></tr></thead><tbody>
         @if (!carregando) { @for (m of movimentos; track m.id) {
-          <tr><td>{{ m.vencimento | date:'dd/MM/yyyy':'UTC' }}</td><td>{{ m.descricao }}<small class="block text-slate-500">{{ m.tipo === 'RECEITA' ? 'Entrada' : 'Saída' }}</small></td><td>{{ m.conta }}<small class="block text-slate-500">{{ m.categoria }}</small></td><td>{{ m.valor | currency:'BRL' }}</td>
+          <tr><td>{{ m.vencimento | date:'dd/MM/yyyy':'UTC' }}</td><td>{{ m.descricao }}<small class="block text-slate-500">{{ m.tipo === 'RECEITA' ? 'Entrada' : 'Saída' }}</small></td><td>{{ m.conta }}<small class="block text-slate-500">{{ rotuloContaContabil(m.categoriaId) || m.categoria }}</small></td><td>{{ m.valor | currency:'BRL' }}</td>
           <td><span class="situacao" [class.pago]="m.situacao === 'PAGO'" [class.pendente]="m.situacao === 'PENDENTE'">{{ m.situacao === 'PAGO' ? (m.tipo === 'RECEITA' ? 'Recebido' : 'Pago') : (m.situacao === 'PENDENTE' ? 'Pendente' : 'Cancelado') }}</span>@if (m.dataPagamento) { <small class="block">{{ m.dataPagamento | date:'dd/MM/yyyy':'UTC' }}</small> }</td>
           <td><div class="flex gap-2 flex-wrap">
             @if (m.situacao === 'PENDENTE' && pode('FINANCEIRO_ALTERAR')) { <button class="btn-secondary" (click)="abrirMovimento(m)" [disabled]="salvando">Editar</button><button class="btn-danger" (click)="acao(m, 'cancelar')" [disabled]="salvando">Cancelar</button> }
@@ -53,21 +53,21 @@
       <div class="tabela-rolagem"><table class="tabela"><thead><tr><th>Conta / banco</th><th>Saldo inicial</th><th>Data inicial</th><th>Situação</th><th>Ações</th></tr></thead><tbody>@for (c of contas; track c.id) { <tr><td>{{ c.nome }}</td><td>{{ c.saldoInicial | currency:'BRL' }}</td><td>{{ c.dataSaldoInicial | date:'dd/MM/yyyy':'UTC' }}</td><td>{{ c.ativo ? 'Ativa' : 'Inativa' }}</td><td>@if (pode('FINANCEIRO_CONFIGURAR')) { <button class="btn-secondary" (click)="abrirConta(c)">Editar</button> }</td></tr> }</tbody></table></div>
       <app-estado-lista [carregando]="carregando" [vazio]="!contas.length" />
     } @else {
-      <app-barra-filtros [semBusca]="true" [temFiltros]="false" (buscar)="carregar()" />
-      <div class="tabela-rolagem"><table class="tabela"><thead><tr><th>Categoria</th><th>Situação</th><th>Ações</th></tr></thead><tbody>@for (c of categorias; track c.id) { <tr><td>{{ c.nome }}</td><td>{{ c.ativo ? 'Ativa' : 'Inativa' }}</td><td>@if (pode('FINANCEIRO_CONFIGURAR')) { <button class="btn-secondary" (click)="abrirCategoria(c)">Editar</button> }</td></tr> }</tbody></table></div>
-      <app-estado-lista [carregando]="carregando" [vazio]="!categorias.length" />
+      <p class="mb-3 text-sm text-slate-500">O plano de contas organiza entradas e saídas. O <strong>grupo</strong> agrupa (ex.: Despesas fixas); a <strong>conta contábil</strong> recebe os lançamentos (ex.: Energia elétrica) e herda o tipo do grupo.</p>
+      <app-plano-contas-lista [categorias]="categorias" [podeConfigurar]="pode('FINANCEIRO_CONFIGURAR')" [carregando]="carregando"
+        (novoGrupo)="abrirGrupo(undefined, $event)" (editarGrupo)="abrirGrupo($event)" (novaConta)="abrirContaContabil(undefined, $event)" (editarConta)="abrirContaContabil($event)" />
     }
   </section>
 </div>
 @if (modal) {
-<app-modal [aberto]="true" [titulo]="modal === 'baixa' ? 'Dar baixa' : (modal === 'movimento' ? 'Lançamento' : (modal === 'conta' ? 'Conta / banco' : 'Categoria'))" (fechar)="fechar()">
+<app-modal [aberto]="true" [titulo]="modal === 'baixa' ? 'Dar baixa' : (modal === 'movimento' ? 'Lançamento' : (modal === 'conta' ? 'Conta / banco' : (modal === 'grupo' ? (editandoId ? 'Editar grupo' : 'Novo grupo') : (editandoId ? 'Editar conta contábil' : 'Nova conta contábil'))))" (fechar)="fechar()">
   <form #formulario="ngForm" (ngSubmit)="salvar(formulario)">
     <section class="secao-form space-y-3">
       @if (modal === 'movimento') {
         <div><label class="label" for="descricao">Descrição</label><input id="descricao" name="descricao" class="field" [(ngModel)]="movimentoForm.descricao" required maxlength="200" /></div>
-        <div class="grade-form"><div><label class="label" for="tipoForm">Tipo</label><select id="tipoForm" name="tipo" class="field" [(ngModel)]="movimentoForm.tipo"><option value="RECEITA">Entrada</option><option value="DESPESA">Saída</option></select></div><div><label class="label" for="valor">Valor (R$)</label><input id="valor" name="valor" class="field" type="number" inputmode="decimal" min="0.01" max="999999999999.99" step="0.01" [(ngModel)]="movimentoForm.valor" required /></div></div>
+        <div class="grade-form"><div><label class="label" for="tipoForm">Tipo</label><select id="tipoForm" name="tipo" class="field" [(ngModel)]="movimentoForm.tipo" (ngModelChange)="trocouTipoLancamento()"><option value="RECEITA">Entrada</option><option value="DESPESA">Saída</option></select></div><div><label class="label" for="valor">Valor (R$)</label><input id="valor" name="valor" class="field" type="number" inputmode="decimal" min="0.01" max="999999999999.99" step="0.01" [(ngModel)]="movimentoForm.valor" required /></div></div>
         <div><label class="label" for="vencimento">Vencimento</label><app-campo-data idCampo="vencimento" name="vencimento" [(ngModel)]="movimentoForm.vencimento" required /></div>
-        <div class="grade-form"><div><label class="label" for="conta">Conta</label><select id="conta" name="conta" class="field" [(ngModel)]="movimentoForm.contaId" required><option value="">Selecione</option>@for (c of contasAtivas; track c.id) { <option [value]="c.id">{{ c.nome }}</option> }</select></div><div><label class="label" for="categoria">Categoria</label><select id="categoria" name="categoria" class="field" [(ngModel)]="movimentoForm.categoriaId" required><option value="">Selecione</option>@for (c of categoriasAtivas; track c.id) { <option [value]="c.id">{{ c.nome }}</option> }</select></div></div>
+        <div class="grade-form"><div><label class="label" for="conta">Conta</label><select id="conta" name="conta" class="field" [(ngModel)]="movimentoForm.contaId" required><option value="">Selecione</option>@for (c of contasAtivas; track c.id) { <option [value]="c.id">{{ c.nome }}</option> }</select></div><div><label class="label" for="categoria">Conta contábil</label><select id="categoria" name="categoria" class="field" [(ngModel)]="movimentoForm.categoriaId" required><option value="">Selecione</option>@for (g of contasParaLancamento(movimentoForm.tipo); track g.grupo.id) { <optgroup [label]="g.grupo.nome">@for (c of g.contas; track c.id) { <option [value]="c.id">{{ c.nome }}</option> }</optgroup> }</select></div></div>
         <div><label class="label" for="observacoes">Observações (opcional)</label><textarea id="observacoes" name="observacoes" class="field" [(ngModel)]="movimentoForm.observacoes" maxlength="1000"></textarea></div>
       } @else if (modal === 'conta') {
         <div><label class="label" for="nomeConta">Nome da conta / banco</label><input id="nomeConta" name="nome" class="field" [(ngModel)]="contaForm.nome" required maxlength="120" /></div>
@@ -75,9 +75,19 @@
         <div><label class="label" for="dataSaldo">Data do saldo inicial</label><app-campo-data idCampo="dataSaldo" name="dataSaldo" [(ngModel)]="contaForm.dataSaldoInicial" [max]="hoje" required /></div>
         <p class="text-xs text-slate-500">Informe o saldo antes das primeiras baixas. Saldo e data inicial ficam protegidos depois do primeiro lançamento.</p>
         <label class="flex gap-2"><input type="checkbox" name="ativo" [(ngModel)]="contaForm.ativo" /> Conta ativa</label>
-      } @else if (modal === 'categoria') {
-        <div><label class="label" for="nomeCategoria">Nome da categoria</label><input id="nomeCategoria" name="nome" class="field" [(ngModel)]="categoriaForm.nome" required maxlength="120" /></div>
-        <label class="flex gap-2"><input type="checkbox" name="ativo" [(ngModel)]="categoriaForm.ativo" /> Categoria ativa</label>
+      } @else if (modal === 'grupo') {
+        <div><label class="label" for="nomeGrupo">Nome do grupo</label><input id="nomeGrupo" name="nome" class="field" [(ngModel)]="categoriaForm.nome" required maxlength="120" placeholder="Ex.: Despesas fixas" /></div>
+        <div><label class="label" for="tipoGrupo">Tipo</label>
+          <select id="tipoGrupo" name="tipo" class="field" [(ngModel)]="categoriaForm.tipo" [disabled]="tipoTravado"><option value="DESPESA">{{ rotuloTipo.DESPESA }}</option><option value="RECEITA">{{ rotuloTipo.RECEITA }}</option></select>
+          @if (tipoTravado) { <p class="mt-1 text-xs text-slate-500">O tipo não muda enquanto o grupo tiver contas contábeis.</p> }</div>
+        <label class="flex gap-2"><input type="checkbox" name="ativo" [(ngModel)]="categoriaForm.ativo" /> Grupo ativo</label>
+      } @else if (modal === 'contaContabil') {
+        <div><label class="label" for="grupoConta">Grupo</label>
+          <select id="grupoConta" name="grupo" class="field" [(ngModel)]="categoriaForm.grupoId" (ngModelChange)="trocouGrupo()" required><option value="">Selecione</option>
+            @for (tipo of ['DESPESA', 'RECEITA']; track tipo) { <optgroup [label]="rotuloTipo[tipo === 'DESPESA' ? 'DESPESA' : 'RECEITA']">@for (g of gruposDoTipo(tipo === 'DESPESA' ? 'DESPESA' : 'RECEITA'); track g.id) { <option [value]="g.id">{{ g.nome }}{{ g.ativo ? '' : ' (inativo)' }}</option> }</optgroup> }
+          </select></div>
+        <div><label class="label" for="nomeContaContabil">Nome da conta contábil</label><input id="nomeContaContabil" name="nome" class="field" [(ngModel)]="categoriaForm.nome" required maxlength="120" placeholder="Ex.: Energia elétrica" /></div>
+        <label class="flex gap-2"><input type="checkbox" name="ativo" [(ngModel)]="categoriaForm.ativo" /> Conta contábil ativa</label>
       } @else {
         <p>{{ baixando?.descricao }} · {{ baixando?.valor | currency:'BRL' }}</p>
         <div><label class="label" for="dataPagamento">Data do pagamento / recebimento</label><app-campo-data idCampo="dataPagamento" name="dataPagamento" [(ngModel)]="dataPagamento" [max]="hoje" required /></div>

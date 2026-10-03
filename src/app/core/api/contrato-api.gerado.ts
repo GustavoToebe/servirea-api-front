@@ -808,13 +808,18 @@ export interface FinanceiroDtos_BaixaRequest {
 
 export interface FinanceiroDtos_CategoriaRequest {
   ativo: boolean;
+  grupoId?: string | null;
   nome?: string | null;
+  tipo?: MovimentoFinanceiro_Tipo | null;
 }
 
 export interface FinanceiroDtos_CategoriaResponse {
   ativo: boolean;
+  ehGrupo: boolean;
+  grupoId?: string | null;
   id?: string | null;
   nome?: string | null;
+  tipo?: MovimentoFinanceiro_Tipo | null;
 }
 
 export interface FinanceiroDtos_ContaRequest {

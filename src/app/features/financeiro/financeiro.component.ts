@@ -1,4 +1,4 @@
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
@@ -12,14 +12,15 @@ import { RodapeFormComponent } from '../../shared/components/rodape-form/rodape-
 import { DialogoService } from '../../shared/services/dialogo.service';
 import { focarPrimeiroInvalido } from '../../shared/utils/foco';
 import { FinanceiroApiService } from './financeiro-api.service';
-import { Categoria, Conta, Filtros, Movimento, MovimentoRequest, Resumo } from './financeiro.models';
+import { PlanoContasListaComponent } from './plano-contas-lista.component';
+import { Categoria, CategoriaRequest, Conta, Filtros, Movimento, MovimentoRequest, ROTULO_TIPO, Resumo, Tipo } from './financeiro.models';
 
 function hojeLocal(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 }
 @Component({
   selector: 'app-financeiro', standalone: true, changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, CommonModule, FormsModule, CabecalhoPaginaComponent, BarraFiltrosComponent, EstadoListaComponent, CampoDataComponent, ModalComponent, RodapeFormComponent],
+  imports: [RouterLink, CommonModule, FormsModule, CabecalhoPaginaComponent, BarraFiltrosComponent, EstadoListaComponent, CampoDataComponent, ModalComponent, RodapeFormComponent, PlanoContasListaComponent],
   templateUrl: './financeiro.component.html', styleUrl: './financeiro.component.scss'
 })
 export class FinanceiroComponent implements OnInit, OnDestroy {
@@ -28,18 +29,25 @@ export class FinanceiroComponent implements OnInit, OnDestroy {
   private readonly cd = inject(ChangeDetectorRef);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly dialogo = inject(DialogoService);
+  private readonly rota = inject(ActivatedRoute);
+  private readonly roteador = inject(Router);
   @ViewChild('formulario') formulario?: NgForm;
   readonly hoje = hojeLocal();
-  aba: 'movimentos' | 'contas' | 'categorias' = 'movimentos';
+  /** Abas por endereço: /financeiro?aba=plano-de-contas abre direto o plano de contas. */
+  private static readonly ABAS: Record<string, 'movimentos' | 'contas' | 'plano'> = { lancamentos: 'movimentos', contas: 'contas', 'plano-de-contas': 'plano' };
+  aba: 'movimentos' | 'contas' | 'plano' = FinanceiroComponent.ABAS[this.rota.snapshot.queryParamMap.get('aba') ?? ''] ?? 'movimentos';
+  readonly rotuloTipo = ROTULO_TIPO;
   filtro: Filtros = { de: this.hoje.slice(0, 7) + '-01', ate: this.hoje, nome: '', contaId: '', categoriaId: '', situacao: '', tipo: '', pagina: 0, tamanho: 30 };
   contas: Conta[] = []; categorias: Categoria[] = []; movimentos: Movimento[] = [];
-  contasAtivas: Conta[] = []; categoriasAtivas: Categoria[] = [];
+  contasAtivas: Conta[] = []; contasContabeisAtivas: Categoria[] = [];
   total = 0; resumo: Resumo | null = null;
   carregando = false; salvando = false; erro = '';
-  modal: 'movimento' | 'conta' | 'categoria' | 'baixa' | null = null;
+  modal: 'movimento' | 'conta' | 'grupo' | 'contaContabil' | 'baixa' | null = null;
   editandoId: string | null = null; baixando: Movimento | null = null; dataPagamento = this.hoje;
   contaForm: Omit<Conta, 'id'> = { nome: '', saldoInicial: 0, dataSaldoInicial: this.hoje, ativo: true };
-  categoriaForm: Omit<Categoria, 'id'> = { nome: '', ativo: true };
+  categoriaForm: CategoriaRequest = { nome: '', ativo: true, tipo: 'DESPESA', grupoId: null };
+  /** Grupo (ou tipo, no grupo novo) fixo na edição: o tipo não muda enquanto houver contas ou lançamentos. */
+  tipoTravado = false;
   movimentoForm: MovimentoRequest = this.novoMovimento();
   private geracao = 0; private destruido = false; private debounce?: ReturnType<typeof setTimeout>;
   ngOnInit() { void this.carregar(); }
@@ -55,7 +63,8 @@ export class FinanceiroComponent implements OnInit, OnDestroy {
       const [contas, categorias, pagina, resumo] = await Promise.all([this.api.contas(), this.api.categorias(), this.api.listar(f), this.api.resumo(f.de, f.ate)]);
       if (this.destruido || geracao !== this.geracao) return;
       this.contas = contas; this.categorias = categorias;
-      this.contasAtivas = contas.filter(c => c.ativo); this.categoriasAtivas = categorias.filter(c => c.ativo);
+      this.contasAtivas = contas.filter(c => c.ativo);
+      this.contasContabeisAtivas = categorias.filter(c => !c.ehGrupo && c.ativo && categorias.find(g => g.id === c.grupoId)?.ativo);
       this.movimentos = pagina.itens; this.total = pagina.total; this.resumo = resumo;
     } catch (e) {
       if (geracao === this.geracao) { this.erro = (e as Error).message; this.movimentos = []; this.resumo = null; this.total = 0; }
@@ -76,9 +85,43 @@ export class FinanceiroComponent implements OnInit, OnDestroy {
     this.contaForm = c ? { nome: c.nome, saldoInicial: c.saldoInicial, dataSaldoInicial: c.dataSaldoInicial, ativo: c.ativo } : { nome: '', saldoInicial: 0, dataSaldoInicial: this.hoje, ativo: true };
     this.modal = 'conta';
   }
-  abrirCategoria(c?: Categoria) {
+  /** Grupo: organiza o plano de contas. Sem `grupo`, é novo (com o tipo escolhido). */
+  abrirGrupo(grupo?: Categoria, tipo: Tipo = 'DESPESA') {
     if (!this.pode('FINANCEIRO_CONFIGURAR')) return;
-    this.editandoId = c?.id ?? null; this.categoriaForm = { nome: c?.nome ?? '', ativo: c?.ativo ?? true }; this.modal = 'categoria';
+    this.editandoId = grupo?.id ?? null;
+    this.categoriaForm = { nome: grupo?.nome ?? '', ativo: grupo?.ativo ?? true, tipo: grupo?.tipo ?? tipo, grupoId: null };
+    this.tipoTravado = !!grupo && this.categorias.some(c => c.grupoId === grupo.id);
+    this.modal = 'grupo';
+  }
+  /** Conta contábil: recebe lançamentos. `grupo` pré-seleciona o grupo; `conta` edita uma existente. */
+  abrirContaContabil(conta?: Categoria, grupo?: Categoria) {
+    if (!this.pode('FINANCEIRO_CONFIGURAR')) return;
+    const grupoId = conta?.grupoId ?? grupo?.id ?? '';
+    this.editandoId = conta?.id ?? null;
+    this.categoriaForm = { nome: conta?.nome ?? '', ativo: conta?.ativo ?? true, tipo: this.categorias.find(g => g.id === grupoId)?.tipo ?? 'DESPESA', grupoId };
+    this.modal = 'contaContabil';
+  }
+  get grupos() { return this.categorias.filter(c => c.ehGrupo); }
+  gruposDoTipo(tipo: Tipo) { return this.grupos.filter(g => g.tipo === tipo).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')); }
+  /** O tipo da conta contábil é o do grupo escolhido. */
+  trocouGrupo() { this.categoriaForm.tipo = this.categorias.find(g => g.id === this.categoriaForm.grupoId)?.tipo ?? this.categoriaForm.tipo; }
+  /** Contas contábeis que aceitam lançamento do tipo informado (entrada ou saída), agrupadas pelo grupo no select. */
+  contasParaLancamento(tipo: Tipo) {
+    return this.gruposDoTipo(tipo).map(grupo => ({ grupo, contas: this.contasContabeisAtivas.filter(c => c.grupoId === grupo.id).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')) })).filter(g => g.contas.length);
+  }
+  trocouTipoLancamento() {
+    if (!this.contasContabeisAtivas.some(c => c.id === this.movimentoForm.categoriaId && c.tipo === this.movimentoForm.tipo)) this.movimentoForm.categoriaId = '';
+  }
+  /** "Grupo › Conta" para a lista de lançamentos. */
+  rotuloContaContabil(id: string) {
+    const c = this.categorias.find(x => x.id === id);
+    const g = c?.grupoId ? this.categorias.find(x => x.id === c.grupoId) : null;
+    return c ? (g ? `${g.nome} › ${c.nome}` : c.nome) : '';
+  }
+  mudarAba(aba: 'movimentos' | 'contas' | 'plano') {
+    this.aba = aba; this.cd.markForCheck();
+    const nome = Object.entries(FinanceiroComponent.ABAS).find(([, v]) => v === aba)?.[0];
+    void this.roteador.navigate([], { relativeTo: this.rota, queryParams: { aba: nome }, replaceUrl: true });
   }
   abrirBaixa(m: Movimento) { if (!this.pode('FINANCEIRO_BAIXAR')) return; this.baixando = m; this.dataPagamento = this.hoje; this.modal = 'baixa'; }
   async fechar() {
@@ -93,7 +136,7 @@ export class FinanceiroComponent implements OnInit, OnDestroy {
     try {
       switch (this.modal) {
         case 'conta': await this.api.salvarConta(this.editandoId, this.contaForm); break;
-        case 'categoria': await this.api.salvarCategoria(this.editandoId, this.categoriaForm); break;
+        case 'grupo': case 'contaContabil': await this.api.salvarCategoria(this.editandoId, { ...this.categoriaForm, grupoId: this.modal === 'grupo' ? null : this.categoriaForm.grupoId }); break;
         case 'movimento': await this.api.salvarMovimento(this.editandoId, this.movimentoForm); break;
         case 'baixa': if (this.baixando) await this.api.baixar(this.baixando, this.dataPagamento); break;
       }
