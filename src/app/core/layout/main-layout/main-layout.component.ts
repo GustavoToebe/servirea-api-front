@@ -2,13 +2,18 @@ import { Component, inject, OnInit, HostListener } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { AuthService } from '../../auth/auth.service';
-import { BARRA, CONTA, montarMenu, podeVer } from '../menu';
+import { BARRA, CONTA, ItemMenu, montarMenu, podeVer } from '../menu';
+import { BuscaGlobalComponent } from '../busca-global.component';
+import { FavoritosService } from '../favoritos.service';
+import { MegaMenuComponent } from '../mega-menu.component';
+import { NavegacaoContextualComponent } from '../navegacao-contextual.component';
+import { SECAO_DA_URL, SECOES, SecaoId, telasVisiveis } from '../navegacao';
 import { SessaoAtual } from '../sessao-atual';
 import { FuncionalidadesPlanoComponent } from '../../plano/funcionalidades-plano.component';
 
 @Component({
     selector: 'app-main-layout',
-    imports: [RouterOutlet, RouterLink, RouterLinkActive, NgClass, FuncionalidadesPlanoComponent],
+    imports: [RouterOutlet, RouterLink, RouterLinkActive, NgClass, FuncionalidadesPlanoComponent, BuscaGlobalComponent, MegaMenuComponent, NavegacaoContextualComponent],
     template: `
     <div class="parish min-h-screen bg-app lg:flex">
       <aside class="fixed inset-y-0 left-0 z-40 hidden flex-col overflow-x-hidden bg-brand-navy text-white lg:flex transition-[width] duration-200" [ngClass]="recolhido ? 'w-20' : 'w-72'">
@@ -24,44 +29,64 @@ import { FuncionalidadesPlanoComponent } from '../../plano/funcionalidades-plano
 
         <div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto [scrollbar-color:rgba(255,255,255,0.35)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/30">
         <nav class="space-y-1 p-4" data-menu="lateral">
-          @for (item of menu().barra; track item.url) {
-            <a [routerLink]="item.url"
-              [title]="recolhido ? item.label : ''"
-              class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-violet-100/80 hover:bg-white/10 hover:text-white"
-              [ngClass]="(recolhido ? 'justify-center px-0 ' : '') + (itemAtivo() === item.url ? '!bg-brand-blue !text-white' : '')">
-              <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                @switch (item.url) {
-                  @case ('/dashboard') { <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/> }
-                  @case ('/escalas') { <rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/> }
-                  @case ('/pessoas') { <path d="M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1"/><circle cx="9.5" cy="8" r="3"/><path d="M20 19v-1a3.5 3.5 0 0 0-2.5-3.35M16.5 5.1a3 3 0 0 1 0 5.8"/> }
-                  @case ('/relatorios') { <path d="M5 19V9M10 19V5M15 19v-7M20 19V8"/> }
-                  @case ('/layouts') { <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/> }
-                  @case ('/comunicados') { <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/> }
-                  @case ('/financeiro') { <path d="M4 7h16m-4-4 4 4-4 4M20 17H4m4-4-4 4 4 4"/> }
-                  @case ('/eventos') { <rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/><path d="m9 15 2 2 4-4"/> }
-                  @case ('/paroquia') { <path d="M18 21v-8M6 21v-8M12 21v-4"/><path d="M3 9l9-6 9 6v12H3V9z"/> }
-                  @case ('/perfis') { <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/> }
-                  @case ('/usuarios') { <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/> }
-                  @case ('/entregas') { <path d="M22 2 11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/> }
-                  @case ('/portal/dependentes') { <path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/> }
-                  @case ('/portal') { <path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/> }
-                  @case ('/minhas-pastorais') { <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/> }
-                  @case ('/pastorais') { <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/> }
-                  @case ('/usuarios/vinculos') { <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/> }
-                  @case ('/mural') { <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/> }
-                  @case ('/tarefas') { <path d="M9 6h11M9 12h11M9 18h11"/><path d="m3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/> }
-                  @case ('/liturgia') { <path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/> }
-                  @case ('/indicadores') { <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/> }
-                  @case ('/estoque') { <path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3.3 7.5 12 12.5l8.7-5M12 22V12.5"/> }
-                  @case ('/aniversarios') { <polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/> }
-                  @case ('/site-paroquia') { <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/> }
-                  @case ('/privacidade') { <rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/> }
-                  @case ('/primeiros-passos') { <path d="M5 21V4M5 4h11l-2 4 2 4H5"/> }
-                  @case ('/ajuda') { <circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/> }
-                }
-              </svg>
-              @if (!recolhido) { <span>{{ item.label }}</span> }
-            </a>
+          @if (!recolhido && favoritosDoMenu().length) {
+            <div class="px-4 pb-1 pt-1 text-[10px] font-extrabold uppercase tracking-widest text-violet-200/60">Favoritos</div>
+            @for (f of favoritosDoMenu(); track f.id) {
+              <a [routerLink]="[f.url]" [queryParams]="f.consulta" class="flex items-center gap-3 rounded-xl px-4 py-2 text-sm font-semibold text-violet-100/80 hover:bg-white/10 hover:text-white" data-favorito>
+                <span class="text-amber-300" aria-hidden="true">★</span><span class="truncate">{{ f.rotulo }}</span>
+              </a>
+            }
+            <div class="mx-4 my-2 border-t border-white/10"></div>
+          }
+          @for (grupo of grupos(); track grupo.secao.id) {
+            @if (!recolhido && grupo.itens.length > 1) {
+              <button type="button" class="mt-2 flex w-full items-center justify-between rounded-xl px-4 py-2 text-left text-[11px] font-extrabold uppercase tracking-widest text-violet-200/70 hover:bg-white/5 hover:text-white"
+                [attr.aria-expanded]="secaoAberta(grupo.secao.id)" (click)="alternarSecao(grupo.secao.id)" data-secao-menu>
+                <span>{{ grupo.secao.titulo }}</span><span aria-hidden="true">{{ secaoAberta(grupo.secao.id) ? '▾' : '▸' }}</span>
+              </button>
+            }
+            @if (recolhido || grupo.itens.length === 1 || secaoAberta(grupo.secao.id)) {
+              @for (item of grupo.itens; track item.url) {
+              <a [routerLink]="item.url"
+                [title]="recolhido ? item.label : ''"
+                class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-violet-100/80 hover:bg-white/10 hover:text-white"
+                [ngClass]="(recolhido ? 'justify-center px-0 ' : '') + (itemAtivo() === item.url ? '!bg-brand-blue !text-white' : '')">
+                <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  @switch (item.url) {
+                    @case ('/dashboard') { <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/> }
+                    @case ('/escalas') { <rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/> }
+                    @case ('/pessoas') { <path d="M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1"/><circle cx="9.5" cy="8" r="3"/><path d="M20 19v-1a3.5 3.5 0 0 0-2.5-3.35M16.5 5.1a3 3 0 0 1 0 5.8"/> }
+                    @case ('/relatorios') { <path d="M5 19V9M10 19V5M15 19v-7M20 19V8"/> }
+                    @case ('/layouts') { <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/> }
+                    @case ('/comunicados') { <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/> }
+                    @case ('/financeiro') { <path d="M4 7h16m-4-4 4 4-4 4M20 17H4m4-4-4 4 4 4"/> }
+                    @case ('/eventos') { <rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/><path d="m9 15 2 2 4-4"/> }
+                    @case ('/paroquia') { <path d="M18 21v-8M6 21v-8M12 21v-4"/><path d="M3 9l9-6 9 6v12H3V9z"/> }
+                    @case ('/perfis') { <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/> }
+                    @case ('/usuarios') { <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/> }
+                    @case ('/entregas') { <path d="M22 2 11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/> }
+                    @case ('/portal/dependentes') { <path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/> }
+                    @case ('/portal') { <path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/> }
+                    @case ('/minhas-pastorais') { <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/> }
+                    @case ('/pastorais') { <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/> }
+                    @case ('/usuarios/vinculos') { <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/> }
+                    @case ('/mural') { <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/> }
+                    @case ('/tarefas') { <path d="M9 6h11M9 12h11M9 18h11"/><path d="m3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/> }
+                    @case ('/liturgia') { <path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/> }
+                    @case ('/indicadores') { <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/> }
+                    @case ('/estoque') { <path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3.3 7.5 12 12.5l8.7-5M12 22V12.5"/> }
+                    @case ('/aniversarios') { <polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/> }
+                    @case ('/site-paroquia') { <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/> }
+                    @case ('/privacidade') { <rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/> }
+                    @case ('/primeiros-passos') { <path d="M5 21V4M5 4h11l-2 4 2 4H5"/> }
+                    @case ('/ajuda') { <circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/> }
+                  }
+                </svg>
+                @if (!recolhido) { <span>{{ item.label }}</span> }
+              </a>
+
+              }
+            }
           }
         </nav>
         </div>
@@ -82,7 +107,12 @@ import { FuncionalidadesPlanoComponent } from '../../plano/funcionalidades-plano
               <div class="font-extrabold leading-tight text-brand-ink">{{ titulo() }}</div>
             </div>
           </div>
+          <div class="mx-4 hidden max-w-md flex-1 md:block"><app-busca-global [telas]="telas()" /></div>
           <div class="flex items-center gap-3 relative">
+            <button type="button" class="flex items-center gap-2 rounded-xl border border-[#E7E4F5] px-3 py-2 text-sm font-semibold text-slate-600 hover:border-brand-blue hover:text-brand-blue" aria-label="Abrir todas as telas" (click)="megaAberto = true" data-menu="completo">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+              <span class="hidden xl:inline">Todas as telas</span>
+            </button>
             <button type="button" id="perfil-menu" class="text-right flex items-center gap-3 cursor-pointer p-1 rounded-xl hover:bg-slate-100 transition"
               aria-haspopup="menu" [attr.aria-expanded]="usuarioAberto" (click)="usuarioAberto = !usuarioAberto">
               <div>
@@ -117,12 +147,13 @@ import { FuncionalidadesPlanoComponent } from '../../plano/funcionalidades-plano
             }
           </div>
         </header>
-        <section class="p-4 pb-24 md:p-6 lg:pb-8"><app-funcionalidades-plano [contextual]="true"/><router-outlet /></section>
+        <section class="p-4 pb-24 md:p-6 lg:pb-8"><app-navegacao-contextual [telas]="telas()" (verTodas)="megaAberto = true" /><app-funcionalidades-plano [contextual]="true"/><router-outlet /></section>
       </main>
 
       @if (maisAberto) {
         <button type="button" class="fixed inset-0 z-30 bg-black/40 lg:hidden" aria-label="Fechar menu" (click)="maisAberto = false"></button>
         <div class="fixed inset-x-0 bottom-16 z-40 rounded-t-3xl bg-white p-3 shadow-xl lg:hidden" data-menu="folha" role="dialog" aria-label="Mais">
+          <button type="button" class="mb-1 block w-full rounded-2xl bg-violet-50 px-4 py-3 text-left text-sm font-extrabold text-brand-blue" (click)="maisAberto = false; megaAberto = true" data-menu="completo-celular">Todas as telas e pesquisa</button>
           @for (item of mobileMais(); track item.url) {
             <a [routerLink]="item.url" (click)="maisAberto = false"
               class="block rounded-2xl px-4 py-3 text-sm font-extrabold text-brand-ink hover:bg-violet-50">
@@ -170,6 +201,7 @@ import { FuncionalidadesPlanoComponent } from '../../plano/funcionalidades-plano
           </button>
         </div>
       </nav>
+      @if (megaAberto) { <app-mega-menu [telas]="telas()" (fechar)="megaAberto = false" /> }
     </div>
     `
 })
@@ -183,8 +215,12 @@ export class MainLayoutComponent implements OnInit {
   private router = inject(Router);
   sessao = inject(SessaoAtual);
 
+  protected readonly favoritos = inject(FavoritosService);
   maisAberto = false;
   usuarioAberto = false;
+  megaAberto = false;
+  /** Seções recolhidas ou abertas à mão pelo usuário. */
+  private secoesManuais: Record<string, boolean> = {};
 
   recolhido = false;
 
@@ -205,6 +241,19 @@ export class MainLayoutComponent implements OnInit {
   menu() {
     return montarMenu(this.sessao.permissoes());
   }
+
+  telas() { return telasVisiveis(this.sessao.permissoes()); }
+
+  /** Itens do menu lateral agrupados por seção, na ordem das seções. */
+  grupos() {
+    const itens = this.menu().barra;
+    return SECOES.map(secao => ({ secao, itens: itens.filter((i: ItemMenu) => (SECAO_DA_URL[i.url] ?? 'inicio') === secao.id) })).filter(g => g.itens.length);
+  }
+
+  /** Todas as seções começam abertas; quem quer menos itens recolhe as que não usa (vale até recarregar). */
+  secaoAberta(id: SecaoId) { return this.secoesManuais[id] ?? true; }
+  alternarSecao(id: SecaoId) { this.secoesManuais = { ...this.secoesManuais, [id]: !this.secaoAberta(id) }; }
+  favoritosDoMenu() { const ids = this.favoritos.ids(); return this.telas().filter(t => ids.includes(t.id)); }
 
   mobileBarra() {
     return this.menu().barra.slice(0, 4);
