@@ -1,5 +1,5 @@
 <div class="space-y-5">
-<app-cabecalho-pagina titulo="Estoque e patrimônio" subtitulo="Itens, saldo e histórico. Entrada/saída não é lançamento financeiro.">
+<app-cabecalho-pagina titulo="Estoque e patrimônio" [exportacao]="dadosExportacao" [exportacaoOcupada]="carregando() || ocupado()" subtitulo="Itens, saldo e histórico. Entrada/saída não é lançamento financeiro.">
 <div acoes>@if(pode('ESTOQUE_EDITAR')){<button class="btn-primary" [disabled]="ocupado()" (click)="abrir()">Novo item</button>}</div>
 </app-cabecalho-pagina>
 @if(erro()){<p role="alert" class="card p-4 text-red-700">{{erro()}}</p>}

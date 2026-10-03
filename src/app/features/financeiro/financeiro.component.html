@@ -1,5 +1,5 @@
 <div class="space-y-5">
-  <app-cabecalho-pagina titulo="Financeiro" subtitulo="Entradas, saídas, contas e visão dos recursos da paróquia." icone="⇄">
+  <app-cabecalho-pagina titulo="Financeiro" [exportacao]="dadosExportacao" [exportacaoOcupada]="carregando" subtitulo="Entradas, saídas, contas e visão dos recursos da paróquia." icone="⇄">
     <div acoes>
       @if (aba === 'movimentos' && pode('FINANCEIRO_CRIAR')) { <button class="btn-primary" (click)="abrirMovimento()" [disabled]="carregando || !contasAtivas.length || !contasContabeisAtivas.length">Novo lançamento</button> }
       @if (aba === 'plano' && pode('FINANCEIRO_CONFIGURAR')) { <button class="btn-secondary" (click)="abrirGrupo()">Novo grupo</button><button class="btn-primary" (click)="abrirContaContabil()" [disabled]="!grupos.length">Nova conta contábil</button> }

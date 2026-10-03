@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { coletarExportacao } from '../../../shared/utils/coletar-exportacao';
+import { exportarTabela, FormatoExportacao } from '../../../shared/utils/exportacao-tabela';
 import { CabecalhoPaginaComponent } from '../../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
 import { SessaoAtual } from '../../../core/layout/sessao-atual';
 import { EventosApiService } from '../eventos-api.service';
@@ -9,7 +12,7 @@ import { EventoResumo, SITUACAO_EVENTO, rotuloQuando } from '../eventos.models';
 /** Eventos da paróquia: próximos primeiro (do mais perto ao mais longe), depois os passados e cancelados. */
 @Component({
   selector: 'app-eventos-list',
-  imports: [NgTemplateOutlet, RouterLink, CabecalhoPaginaComponent],
+  imports: [NgTemplateOutlet, RouterLink, FormsModule, CabecalhoPaginaComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-6">
@@ -18,6 +21,7 @@ import { EventoResumo, SITUACAO_EVENTO, rotuloQuando } from '../eventos.models';
         @if (podeCriar()) {
           <a acoes routerLink="/eventos/novo" class="btn-primary" data-acao="novo">＋ Novo evento</a>
         }
+        <div acoes class="flex items-center gap-2"><select class="field !w-auto" aria-label="Formato da listagem" [(ngModel)]="formatoExportacao"><option value="xlsx">Excel (XLSX)</option><option value="csv">CSV</option><option value="json">JSON</option><option value="pdf">PDF</option><option value="png">Imagem</option></select><button type="button" class="btn-secondary" [disabled]="carregando() || exportando()" (click)="exportar()">{{exportando() ? 'Preparando...' : 'Exportar eventos'}}</button></div>
       </app-cabecalho-pagina>
 
       @if (erro(); as mensagem) {
@@ -78,6 +82,18 @@ import { EventoResumo, SITUACAO_EVENTO, rotuloQuando } from '../eventos.models';
   `
 })
 export class EventosListComponent implements OnInit, OnDestroy {
+  formatoExportacao: FormatoExportacao = 'xlsx';
+  readonly exportando = signal(false);
+  private destruido = false;
+  async exportar() {
+    if (this.carregando() || this.exportando()) return;
+    this.exportando.set(true); this.erro.set(null);
+    try {
+      const itens = await coletarExportacao(p => this.api.pagina(p), () => !this.destruido);
+      await exportarTabela({ nome: 'eventos', titulo: 'Servirea · Eventos', colunas: ['Título', 'Início', 'Local', 'Situação', 'Inscritos', 'Vagas'], linhas: itens.map(e => [e.titulo, this.quando(e.inicio), e.localNome ?? '', this.texto(e), e.inscritos, e.vagas ?? null]) }, this.formatoExportacao, () => !this.destruido);
+    } catch (e) { if (!this.destruido) this.erro.set(e instanceof Error ? e.message : 'Não foi possível exportar.'); }
+    finally { if (!this.destruido) this.exportando.set(false); }
+  }
   private api = inject(EventosApiService);
   private sessao = inject(SessaoAtual);
 
@@ -112,7 +128,7 @@ export class EventosListComponent implements OnInit, OnDestroy {
     if(this.carregando() || destino<0 || destino>=this.paginas())return;
     this.pagina.set(destino);await this.carregar();
   }
-  ngOnDestroy(): void {this.pedido++;}
+  ngOnDestroy(): void {this.destruido=true;this.pedido++;}
 
   readonly quando = rotuloQuando;
 

@@ -464,6 +464,9 @@ export class EscalaBuilderComponent implements OnInit, HasPendingChanges {
 
   async exportPdf(){if(!this.id)return;try{await this.exporter.exportPdf(await this.service.getById(this.id), this.orientacao);}catch(e:any){this.error=e?.message||'Erro ao exportar PDF.';}}
   async exportPng(){if(!this.id)return;try{await this.exporter.exportPng(await this.service.getById(this.id), this.orientacao);}catch(e:any){this.error=e?.message||'Erro ao exportar PNG.';}}
+  formatoDados: 'csv' | 'json' | 'xlsx' = 'xlsx';
+  exportandoDados = false;
+  async exportDados(){if(!this.id || this.exportandoDados)return;this.exportandoDados=true;try{await this.exporter.exportDados(await this.service.getById(this.id),this.formatoDados);}catch(e:any){this.error=e?.message||'Erro ao exportar dados.';}finally{this.exportandoDados=false;}}
 
   /** Referência (escala replicada) não conta em vagas: nunca é publicada. Lê o que `recalcular` já contou. */
   totalSlots(){return this.total;}

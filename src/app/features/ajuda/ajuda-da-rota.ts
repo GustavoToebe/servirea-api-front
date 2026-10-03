@@ -24,7 +24,7 @@ const REGRAS: readonly (readonly [string, string])[] = [
   ['/mural', 'mural'],
   ['/tarefas', 'tarefas'],
   ['/aniversarios', 'aniversarios'],
-  ['/contas-bancarias', 'financeiro'],
+  ['/contas-bancarias', 'contas-bancarias'],
   ['/financeiro', 'financeiro'],
   ['/pastorais', 'pastorais'],
   ['/minhas-pastorais', 'pastorais'],

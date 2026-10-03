@@ -1,5 +1,5 @@
 <div class="space-y-5">
-<app-cabecalho-pagina titulo="Referências e roteiros litúrgicos" subtitulo="Conteúdo informado e revisado pela equipe. A sequência é manual; não há conteúdo litúrgico gerado.">
+<app-cabecalho-pagina titulo="Referências e roteiros litúrgicos" [exportacao]="dadosExportacao" [exportacaoOcupada]="carregando() || ocupado()" subtitulo="Conteúdo informado e revisado pela equipe. A sequência é manual; não há conteúdo litúrgico gerado.">
 <div acoes>@if(podeEditar()){<button class="btn-primary" [disabled]="ocupado()" (click)="aba==='referencias'?abrirReferencia():abrirRoteiro()">Novo registro</button>}</div>
 </app-cabecalho-pagina>
 <div class="flex gap-2">

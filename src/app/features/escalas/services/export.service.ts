@@ -6,6 +6,12 @@ import { ColunaEscala, EscalaDetalhe, EscalaEvento, MESES, resolverTags, textosD
 import { FuncaoEscala } from '../../voluntarios/models/voluntario.model';
 import { Orientacao } from '../../../shared/export/orientacao';
 import { coresDaFolha } from '../../../shared/export/cores-folha';
+import { exportarTabela, FormatoExportacao, TabelaExportacao } from '../../../shared/utils/exportacao-tabela';
+
+export function tabelaEscala(escala: EscalaDetalhe): TabelaExportacao {
+  const linhas = escala.eventos.filter(e => !e.referencia).flatMap(e => e.vagas.map(v => [e.data, e.horario, e.celebracao, v.funcao, v.posicao, v.voluntario?.nome_completo ?? '', v.presenca ?? 'PENDENTE']));
+  return { nome: `escala-${escala.ano}-${String(escala.mes).padStart(2, '0')}`, titulo: escala.titulo, contexto: `${MESES[escala.mes - 1]} ${escala.ano} · ${escala.status}`, colunas: ['Data', 'Horário', 'Celebração', 'Função', 'Posição', 'Pessoa', 'Presença'], linhas };
+}
 
 const AGNOMES = new Set(['neto', 'filho', 'junior', 'júnior', 'sobrinho']);
 
@@ -24,6 +30,10 @@ export function nomeCurto(completo: string): string {
 @Injectable({ providedIn: 'root' })
 export class ExportService {
   private auth = inject(AuthService);
+
+  async exportDados(escala: EscalaDetalhe, formato: FormatoExportacao) {
+    await exportarTabela(tabelaEscala(escala), formato);
+  }
 
   async exportPdf(escala: EscalaDetalhe, orientacao: Orientacao = 'PAISAGEM') {
     const canvas = await this.renderCanvas(escala, orientacao);

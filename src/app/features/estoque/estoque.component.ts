@@ -1,7 +1,9 @@
 import { Component, ChangeDetectionStrategy, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
+import { coletarExportacao } from '../../shared/utils/coletar-exportacao';
+import { TabelaExportacao } from '../../shared/utils/exportacao-tabela';
 import { SessaoAtual } from '../../core/layout/sessao-atual';
 import { mensagemApi } from '../../core/api/api-error';
 import { DialogoService } from '../../shared/services/dialogo.service';
@@ -12,6 +14,16 @@ import { RodapeFormComponent } from '../../shared/components/rodape-form/rodape-
 import { EstoqueApiService, ItemEstoque, MovimentoEstoque, MovimentarEstoque } from './estoque-api.service';
 @Component({ selector: 'app-estoque', imports: [CommonModule, FormsModule, CabecalhoPaginaComponent, BarraFiltrosComponent, EstadoListaComponent, RodapeFormComponent], changeDetection: ChangeDetectionStrategy.OnPush, templateUrl: './estoque.component.html' })
 export class EstoqueComponent implements OnInit, OnDestroy {
+    private buscaExportacao = '';
+    readonly dadosExportacao = async (): Promise<TabelaExportacao> => {
+      const item = this.atual(), busca = this.buscaExportacao;
+      if (item) {
+        const itens = await coletarExportacao(p => firstValueFrom(this.api.historico(item.id, p)), () => !this.destruido);
+        return { nome: 'historico-estoque', titulo: `Servirea · ${item.nome}`, colunas: ['Data', 'Tipo', 'Quantidade', 'Saldo anterior', 'Saldo posterior', 'Motivo', 'Responsável'], linhas: itens.map(m => [m.registradoEm, m.tipo, m.quantidade, m.saldoAntes, m.saldoDepois, m.motivo, m.responsavelNome ?? '']) };
+      }
+      const itens = await coletarExportacao(p => firstValueFrom(this.api.listar(busca, p)), () => !this.destruido);
+      return { nome: 'estoque-patrimonio', titulo: 'Servirea · Estoque e patrimônio', contexto: `Busca: ${busca || 'todos'}`, colunas: ['Código', 'Nome', 'Tipo', 'Unidade', 'Local', 'Responsável', 'Saldo', 'Situação'], linhas: itens.map(i => [i.codigo, i.nome, i.tipo, i.unidade, i.local, i.responsavelNome ?? '', i.saldo, i.ativo ? 'Ativo' : 'Inativo']) };
+    };
     private readonly api = inject(EstoqueApiService);
     private readonly sessao = inject(SessaoAtual);
     private readonly dialogo = inject(DialogoService);
@@ -45,7 +57,7 @@ export class EstoqueComponent implements OnInit, OnDestroy {
     ngOnInit() { this.carregar(); }
     pode(c: string) { return this.sessao.permissoes().includes(c); }
     hasPendingChanges() { return this.alterado(); }
-    carregar() { this.leitura?.unsubscribe(); this.carregando.set(true); this.erro.set(''); this.leitura = this.api.listar(this.busca, this.pagina).subscribe({ next: r => { this.itens.set(r.itens); this.total.set(r.total); this.carregando.set(false); }, error: e => { this.itens.set([]); this.total.set(0); this.carregando.set(false); this.erro.set(mensagemApi(e, 'Não foi possível consultar estoque.')); } }); }
+    carregar() { this.buscaExportacao = this.busca; this.leitura?.unsubscribe(); this.carregando.set(true); this.erro.set(''); this.leitura = this.api.listar(this.busca, this.pagina).subscribe({ next: r => { this.itens.set(r.itens); this.total.set(r.total); this.carregando.set(false); }, error: e => { this.itens.set([]); this.total.set(0); this.carregando.set(false); this.erro.set(mensagemApi(e, 'Não foi possível consultar estoque.')); } }); }
     buscar() { this.pagina = 0; this.carregar(); }
     paginar(d: number) { if (this.carregando() || this.pagina + d < 0)
         return; this.pagina += d; this.carregar(); }

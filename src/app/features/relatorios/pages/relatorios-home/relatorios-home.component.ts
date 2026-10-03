@@ -6,7 +6,8 @@ import { FormsModule } from '@angular/forms';
 import { CabecalhoPaginaComponent } from '../../../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
 import { EscalaDetalhe, EscalaFilters, MESES } from '../../../escalas/models/escala.model';
 import { EscalasService } from '../../../escalas/services/escalas.service';
-import { ExportService } from '../../../escalas/services/export.service';
+import { ExportService, tabelaEscala } from '../../../escalas/services/export.service';
+import { exportarTabela, FormatoExportacao } from '../../../../shared/utils/exportacao-tabela';
 import { FUNCOES_LABEL, FuncaoEscala } from '../../../pessoas/models/pessoa.model';
 
 interface Barra {
@@ -25,7 +26,7 @@ interface Ranking {
     imports: [RouterLink,FormsModule, CabecalhoPaginaComponent, OrientacaoToggleComponent],
     template: `
     <div class="space-y-6">
-      <app-cabecalho-pagina titulo="Relatórios e frequência" subtitulo="Presenças já lançadas nas escalas finalizadas, e o PDF ou PNG para a sacristia."><a acoes routerLink="/relatorios/participacao" class="btn-secondary">Participação e CSV</a></app-cabecalho-pagina>
+      <app-cabecalho-pagina titulo="Relatórios e frequência" subtitulo="Presenças nas escalas finalizadas e arquivos para a sacristia."><div acoes class="flex flex-wrap items-center gap-2"><a routerLink="/relatorios/participacao" class="btn-secondary">Participação</a><select class="field !w-auto" aria-label="Formato do relatório" [(ngModel)]="formato"><option value="xlsx">Excel (XLSX)</option><option value="csv">CSV</option><option value="json">JSON</option><option value="pdf">PDF</option><option value="png">Imagem</option></select><button type="button" class="btn-secondary" [disabled]="loading || exportando || !rows.length" (click)="exportarFiltrados()">{{exportando ? 'Preparando...' : 'Exportar filtrados'}}</button></div></app-cabecalho-pagina>
 
       <section class="card p-5">
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -146,6 +147,16 @@ interface Ranking {
     `
 })
 export class RelatoriosHomeComponent implements OnInit {
+  formato: FormatoExportacao = 'xlsx';
+  exportando = false;
+  async exportarFiltrados() {
+    if (this.loading || this.exportando || !this.rows.length) return;
+    const tabelas = this.rows.map(tabelaEscala);
+    this.exportando = true;
+    try { await exportarTabela({ nome: 'escalas-filtradas', titulo: 'Servirea · Escalas finalizadas', contexto: `${this.rows.length} escala(s) nos filtros aplicados`, colunas: ['Escala', ...tabelas[0].colunas], linhas: tabelas.flatMap(t => t.linhas.map(l => [t.titulo, ...l])) }, this.formato); }
+    catch (e) { this.error = e instanceof Error ? e.message : 'Não foi possível exportar.'; }
+    finally { this.exportando = false; }
+  }
   rows: EscalaDetalhe[] = [];
   months = MESES;
   loading = true;

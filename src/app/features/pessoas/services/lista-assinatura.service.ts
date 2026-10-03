@@ -3,6 +3,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { coresDaFolha } from '../../../shared/export/cores-folha';
 import { Orientacao } from '../../../shared/export/orientacao';
+import { exportarTabela } from '../../../shared/utils/exportacao-tabela';
 
 /** Uma linha da lista: só o necessário para ordenar e imprimir o nome. */
 export interface ItemAssinatura {
@@ -71,6 +72,11 @@ export function ordenar(itens: ItemAssinatura[], por: OrdenarPor, ordem: Ordem):
  */
 @Injectable({ providedIn: 'root' })
 export class ListaAssinaturaService {
+
+  async gerarDados(itens: ItemAssinatura[], opcoes: OpcoesListaAssinatura, formato: 'csv' | 'json' | 'xlsx') {
+    const linhas = ordenar(itens, opcoes.ordenarPor, opcoes.ordem).map((item, indice) => [indice + 1, item.nome, '']);
+    await exportarTabela({ nome: 'lista-assinatura', titulo: opcoes.titulo, contexto: opcoes.subtitulo, colunas: ['Nº', 'Nome', 'Assinatura / responsável'], linhas }, formato);
+  }
 
   async gerarPdf(itens: ItemAssinatura[], opcoes: OpcoesListaAssinatura) {
     const linhas = ordenar(itens, opcoes.ordenarPor, opcoes.ordem);

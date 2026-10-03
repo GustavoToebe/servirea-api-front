@@ -1,3 +1,4 @@
+import { TabelaExportacao } from '../../../../shared/utils/exportacao-tabela';
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -16,7 +17,7 @@ import { EstadoListaComponent } from '../../../../shared/components/estado-lista
   template: `
     <div class="space-y-6">
       <app-cabecalho-pagina
-        titulo="Layouts de Escala"
+        [exportacao]="exportacao" titulo="Layouts de Escala"
         subtitulo="Modelos visuais que definem o cabeçalho, as vagas e a distribuição das missas na escala e no PDF.">
         <a acoes routerLink="novo" class="btn-primary">＋ Novo layout</a>
       </app-cabecalho-pagina>
@@ -104,16 +105,16 @@ import { EstadoListaComponent } from '../../../../shared/components/estado-lista
                 <td class="text-right whitespace-nowrap">
                   <button
                     type="button"
-                    class="text-xs font-bold text-slate-600 hover:text-indigo-600 mr-3"
+                    class="btn-secondary !text-xs !py-1 mr-3"
                     (click)="duplicar(layout)">
                     Duplicar
                   </button>
-                  <a [routerLink]="[layout.id]" class="text-xs font-bold text-brand-blue hover:underline mr-3">
+                  <a [routerLink]="[layout.id]" class="btn-secondary !text-xs !py-1 mr-3">
                     Editar
                   </a>
                   <button
                     type="button"
-                    class="text-xs font-bold text-slate-600 hover:text-indigo-600 mr-3"
+                    class="btn-secondary !text-xs !py-1 mr-3"
                     [attr.data-alternar-ativo]="layout.id"
                     (click)="alternarAtivo(layout)">
                     {{ layout.ativo ? 'Inativar' : 'Ativar' }}
@@ -121,7 +122,7 @@ import { EstadoListaComponent } from '../../../../shared/components/estado-lista
                   @if (!layout.sistema) {
                     <button
                       type="button"
-                      class="text-xs font-bold text-red-600 hover:underline"
+                      class="btn-danger !text-xs !py-1"
                       (click)="excluir(layout)">
                       Excluir
                     </button>
@@ -149,6 +150,11 @@ export class LayoutsListComponent implements OnInit {
   private dialogo = inject(DialogoService);
   private router = inject(Router);
 
+  readonly exportacao = (): TabelaExportacao => ({
+    nome: 'layouts-escalas', titulo: 'Layouts de escala',
+    colunas: ['Nome', 'Descrição', 'Formato', 'Vagas', 'Situação'],
+    linhas: this.layoutsFiltrados.map(l => [l.nome, l.descricao ?? '', l.tipo, this.numVagas(l), l.ativo ? 'Ativo' : 'Inativo'])
+  });
   layouts: LayoutEscala[] = [];
   layoutsFiltrados: LayoutEscala[] = [];
   termo = '';

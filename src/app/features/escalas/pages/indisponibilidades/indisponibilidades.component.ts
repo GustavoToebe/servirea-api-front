@@ -1,4 +1,4 @@
-import { AjudaLinkComponent } from '../../../../shared/components/ajuda-link/ajuda-link.component';
+import { CabecalhoPaginaComponent } from '../../../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -34,13 +34,13 @@ export function fimDeSemanaDoMes(ano: number, mes: number): Coluna[] {
 @Component({
   selector: 'app-indisponibilidades',
   standalone: true,
-  imports: [FormsModule, CampoCompetenciaComponent, AjudaLinkComponent],
+  imports: [FormsModule, CampoCompetenciaComponent, CabecalhoPaginaComponent],
   template: `
     <div class="space-y-5 pb-24">
+      <app-cabecalho-pagina [titulo]="'Indisponibilidades — ' + meses[mes - 1] + ' ' + ano"
+        subtitulo="Clique na data em que a pessoa não pode. Marque Sem restrição quando ela estiver disponível em todas." />
       <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <h1 class="text-2xl font-black text-slate-900">Indisponibilidades — {{ meses[mes - 1] }} {{ ano }}</h1>
         <div class="flex flex-wrap items-end gap-2">
-          <app-ajuda-link />
           <div><label class="label">Mês</label>
             <app-campo-competencia [ngModel]="competencia" (ngModelChange)="trocarMes($event)" [limpavel]="false" [disabled]="salvando" /></div>
           <div><label class="label" for="ind-busca">Buscar</label>

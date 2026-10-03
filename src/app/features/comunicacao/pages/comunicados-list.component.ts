@@ -21,7 +21,7 @@ export const TOM_STATUS_COMUNICADO: Record<StatusComunicado, string> = {
   imports: [FormsModule, DatePipe, BarraFiltrosComponent, CabecalhoPaginaComponent, EstadoListaComponent],
   template: `
     <div class="space-y-6">
-      <app-cabecalho-pagina titulo="Comunicados" subtitulo="Histórico dos envios por e-mail e WhatsApp. Crie um novo em Pessoas → Opções." />
+      <app-cabecalho-pagina titulo="Comunicados" [exportacao]="dadosExportacao" [exportacaoOcupada]="carregando" subtitulo="Histórico dos envios por e-mail e WhatsApp. Crie um novo em Pessoas → Opções." />
       @if (error) { <div class="rounded-xl bg-red-50 p-4 text-red-700">{{ error }}</div> }
 
       <app-barra-filtros [semBusca]="true" (buscar)="load()" [filtrosAtivos]="filtrosAtivos"
@@ -68,6 +68,7 @@ export const TOM_STATUS_COMUNICADO: Record<StatusComunicado, string> = {
   `
 })
 export class ComunicadosListComponent implements OnInit, OnDestroy {
+  readonly dadosExportacao = () => ({ nome: 'comunicados', titulo: 'Servirea · Comunicados', colunas: ['Criado em', 'Layout', 'Canal', 'Situação', 'Total', 'Enviados', 'Falhas'], linhas: this.comunicados.map(c => [c.createdAt, c.layoutNome, c.canal, c.status, c.total, c.enviados, c.falhas]) });
   readonly rotuloCanal = TIPO_ENVIO_LABEL;
   readonly rotuloStatus = STATUS_COMUNICADO_LABEL;
   readonly tom = TOM_STATUS_COMUNICADO;

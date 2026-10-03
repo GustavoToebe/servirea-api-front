@@ -15,7 +15,7 @@ import { AcessoApiService } from '../acesso-api.service';
   selector: 'app-meu-perfil',
   imports: [MfaComponent, FormsModule, MascaraDirective, OlhoSenhaComponent, CabecalhoPaginaComponent, RodapeFormComponent],
   template: `
-    <div class="mx-auto max-w-3xl space-y-6">
+    <div class="w-full min-w-0 space-y-6">
       <app-cabecalho-pagina titulo="Meu perfil" [subtitulo]="perfilNome" />
       @if (erro) {
         <div class="rounded-xl bg-red-50 p-3 text-sm text-red-700">{{ erro }}</div>

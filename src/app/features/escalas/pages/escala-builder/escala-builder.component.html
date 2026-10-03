@@ -2,7 +2,6 @@
       <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div><a routerLink="/escalas" class="text-sm font-semibold text-brand-blue">← Voltar para escalas</a>
           <h1 class="mt-1 text-2xl font-black">{{ id ? 'Montagem da escala' : 'Nova escala' }}<app-numero [numero]="currentDetail?.sequencial" /></h1></div>
-        <div class="flex items-center"><app-ajuda-link /></div>
         @if (id) {
           <div class="flex flex-wrap items-center gap-2"><span class="badge" [ngClass]="statusClass(status)">{{ statusLabel(status) }}</span>
             @if (status==='RASCUNHO' && sessaoRespostas.permissoes().includes('VAGA_DISTRIBUIR')) {<a class="btn-secondary !py-2" [routerLink]="['/escalas',id,'distribuicao']" data-distribuir>Distribuir por regras</a>}
@@ -16,9 +15,13 @@
               <button type="button" class="btn-secondary !py-2" (click)="gerarPrevia()">Gerar prévia (PDF)</button>
               <button class="btn-secondary !py-2" (click)="exportPdf()">Exportar PDF</button>
               <button class="btn-secondary !py-2" (click)="exportPng()">Exportar PNG</button>
+              <select aria-label="Formato dos dados da escala" class="field !w-auto" [(ngModel)]="formatoDados"><option value="xlsx">Excel (XLSX)</option><option value="csv">CSV</option><option value="json">JSON</option></select>
+              <button type="button" class="btn-secondary !py-2" [disabled]="exportandoDados" (click)="exportDados()">{{exportandoDados ? 'Preparando...' : 'Baixar dados'}}</button>
             }
+            <app-ajuda-link />
           </div>
         }
+        @if (!id) {<app-ajuda-link />}
       </div>
 
       @if(!readOnly&&podeArrastar()){

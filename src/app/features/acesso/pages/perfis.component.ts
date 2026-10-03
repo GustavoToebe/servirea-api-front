@@ -14,7 +14,7 @@ import { RodapeFormComponent } from '../../../shared/components/rodape-form/roda
   imports: [FormsModule, NumeroComponent, CabecalhoPaginaComponent, BarraFiltrosComponent, EstadoListaComponent, RodapeFormComponent],
   template: `
     <div class="space-y-6">
-      <app-cabecalho-pagina titulo="Perfis" subtitulo="O que cada pessoa pode ver e fazer nesta paróquia.">
+      <app-cabecalho-pagina titulo="Perfis" [exportacao]="dadosExportacao" [exportacaoOcupada]="carregando" subtitulo="O que cada pessoa pode ver e fazer nesta paróquia.">
         <button acoes type="button" class="btn-primary" (click)="novo()">＋ Novo perfil</button>
       </app-cabecalho-pagina>
 
@@ -88,6 +88,7 @@ import { RodapeFormComponent } from '../../../shared/components/rodape-form/roda
   `
 })
 export class PerfisComponent implements OnInit {
+  readonly dadosExportacao = () => ({ nome: 'perfis', titulo: 'Servirea · Perfis', colunas: ['Nome', 'Situação', 'Acesso total', 'Usuários'], linhas: this.visiveis.map(p => [p.nome, p.ativo ? 'Ativo' : 'Inativo', p.acessoTotal ? 'Sim' : 'Não', p.usuarios]) });
   private api = inject(AcessoApiService);
 
   perfis: Perfil[] = [];

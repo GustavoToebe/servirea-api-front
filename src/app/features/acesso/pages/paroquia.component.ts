@@ -23,7 +23,7 @@ const ENDERECO_VAZIO: Endereco = { cep: '', logradouro: '', numero: '', compleme
   selector: 'app-paroquia',
   imports: [FormsModule, MascaraDirective, OlhoSenhaComponent, CabecalhoPaginaComponent, RodapeFormComponent],
   template: `
-    <div class="mx-auto max-w-3xl space-y-6">
+    <div class="w-full min-w-0 space-y-6">
       <app-cabecalho-pagina titulo="Paróquia" subtitulo="Nome, diocese, endereço e contatos que aparecem para a coordenação." />
       @if (erro) {
         <div class="rounded-xl bg-red-50 p-3 text-sm text-red-700">{{ erro }}</div>

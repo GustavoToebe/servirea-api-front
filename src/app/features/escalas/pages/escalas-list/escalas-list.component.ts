@@ -1,3 +1,4 @@
+import { TabelaExportacao } from '../../../../shared/utils/exportacao-tabela';
 import { OrientacaoToggleComponent } from '../../../../shared/components/orientacao-toggle/orientacao-toggle.component';
 import { Orientacao, lerOrientacao } from '../../../../shared/export/orientacao';
 import { CommonModule } from '@angular/common';
@@ -18,7 +19,7 @@ import { BarraFiltrosComponent, FiltroAtivo } from '../../../../shared/component
     imports: [CommonModule, FormsModule, RouterLink, OrientacaoToggleComponent, CampoCompetenciaComponent, BarraFiltrosComponent, ReplicarDialogComponent, CabecalhoPaginaComponent],
     template: `
     <div class="space-y-6">
-      <app-cabecalho-pagina titulo="Escalas litúrgicas" subtitulo="As escalas do mês, com as vagas preenchidas e as que ainda estão livres.">
+      <app-cabecalho-pagina [exportacao]="exportacao" [exportacaoOcupada]="loading" titulo="Escalas litúrgicas" subtitulo="As escalas do mês, com as vagas preenchidas e as que ainda estão livres.">
         <a acoes routerLink="/escalas/nova" class="btn-primary">＋ Nova escala</a>
       </app-cabecalho-pagina>
 
@@ -100,6 +101,11 @@ import { BarraFiltrosComponent, FiltroAtivo } from '../../../../shared/component
     `
 })
 export class EscalasListComponent implements OnInit {
+  readonly exportacao = (): TabelaExportacao => ({
+    nome: 'escalas', titulo: 'Escalas litúrgicas',
+    colunas: ['Título', 'Mês', 'Ano', 'Tipo', 'Situação', 'Celebrações', 'Vagas', 'Preenchidas'],
+    linhas: this.escalas.map(e => [e.titulo, e.mes, e.ano, e.tipo, this.status(e.status), this.missas(e), this.vagas(e), this.preenchidas(e)])
+  });
   busca = "";
   months = MESES;
   rows: EscalaDetalhe[] = [];

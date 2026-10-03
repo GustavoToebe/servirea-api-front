@@ -1,7 +1,9 @@
 import { Component, ChangeDetectionStrategy, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
+import { coletarExportacao } from '../../shared/utils/coletar-exportacao';
+import { TabelaExportacao } from '../../shared/utils/exportacao-tabela';
 import { SessaoAtual } from '../../core/layout/sessao-atual';
 import { mensagemApi } from '../../core/api/api-error';
 import { DialogoService } from '../../shared/services/dialogo.service';
@@ -12,6 +14,16 @@ import { RodapeFormComponent } from '../../shared/components/rodape-form/rodape-
 import { LiturgiaApiService, Referencia, Roteiro } from './liturgia-api.service';
 @Component({ selector: 'app-liturgia', imports: [CommonModule, FormsModule, CabecalhoPaginaComponent, BarraFiltrosComponent, EstadoListaComponent, RodapeFormComponent], changeDetection: ChangeDetectionStrategy.OnPush, templateUrl: './liturgia.component.html' })
 export class LiturgiaComponent implements OnInit, OnDestroy {
+    private buscaExportacao = '';
+    readonly dadosExportacao = async (): Promise<TabelaExportacao> => {
+      const busca = this.buscaExportacao;
+      if (this.aba === 'referencias') {
+        const itens = await coletarExportacao(p => firstValueFrom(this.api.referencias(busca, p)), () => !this.destruido);
+        return { nome: 'referencias-liturgicas', titulo: 'Servirea · Referências litúrgicas', contexto: `Busca: ${busca || 'todas'}`, colunas: ['Título', 'Fonte', 'Endereço', 'Observação', 'Situação'], linhas: itens.map(r => [r.titulo, r.fonte, r.url, r.observacao, r.ativo ? 'Ativa' : 'Inativa']) };
+      }
+      const itens = await coletarExportacao(p => firstValueFrom(this.api.roteiros(busca, p)), () => !this.destruido);
+      return { nome: 'roteiros-liturgicos', titulo: 'Servirea · Roteiros litúrgicos', contexto: `Busca: ${busca || 'todos'}`, colunas: ['Título', 'Celebração', 'Sequência', 'Situação'], linhas: itens.map(r => [r.titulo, r.celebracao, r.passos.map((p, i) => `${i + 1}. ${p.titulo}${p.observacao ? ` — ${p.observacao}` : ''}`).join('\n'), r.ativo ? 'Ativo' : 'Inativo']) };
+    };
     private readonly api = inject(LiturgiaApiService);
     private readonly sessao = inject(SessaoAtual);
     private readonly dialogo = inject(DialogoService);
@@ -39,7 +51,7 @@ export class LiturgiaComponent implements OnInit, OnDestroy {
     ngOnInit() { this.carregar(); }
     podeEditar() { return this.sessao.permissoes().includes('LITURGIA_EDITAR'); }
     hasPendingChanges() { return this.alterado(); }
-    carregar() { this.leitura?.unsubscribe(); this.erro.set(''); this.carregando.set(true); if (this.aba === 'referencias') {
+    carregar() { this.buscaExportacao = this.busca; this.leitura?.unsubscribe(); this.erro.set(''); this.carregando.set(true); if (this.aba === 'referencias') {
         this.leitura = this.api.referencias(this.busca, this.pagina).subscribe({ next: p => { this.referencias.set(p.itens); this.total.set(p.total); this.carregando.set(false); }, error: e => this.falhaLista(e) });
     }
     else {

@@ -18,7 +18,7 @@ import { RodapeFormComponent } from '../../../shared/components/rodape-form/roda
     SelectBuscaComponent, RodapeFormComponent],
   template: `
     <div class="space-y-6">
-      <app-cabecalho-pagina titulo="Usuários" subtitulo="Quem entra nesta paróquia. A senha chega por convite, não por este formulário.">
+      <app-cabecalho-pagina titulo="Usuários" [exportacao]="dadosExportacao" [exportacaoOcupada]="carregando" subtitulo="Quem entra nesta paróquia. A senha chega por convite, não por este formulário.">
         <button acoes type="button" class="btn-primary" (click)="novo()">＋ Convidar</button>
       </app-cabecalho-pagina>
 
@@ -89,6 +89,7 @@ import { RodapeFormComponent } from '../../../shared/components/rodape-form/roda
   `
 })
 export class UsuariosComponent implements OnInit {
+  readonly dadosExportacao = () => ({ nome: 'usuarios', titulo: 'Servirea · Usuários', colunas: ['Nome', 'E-mail', 'Perfil', 'Situação', 'Somente leitura'], linhas: this.visiveis.map(u => [u.nome, u.email, u.perfilNome ?? '', u.situacaoAcesso, u.somenteLeitura ? 'Sim' : 'Não']) });
   private api = inject(AcessoApiService);
 
   usuarios: UsuarioParoquia[] = [];

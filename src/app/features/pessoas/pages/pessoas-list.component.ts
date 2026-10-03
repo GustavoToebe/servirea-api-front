@@ -19,6 +19,8 @@ import { ComunicadoDialogComponent } from '../../comunicacao/components/comunica
 import { SessaoAtual } from '../../../core/layout/sessao-atual';
 import { CabecalhoPaginaComponent } from '../../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
 import { EstadoListaComponent } from '../../../shared/components/estado-lista/estado-lista.component';
+import { coletarExportacao } from '../../../shared/utils/coletar-exportacao';
+import { exportarTabela, FormatoExportacao, TabelaExportacao } from '../../../shared/utils/exportacao-tabela';
 
 type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
 
@@ -33,6 +35,7 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
         
         @if (podeImportar) {<a acoes routerLink="/pessoas/importar" class="btn-secondary">Importar pessoas</a>}
         <a acoes routerLink="/pessoas/nova" class="btn-primary">＋ Novo cadastro</a>
+        <div acoes class="flex items-center gap-2"><select class="field !w-auto" aria-label="Formato da listagem" [(ngModel)]="formatoExportacao"><option value="xlsx">Excel (XLSX)</option><option value="csv">CSV</option><option value="json">JSON</option><option value="pdf">PDF</option><option value="png">Imagem</option></select><button type="button" class="btn-secondary" [disabled]="loading || exportando" (click)="exportarFiltrados()">{{exportando ? 'Preparando...' : 'Exportar filtrados'}}</button></div>
       </app-cabecalho-pagina>
 
       <div class="flex flex-wrap gap-2 pb-6">
@@ -264,6 +267,28 @@ type Aba = 'todas' | 'ativos' | 'inativos' | 'aguardando' | 'historico';
 `
 })
 export class PessoasListComponent implements OnInit, OnDestroy {
+  formatoExportacao: FormatoExportacao = 'xlsx';
+  exportando = false;
+  private destruido = false;
+  private aplicados: { aba: Aba; historico: 'APROVADA' | 'REJEITADA'; filtro: Parameters<PessoasService['pagina']>[0] } = { aba: 'todas', historico: 'APROVADA', filtro: {} };
+  async exportarFiltrados() {
+    if (this.loading || this.exportando) return;
+    const aplicados = this.aplicados, formato = this.formatoExportacao;
+    this.exportando = true; this.error = ''; this.cdr.markForCheck();
+    try {
+      let tabela: TabelaExportacao;
+      if (aplicados.aba === 'aguardando' || aplicados.aba === 'historico') {
+        const status = aplicados.aba === 'aguardando' ? 'PENDENTE' : aplicados.historico;
+        const itens = await coletarExportacao(p => this.inscricoesApi.pagina(status, p), () => !this.destruido);
+        tabela = { nome: 'inscricoes-filtradas', titulo: 'Servirea · Inscrições', contexto: `Situação: ${status}`, colunas: ['Nome', 'Situação'], linhas: itens.map(i => [i.nomeCompleto, i.status]) };
+      } else {
+        const itens = await coletarExportacao(p => this.pessoasApi.pagina(aplicados.filtro, p), () => !this.destruido);
+        tabela = { nome: 'pessoas-filtradas', titulo: 'Servirea · Pessoas', contexto: `Aba: ${aplicados.aba} · Busca: ${aplicados.filtro.nome || 'todas'} · Tipo: ${aplicados.filtro.tipo || aplicados.filtro.papel || 'todos'}`, colunas: ['Nome', 'Tipo', 'Situação'], linhas: itens.map(p => [p.nomeCompleto, p.voluntario ? this.tipoLabel[p.voluntario.tipo] : 'Responsável', p.voluntario ? (p.voluntario.ativo ? 'Ativo' : 'Inativo') : 'Responsável']) };
+      }
+      await exportarTabela(tabela, formato, () => !this.destruido);
+    } catch (e) { if (!this.destruido) this.error = e instanceof Error ? e.message : 'Não foi possível exportar.'; }
+    finally { this.exportando = false; if (!this.destruido) this.cdr.markForCheck(); }
+  }
   CONDICAO_LABEL = CONDICAO_LABEL;
 
   temCuidado(p: { condicoes?: CondicaoEspecial[], cuidados?: string | null }): boolean {
@@ -363,6 +388,8 @@ export class PessoasListComponent implements OnInit, OnDestroy {
     if (reiniciar) this.pagina = 0;
     this.loading = true; this.error = ''; this.cdr.markForCheck();
     const aba = this.aba;
+    const historico = this.historico;
+    const filtro: Parameters<PessoasService['pagina']>[0] = { nome: this.nome, papel: aba === 'ativos' || aba === 'inativos' ? 'VOLUNTARIO' : this.tipo === 'RESPONSAVEL' ? 'RESPONSAVEL' : undefined, tipo: this.tipo && this.tipo !== 'RESPONSAVEL' ? this.tipo : undefined, ativo: aba === 'ativos' ? true : aba === 'inativos' ? false : undefined };
     try {
       const daAba = aba === 'aguardando' || aba === 'historico'
         ? this.inscricoesApi.pagina(aba === 'aguardando' ? 'PENDENTE' : this.historico, this.pagina)
@@ -372,6 +399,7 @@ export class PessoasListComponent implements OnInit, OnDestroy {
             ativo: aba === 'ativos' ? true : aba === 'inativos' ? false : undefined }, this.pagina);
       const [resumo, pagina] = await Promise.all([this.pessoasApi.resumo(), daAba]);
       if (pedido !== this.pedido) return;
+      this.aplicados = { aba, historico, filtro };
       this.counts = resumo; this.total = pagina.total; this.paginas = pagina.paginas;
       this.selecao.limpar(); this.pessoas = []; this.rows = []; this.inscricoes = [];
       if (aba === 'aguardando' || aba === 'historico') this.inscricoes = pagina.itens as Inscricao[];
@@ -395,7 +423,7 @@ export class PessoasListComponent implements OnInit, OnDestroy {
     if (this.loading || destino<0 || destino>=this.paginas) return;
     this.pagina=destino; await this.load(false);
   }
-  ngOnDestroy(): void { this.pedido++; if (this.espera) clearTimeout(this.espera); }
+  ngOnDestroy(): void { this.destruido = true; this.pedido++; if (this.espera) clearTimeout(this.espera); }
 
   principalNome(i: Inscricao): string {
     const p = i.responsaveis.find(r => r.principal) || i.responsaveis[0];

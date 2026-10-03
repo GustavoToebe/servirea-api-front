@@ -15,7 +15,7 @@ import { EstadoListaComponent } from '../../../shared/components/estado-lista/es
   imports: [CommonModule, FormsModule, RouterLink, BarraFiltrosComponent, CabecalhoPaginaComponent, EstadoListaComponent],
   template: `
     <div class="space-y-6">
-      <app-cabecalho-pagina titulo="Layouts" subtitulo="Modelos de e-mail e WhatsApp com tags trocadas pelos dados de cada pessoa.">
+      <app-cabecalho-pagina titulo="Layouts" [exportacao]="dadosExportacao" [exportacaoOcupada]="carregando" subtitulo="Modelos de e-mail e WhatsApp com tags trocadas pelos dados de cada pessoa.">
         <a acoes routerLink="/layouts/novo" class="btn-primary">＋ Novo layout</a>
       </app-cabecalho-pagina>
 
@@ -100,6 +100,7 @@ import { EstadoListaComponent } from '../../../shared/components/estado-lista/es
   `
 })
 export class LayoutsListComponent implements OnInit {
+  readonly dadosExportacao = () => ({ nome: 'layouts-comunicacao', titulo: 'Servirea · Layouts de comunicação', colunas: ['Nome', 'Tipo', 'Canal', 'Situação'], linhas: this.layouts.map(l => [l.nome, l.tipoLayout, l.tipoEnvio, l.ativo ? 'Ativo' : 'Inativo']) });
   layouts: Layout[] = [];
   nome = '';
   tipoLayout: TipoLayout | '' = '';

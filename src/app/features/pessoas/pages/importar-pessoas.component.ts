@@ -18,15 +18,26 @@ import { ImportacoesPessoasService, PreviaImportacao, EstruturaImportacao, Opcoe
       </app-cabecalho-pagina>
       @if (!permitido) { <div class="card p-5" role="alert">É necessário acesso a Pessoas e permissão para criar cadastros.</div> }
       @else {
+        <ol class="grid gap-3 text-sm sm:grid-cols-3" aria-label="Etapas da importação">
+          <li class="card flex items-center gap-3 p-4"><span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-100 font-bold text-[var(--brand)]">1</span><span><strong class="block">Preparar</strong>Baixe e preencha o modelo.</span></li>
+          <li class="card flex items-center gap-3 p-4"><span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-100 font-bold text-[var(--brand)]">2</span><span><strong class="block">Conferir</strong>Mapeie as colunas e veja a prévia.</span></li>
+          <li class="card flex items-center gap-3 p-4"><span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-100 font-bold text-[var(--brand)]">3</span><span><strong class="block">Confirmar</strong>Crie o lote após revisar os erros.</span></li>
+        </ol>
         <form ngNoForm (submit)="$event.preventDefault();confirmar()" class="space-y-6">
           <section class="card secao-form p-6">
-            <h2 class="secao-titulo">Arquivo CSV ou XLSX</h2>
+            <h2 class="secao-titulo">1. Prepare a planilha</h2>
             <p class="text-sm">Até 100 pessoas, 30 colunas e 512 KiB por lote. CSV em UTF-8, separado por ponto e vírgula ou vírgula. No XLSX, selecione uma aba. A primeira linha preenchida será o cabeçalho (nas primeiras 20 linhas).</p>
             <p class="mt-2 text-sm">Papel: RESPONSAVEL, COROINHA, ACOLITO, AMBOS ou MESC. CPF, e-mail e telefone são opcionais. No Excel, mantenha CPF e telefone como texto desde a origem, preservando zeros. Substitua fórmulas por valores; remova macros, vínculos externos e células mescladas.</p>
             <p class="mt-2 text-sm text-slate-500">Duplicidades por nome ou CPF bloqueiam o lote para revisão. Nenhuma ficha existente será alterada. Voluntários não recebem autorização de WhatsApp automaticamente. Um lote confirmado consome uma importação mensal; prévias e repetições da mesma confirmação não consomem outra.</p>
-            <a class="btn-secondary inline-block mt-3" download="modelo-pessoas.csv" href="data:text/csv;charset=utf-8,%EF%BB%BFnome%3Bpapel%3Bcpf%3Bemail%3Btelefone%0AAna%3BRESPONSAVEL%3B%3B%3B%0A">Baixar modelo CSV</a>
-            <label class="label mt-4" for="arquivo-csv">Selecionar arquivo</label>
-            <input #entradaArquivo id="arquivo-csv" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="field" [disabled]="ocupado()" (change)="selecionar($event)">
+            <div class="mt-4 flex flex-wrap gap-2">
+              <a class="btn-primary" download="modelo-pessoas.xlsx" href="/modelo-pessoas.xlsx">Baixar modelo Excel</a>
+              <a class="btn-secondary" download="modelo-pessoas.csv" href="data:text/csv;charset=utf-8,%EF%BB%BFnome%3Bpapel%3Bcpf%3Bemail%3Btelefone%0A">Baixar modelo CSV</a>
+            </div>
+            <div class="mt-5 rounded-2xl border-2 border-dashed border-[var(--field-line)] bg-violet-50/40 p-5">
+              <label class="label" for="arquivo-csv">2. Selecione o arquivo preenchido</label>
+              <p class="mb-3 text-sm text-slate-500">Use a aba Pessoas do modelo Excel ou seu próprio CSV/XLSX. A prévia permite corrigir tudo antes de criar cadastros.</p>
+              <input #entradaArquivo id="arquivo-csv" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="field" [disabled]="ocupado()" (change)="selecionar($event)">
+            </div>
             <button type="button" class="btn-secondary mt-3" [disabled]="!arquivo || ocupado()" (click)="analisar()">{{ ocupado() ? 'Processando...' : 'Ler colunas' }}</button>
           </section>
           @if (estrutura(); as e) {

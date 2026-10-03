@@ -80,7 +80,10 @@ import { ItemAssinatura, ListaAssinaturaService, ORDENAR_POR, Ordem, OrdenarPor,
       @if (erro) { <p class="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{{ erro }}</p> }
       <div rodape class="flex flex-wrap items-center justify-between gap-2">
         <button type="button" class="btn-secondary" (click)="fechar.emit()">Cancelar</button>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
+          <button type="button" class="btn-secondary" [disabled]="gerando" (click)="gerar('csv')">CSV</button>
+          <button type="button" class="btn-secondary" [disabled]="gerando" (click)="gerar('json')">JSON</button>
+          <button type="button" class="btn-secondary" [disabled]="gerando" (click)="gerar('xlsx')">Excel</button>
           <button type="button" class="btn-secondary" [disabled]="gerando" (click)="gerar('IMAGEM')">Gerar imagem</button>
           <button type="button" class="btn-primary" [disabled]="gerando" (click)="gerar('PDF')">{{ gerando ? 'Gerando...' : 'Gerar PDF' }}</button>
         </div>
@@ -132,7 +135,7 @@ export class ListaAssinaturaDialogComponent implements OnChanges {
     if (!this.gerando) this.fechar.emit();
   }
 
-  async gerar(formato: 'PDF' | 'IMAGEM'): Promise<void> {
+  async gerar(formato: 'PDF' | 'IMAGEM' | 'csv' | 'json' | 'xlsx'): Promise<void> {
     if (!this.titulo.trim()) {
       this.erro = 'Informe o título.';
       return;
@@ -142,7 +145,8 @@ export class ListaAssinaturaDialogComponent implements OnChanges {
     const opcoes = { titulo: this.titulo.trim(), subtitulo: this.subtitulo.trim(), ordenarPor: this.ordenarPor, ordem: this.ordem, orientacao: this.orientacao };
     try {
       if (formato === 'PDF') await this.servico.gerarPdf(this.itens, opcoes);
-      else await this.servico.gerarImagem(this.itens, opcoes);
+      else if (formato === 'IMAGEM') await this.servico.gerarImagem(this.itens, opcoes);
+      else await this.servico.gerarDados(this.itens, opcoes, formato);
       this.fechar.emit();
     } catch {
       this.erro = 'Não foi possível gerar o arquivo. Tente de novo.';

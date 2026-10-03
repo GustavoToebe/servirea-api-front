@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { TEMAS, TemaAjuda } from './ajuda-temas';
@@ -28,7 +28,7 @@ function textoDoTema(t: TemaAjuda): string {
         <section class="space-y-3" [attr.data-secao-ajuda]="grupo.id">
           <h2 class="text-xs font-extrabold uppercase tracking-widest text-[var(--muted)]">{{ grupo.titulo }}</h2>
           @for (tema of grupo.temas; track tema.id) {
-            <details class="card p-5" [open]="tema.id === temaInicial() || !!busca()" [attr.data-tema]="tema.id" [id]="'tema-' + tema.id">
+            <details class="card scroll-mt-28 p-5" [open]="tema.id === temaInicial() || !!busca()" [attr.data-tema]="tema.id" [id]="'tema-' + tema.id">
               <summary class="cursor-pointer text-lg font-bold text-[var(--ink)]">{{ tema.titulo }}</summary>
               <p class="mt-3 text-sm text-[var(--ink)]" data-resumo>{{ tema.resumo }}</p>
               <h3 class="mt-4 text-sm font-bold text-[var(--ink)]">Passo a passo</h3>
@@ -75,6 +75,11 @@ export class AjudaComponent {
   readonly grupos = computed(() => {
     const temas = this.temas();
     return SECOES.map(s => ({ id: s.id as SecaoId, titulo: s.titulo, temas: temas.filter(t => t.secao === s.id) })).filter(g => g.temas.length);
+  });
+  private readonly focarTema = effect(() => {
+    const id = this.temaInicial();
+    if (!id || !this.temas().some(t => t.id === id)) return;
+    setTimeout(() => document.getElementById(`tema-${id}`)?.scrollIntoView({ block: 'start' }), 0);
   });
 
   /** Relacionados que o usuário pode ver (e que existem), no máximo três. */

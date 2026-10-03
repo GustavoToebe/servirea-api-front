@@ -93,7 +93,7 @@ export const TEMAS: readonly TemaAjuda[] = [
     id: 'importacao', titulo: 'Importar pessoas por CSV ou XLSX', secao: 'cadastro', permissao: ['PESSOA', 'PESSOA_CRIAR'], url: '/pessoas/importar',
     resumo: 'Cria muitas fichas de uma vez a partir de uma planilha, com uma prévia que não grava nada até você confirmar.',
     passos: [
-      'Em Pessoas, abra Importar pessoas e baixe o modelo CSV. Preencha uma pessoa por linha; o limite é de 100 pessoas, 30 colunas e 512 KiB por arquivo.',
+      'Em Pessoas, abra Importar pessoas e baixe o modelo Excel. A aba Pessoas já traz as colunas e a aba Como preencher explica cada passo. Se preferir, baixe o modelo CSV. Preencha uma pessoa por linha; o limite é de 100 pessoas, 30 colunas e 512 KiB por arquivo.',
       'Selecione o arquivo e use Ler colunas. No XLSX escolha a aba; no CSV a primeira linha preenchida é o cabeçalho.',
       'Mapeie as colunas (nome e papel são obrigatórios; CPF, e-mail e telefone são opcionais) e gere a prévia.',
       'Leia os erros e os duplicados. Duplicidade por nome ou CPF bloqueia o lote para revisão; nenhuma ficha existente é alterada.',
@@ -356,6 +356,20 @@ export const TEMAS: readonly TemaAjuda[] = [
 
   // ---- Financeiro
   {
+    id: 'contas-bancarias', titulo: 'Cadastrar contas bancárias e caixa', secao: 'financeiro', permissao: 'FINANCEIRO', url: '/contas-bancarias',
+    resumo: 'Guarda onde a paróquia movimenta dinheiro. A conta bancária é diferente da conta contábil, que classifica cada entrada ou saída.',
+    passos: [
+      'Abra Cadastro › Contas bancárias e use Nova conta. Dê um nome fácil de reconhecer, como Banco do Brasil principal ou Caixa da secretaria.',
+      'Escolha o tipo. Para conta corrente ou poupança, preencha banco, agência, número e titular. Para dinheiro físico, escolha Caixa.',
+      'Informe o saldo que já existia e a data desse saldo antes de registrar lançamentos. Depois do primeiro lançamento, esses dois campos ficam protegidos.',
+      'Se a conta receber PIX, adicione as chaves e marque uma como principal. Confira cada chave antes de salvar.',
+      'No Financeiro, escolha a conta ao criar um lançamento. Dê baixa quando o dinheiro realmente entrar ou sair.',
+    ],
+    cuidados: ['Agência, número da conta, titular e chaves PIX ficam visíveis apenas para quem configura o financeiro.', 'Uma conta inativa mantém o histórico, mas não recebe lançamentos novos.'],
+    perguntas: [{ pergunta: 'O que faço se só tenho dinheiro em espécie?', resposta: 'Cadastre uma conta do tipo Caixa. Ela representa o dinheiro físico e não exige agência nem número bancário.' }],
+    relacionados: ['financeiro'],
+  },
+  {
     id: 'financeiro', titulo: 'Financeiro: plano de contas, lançamentos e saldos', secao: 'financeiro', permissao: 'FINANCEIRO', url: '/financeiro',
     resumo: 'Controla o dinheiro da paróquia: contas ou bancos, plano de contas, entradas e saídas, baixas e saldo.',
     passos: [
@@ -497,10 +511,11 @@ export const TEMAS: readonly TemaAjuda[] = [
   // ---- Relatórios e indicadores
   {
     id: 'relatorios', titulo: 'Relatórios', secao: 'relatorios', permissao: 'AUDITORIA', url: '/relatorios/participacao',
-    resumo: 'Lista a participação nas escalas finalizadas em um período e permite exportar para planilha.',
+    resumo: 'Lista a participação nas escalas finalizadas em um período e permite baixar os resultados filtrados em vários formatos.',
     passos: [
       'Escolha o período (até 366 dias) e use Buscar. A lista mostra, por pessoa, as participações, presenças e faltas.',
-      'Para levar os dados para fora do sistema, use a exportação. Ela traz até 5.000 linhas.',
+      'Para levar os dados para fora do sistema, escolha CSV, JSON, Excel, PDF ou imagem e use Exportar. Ela traz todos os resultados dos filtros aplicados, até 5.000 linhas.',
+      'Quando a imagem ocupar várias páginas, o arquivo baixado será um ZIP com as imagens numeradas.',
       'Se o resultado vier vazio, confira se há escalas finalizadas no período: rascunhos não entram.',
     ],
     cuidados: ['O arquivo exportado contém nomes e datas. Guarde e compartilhe com cuidado.'],

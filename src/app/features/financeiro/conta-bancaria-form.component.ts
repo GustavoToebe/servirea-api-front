@@ -21,7 +21,7 @@ function hojeLocal(): string {
   template: `
 <div class="space-y-5">
   <app-cabecalho-pagina [titulo]="id ? 'Editar conta bancária' : 'Nova conta bancária'" subtitulo="Dados do banco, chaves PIX e saldo inicial." icone="🏦">
-    <label acoes class="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" name="ativoTopo" [(ngModel)]="form.ativo" [ngModelOptions]="{ standalone: true }" data-ativo /> Conta ativa</label>
+    <label acoes class="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" name="ativoTopo" [(ngModel)]="form.ativo" [ngModelOptions]="{ standalone: true }" (ngModelChange)="marcarPendente()" data-ativo /> Conta ativa</label>
   </app-cabecalho-pagina>
   @if (erro) { <div class="card p-4 text-red-600" role="alert">{{ erro }}</div> }
   @if (carregando) { <p class="card p-6 text-slate-500" role="status">Carregando…</p> } @else {
@@ -91,6 +91,7 @@ export class ContaBancariaFormComponent implements OnInit {
   form: ContaRequest = this.novo();
   carregando = false; salvando = false; erro = '';
   private salvo = false;
+  marcarPendente() { this.formulario?.form.markAsDirty(); }
 
   async ngOnInit() {
     if (!this.id) return;

@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, Input, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { exportarTabela, FormatoExportacao, TabelaExportacao } from '../../utils/exportacao-tabela';
 import { Router, RouterLink } from '@angular/router';
 import { ajudaDaRota } from '../../../features/ajuda/ajuda-da-rota';
 
@@ -10,7 +12,7 @@ import { ajudaDaRota } from '../../../features/ajuda/ajuda-da-rota';
 @Component({
   selector: 'app-cabecalho-pagina',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="border-b border-[var(--line)] pb-4">
@@ -21,16 +23,35 @@ import { ajudaDaRota } from '../../../features/ajuda/ajuda-da-rota';
         </h1>
         <div class="flex flex-wrap items-center gap-2">
           <ng-content select="[acoes]" />
+          @if (exportacao) {
+            <select class="field !w-auto" aria-label="Formato da exportação" [(ngModel)]="formato" [ngModelOptions]="{standalone:true}"><option value="xlsx">Excel (XLSX)</option><option value="csv">CSV</option><option value="json">JSON</option><option value="pdf">PDF</option><option value="png">Imagem</option></select>
+            <button type="button" class="btn-secondary" [disabled]="exportando() || exportacaoOcupada" (click)="exportar()">{{exportando() ? 'Preparando...' : 'Exportar filtrados'}}</button>
+          }
           @if (temaDeAjuda; as tema) {
             <a routerLink="/ajuda" [queryParams]="{ tema }" class="btn-secondary" data-ajuda aria-label="Ajuda desta tela">Ajuda</a>
           }
         </div>
       </div>
       @if (subtitulo) { <p class="mt-1 text-sm text-slate-500" data-subtitulo>{{ subtitulo }}</p> }
+      @if (erroExportacao()) {<p class="mt-3 text-sm text-red-700 dark:text-red-300" role="alert">{{erroExportacao()}}</p>}
     </header>
   `
 })
 export class CabecalhoPaginaComponent {
+  @Input() exportacao?: () => TabelaExportacao | Promise<TabelaExportacao>;
+  @Input() exportacaoOcupada = false;
+  readonly exportando = signal(false);
+  readonly erroExportacao = signal('');
+  formato: FormatoExportacao = 'xlsx';
+  private destruido = false;
+  constructor() { inject(DestroyRef).onDestroy(() => { this.destruido = true; }); }
+  async exportar() {
+    if (!this.exportacao || this.exportando() || this.exportacaoOcupada) return;
+    const formato = this.formato; this.exportando.set(true); this.erroExportacao.set('');
+    try { await exportarTabela(await this.exportacao(), formato, () => !this.destruido); }
+    catch (e) { if (!this.destruido) this.erroExportacao.set(e instanceof Error ? e.message : 'Não foi possível exportar.'); }
+    finally { if (!this.destruido) this.exportando.set(false); }
+  }
   private readonly router = inject(Router);
   @Input({ required: true }) titulo = '';
   @Input() subtitulo = '';

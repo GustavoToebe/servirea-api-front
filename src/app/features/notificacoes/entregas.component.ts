@@ -2,7 +2,9 @@ import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal }
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { TabelaExportacao } from '../../shared/utils/exportacao-tabela';
+import { coletarExportacao } from '../../shared/utils/coletar-exportacao';
+import { firstValueFrom, Subscription } from 'rxjs';
 import { mensagemApi } from '../../core/api/api-error';
 import { SessaoAtual } from '../../core/layout/sessao-atual';
 import { CabecalhoPaginaComponent } from '../../shared/components/cabecalho-pagina/cabecalho-pagina.component';
@@ -22,7 +24,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-4">
-      <app-cabecalho-pagina titulo="Centro de entregas"
+      <app-cabecalho-pagina [exportacao]="exportacao" [exportacaoOcupada]="carregando()" titulo="Centro de entregas"
         subtitulo="Avisos de escala e mural enfileirados. ENVIADO indica aceitação do provedor, não leitura.">
         <a acoes routerLink="/comunicados" class="btn-secondary">Comunicados</a>
       </app-cabecalho-pagina>
@@ -97,6 +99,15 @@ export class EntregasComponent implements OnInit, OnDestroy {
   readonly carregando = signal(false);
   readonly ocupado = signal(false);
   readonly erro = signal('');
+  private destruido = false;
+  private origemAplicada: OrigemNotificacao | '' = '';
+  readonly exportacao = async (): Promise<TabelaExportacao> => {
+    const origem = this.origemAplicada;
+    const itens = await coletarExportacao(p => firstValueFrom(this.api.entregas(origem, p)), () => !this.destruido);
+    return { nome: 'entregas', titulo: 'Centro de entregas', contexto: origem || 'Todas as origens',
+      colunas: ['Quando', 'Origem', 'Título', 'Canal', 'Gatilho', 'Destinatários', 'Ignorados', 'Pendentes', 'Enviados', 'Falhas'],
+      linhas: itens.map(e => [e.criadoEm, this.rotuloOrigem(e.origem), e.titulo ?? '', this.rotuloCanal(e.canal), e.gatilho, e.total, e.ignorados, e.pendentes, e.enviados, e.falhas]) };
+  };
   origem: OrigemNotificacao | '' = '';
   pagina = 0;
   private leitura?: Subscription;
@@ -117,8 +128,9 @@ export class EntregasComponent implements OnInit, OnDestroy {
   carregar() {
     this.leitura?.unsubscribe();
     this.carregando.set(true);
-    this.leitura = this.api.entregas(this.origem, this.pagina).subscribe({
-      next: r => { this.itens.set(r.itens); this.total.set(r.total); this.carregando.set(false); },
+    const origem = this.origem;
+    this.leitura = this.api.entregas(origem, this.pagina).subscribe({
+      next: r => { this.origemAplicada = origem; this.itens.set(r.itens); this.total.set(r.total); this.carregando.set(false); },
       error: e => { this.carregando.set(false); this.erro.set(mensagemApi(e, 'Não foi possível consultar as entregas.')); }
     });
   }
@@ -146,6 +158,7 @@ export class EntregasComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.destruido = true;
     this.leitura?.unsubscribe();
     this.escrita?.unsubscribe();
   }
