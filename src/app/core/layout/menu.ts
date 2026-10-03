@@ -1,13 +1,31 @@
+/** Subitem de um módulo no menu lateral (uma aba da tela, escolhida por `?aba=`). */
+export interface FilhoMenu {
+  id: string;
+  label: string;
+  /** Aba da própria tela do módulo (`?aba=`). */
+  consulta?: Record<string, string>;
+  /** Tela própria, quando o subitem não é uma aba do módulo. */
+  url?: string;
+  /** Quem pode ver o subitem; vazio = quem vê o módulo. */
+  permissao?: string | readonly string[] | null;
+}
+
 export interface ItemMenu {
   label: string;
   url: string;
+  /** Quando existe, o menu lateral mostra o módulo como título e estes subitens como links. */
+  filhos?: readonly FilhoMenu[];
   /** Código do catálogo, ou vários (basta um). Vazio = sempre visível. */
   permissao: string | readonly string[] | null;
 }
 
 export const BARRA: ItemMenu[] = [
   { label: 'Início', url: '/dashboard', permissao: null },
-  { label: 'Escalas', url: '/escalas', permissao: ['ESCALA', 'VAGA'] },
+  { label: 'Escalas', url: '/escalas', permissao: ['ESCALA', 'VAGA'], filhos: [
+    { id: '/escalas', label: 'Escalas' },
+    { id: 'escalas/layouts', label: 'Layouts de escala', url: '/escalas/layouts', permissao: 'LAYOUT' },
+    { id: 'escalas/indisponibilidades', label: 'Indisponibilidades', url: '/escalas/indisponibilidades', permissao: ['ESCALA', 'VAGA'] },
+  ] },
   { label: 'Pessoas', url: '/pessoas', permissao: 'PESSOA' },
   { label: 'Relatórios', url: '/relatorios', permissao: 'AUDITORIA' },
   { label: 'Layouts', url: '/layouts', permissao: 'LAYOUT' },
@@ -20,7 +38,11 @@ export const BARRA: ItemMenu[] = [
   { label: 'Vínculos de pessoas', url: '/usuarios/vinculos', permissao: 'USUARIO_ALTERAR' },
   { label: 'Mural', url: '/mural', permissao: 'MURAL' },
   { label: 'Tarefas', url: '/tarefas', permissao: 'TAREFA' },
-  { label: 'Financeiro', url: '/financeiro', permissao: 'FINANCEIRO' },
+  { label: 'Financeiro', url: '/financeiro', permissao: 'FINANCEIRO', filhos: [
+    { id: 'financeiro?lancamentos', label: 'Lançamentos', consulta: { aba: 'lancamentos' } },
+    { id: 'financeiro?contas', label: 'Banco/caixa', consulta: { aba: 'contas' } },
+    { id: 'financeiro?plano', label: 'Plano de contas', consulta: { aba: 'plano-de-contas' } },
+  ] },
   { label: 'Eventos', url: '/eventos', permissao: 'EVENTO' },
   { label: 'Paróquia', url: '/paroquia', permissao: 'PAROQUIA' },
   { label: 'Perfis', url: '/perfis', permissao: 'PERFIL' },

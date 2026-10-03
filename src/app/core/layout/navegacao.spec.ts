@@ -24,7 +24,7 @@ describe('Navegação por seções', () => {
   it('agrupa por seção na ordem do menu e omite seções vazias', () => {
     const grupos = agruparPorSecao(telasVisiveis(['FINANCEIRO']));
     expect(grupos.map(g => g.secao.id)).toEqual(['inicio', 'financeiro', 'ajuda']);
-    expect(grupos[1].telas.map(t => t.rotulo)).toEqual(['Financeiro', 'Lançamentos financeiros', 'Contas / bancos', 'Plano de contas']);
+    expect(grupos[1].telas.map(t => t.rotulo)).toEqual(['Financeiro', 'Lançamentos financeiros', 'Banco/caixa', 'Plano de contas']);
   });
 
   it('a busca ignora acento e caixa, exige todas as palavras e usa sinônimos', () => {
@@ -38,8 +38,8 @@ describe('Navegação por seções', () => {
   });
 
   it('quem começa com o termo vem antes de quem só contém', () => {
-    const r = buscarTelas(telasVisiveis(['FINANCEIRO']), 'contas');
-    expect(r[0].rotulo).toBe('Contas / bancos');
+    const r = buscarTelas(telasVisiveis(['FINANCEIRO']), 'caixa');
+    expect(r[0].rotulo).toBe('Banco/caixa');
   });
 
   it('acha a tela pelo endereço, com aba, com subcaminho e sem correspondência', () => {

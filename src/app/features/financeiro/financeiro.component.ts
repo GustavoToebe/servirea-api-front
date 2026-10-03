@@ -1,5 +1,6 @@
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { SessaoAtual } from '../../core/layout/sessao-atual';
@@ -31,6 +32,7 @@ export class FinanceiroComponent implements OnInit, OnDestroy {
   private readonly dialogo = inject(DialogoService);
   private readonly rota = inject(ActivatedRoute);
   private readonly roteador = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
   @ViewChild('formulario') formulario?: NgForm;
   readonly hoje = hojeLocal();
   /** Abas por endereço: /financeiro?aba=plano-de-contas abre direto o plano de contas. */
@@ -50,7 +52,14 @@ export class FinanceiroComponent implements OnInit, OnDestroy {
   tipoTravado = false;
   movimentoForm: MovimentoRequest = this.novoMovimento();
   private geracao = 0; private destruido = false; private debounce?: ReturnType<typeof setTimeout>;
-  ngOnInit() { void this.carregar(); }
+  ngOnInit() {
+    // O menu lateral troca a aba pelo endereço (?aba=): a tela acompanha sem ser recriada.
+    this.rota.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(p => {
+      const nova = FinanceiroComponent.ABAS[p.get('aba') ?? ''] ?? 'movimentos';
+      if (nova !== this.aba) { this.aba = nova; this.cd.markForCheck(); }
+    });
+    void this.carregar();
+  }
   ngOnDestroy() { this.destruido = true; ++this.geracao; clearTimeout(this.debounce); }
   pode(codigo: string) { return this.sessao.permissoes().includes(codigo); }
   hasPendingChanges() { return this.salvando || (!!this.modal && !!this.formulario?.dirty); }

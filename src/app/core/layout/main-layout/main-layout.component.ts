@@ -39,27 +39,32 @@ import { FuncionalidadesPlanoComponent } from '../../plano/funcionalidades-plano
             <div class="mx-4 my-2 border-t border-white/10"></div>
           }
           @for (grupo of grupos(); track grupo.secao.id) {
-            @if (!recolhido && grupo.itens.length > 1) {
-              <button type="button" class="mt-2 flex w-full items-center justify-between rounded-xl px-4 py-2 text-left text-[11px] font-extrabold uppercase tracking-widest text-violet-200/70 hover:bg-white/5 hover:text-white"
+            @if (!recolhido && grupo.linhas.length > 1) {
+              <button type="button" class="mt-4 flex w-full items-center justify-between rounded-xl border-l-4 border-violet-300 bg-white/10 px-4 py-2.5 text-left text-xs font-black uppercase tracking-widest text-white hover:bg-white/15"
                 [attr.aria-expanded]="secaoAberta(grupo.secao.id)" (click)="alternarSecao(grupo.secao.id)" data-secao-menu>
                 <span>{{ grupo.secao.titulo }}</span><span aria-hidden="true">{{ secaoAberta(grupo.secao.id) ? '▾' : '▸' }}</span>
               </button>
             }
-            @if (recolhido || grupo.itens.length === 1 || secaoAberta(grupo.secao.id)) {
-              @for (item of grupo.itens; track item.url) {
-              <a [routerLink]="item.url"
+            @if (recolhido || grupo.linhas.length === 1 || secaoAberta(grupo.secao.id)) {
+              @for (item of grupo.linhas; track item.chave) {
+              <a [routerLink]="item.url" [queryParams]="item.consulta"
                 [title]="recolhido ? item.label : ''"
                 class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-violet-100/80 hover:bg-white/10 hover:text-white"
-                [ngClass]="(recolhido ? 'justify-center px-0 ' : '') + (itemAtivo() === item.url ? '!bg-brand-blue !text-white' : '')">
+                [ngClass]="(recolhido ? 'justify-center px-0 ' : '') + (linhaAtiva(item) ? '!bg-brand-blue !text-white' : '')">
                 <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  @switch (item.url) {
+                  @switch (item.icone) {
                     @case ('/dashboard') { <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/> }
                     @case ('/escalas') { <rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/> }
                     @case ('/pessoas') { <path d="M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1"/><circle cx="9.5" cy="8" r="3"/><path d="M20 19v-1a3.5 3.5 0 0 0-2.5-3.35M16.5 5.1a3 3 0 0 1 0 5.8"/> }
                     @case ('/relatorios') { <path d="M5 19V9M10 19V5M15 19v-7M20 19V8"/> }
                     @case ('/layouts') { <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/> }
                     @case ('/comunicados') { <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/> }
+                    @case ('escalas/layouts') { <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/> }
+                    @case ('escalas/indisponibilidades') { <circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/> }
                     @case ('/financeiro') { <path d="M4 7h16m-4-4 4 4-4 4M20 17H4m4-4-4 4 4 4"/> }
+                    @case ('financeiro?lancamentos') { <path d="M4 7h16m-4-4 4 4-4 4M20 17H4m4-4-4 4 4 4"/> }
+                    @case ('financeiro?contas') { <path d="M3 10 12 4l9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/> }
+                    @case ('financeiro?plano') { <path d="M5 4h6v4H5zM13 10h6v4h-6zM13 16h6v4h-6zM8 8v10h5M8 12h5"/> }
                     @case ('/eventos') { <rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/><path d="m9 15 2 2 4-4"/> }
                     @case ('/paroquia') { <path d="M18 21v-8M6 21v-8M12 21v-4"/><path d="M3 9l9-6 9 6v12H3V9z"/> }
                     @case ('/perfis') { <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/> }
@@ -247,7 +252,29 @@ export class MainLayoutComponent implements OnInit {
   /** Itens do menu lateral agrupados por seção, na ordem das seções. */
   grupos() {
     const itens = this.menu().barra;
-    return SECOES.map(secao => ({ secao, itens: itens.filter((i: ItemMenu) => (SECAO_DA_URL[i.url] ?? 'inicio') === secao.id) })).filter(g => g.itens.length);
+    return SECOES.map(secao => {
+      const doGrupo = itens.filter((i: ItemMenu) => (SECAO_DA_URL[i.url] ?? 'inicio') === secao.id);
+      /** Módulo com subitens vira título do grupo e seus subitens, links; os demais itens são uma linha só. */
+      const permissoes = this.sessao.permissoes();
+      const linhas = doGrupo.flatMap(i => i.filhos
+        ? i.filhos.filter(f => podeVer(permissoes, f.permissao ?? null)).map(f => ({ chave: f.id, label: f.label, url: f.url ?? i.url, consulta: f.consulta as Record<string, string> | undefined, icone: f.id }))
+        : [{ chave: i.url, label: i.label, url: i.url, consulta: undefined as Record<string, string> | undefined, icone: i.url }]);
+      return { secao, itens: doGrupo, linhas };
+    }).filter(g => g.itens.length);
+  }
+
+  /** Aba da tela atual (?aba=), para destacar o subitem certo do módulo. */
+  private abaAtual(): string {
+    return new URLSearchParams(this.router.url.split('#')[0].split('?')[1] ?? '').get('aba') ?? 'lancamentos';
+  }
+
+  linhaAtiva(l: { url: string; consulta?: Record<string, string> }): boolean {
+    const caminho = this.router.url.split(/[?#(]/)[0];
+    /** Subitem de tela própria (ex.: /escalas/layouts) vence o módulo (/escalas) quando a rota é dele. */
+    const urls = BARRA.flatMap(i => [i.url, ...(i.filhos ?? []).flatMap(f => f.url ? [f.url] : [])]);
+    const melhor = urls.filter(u => caminho === u || caminho.startsWith(u + '/')).sort((a, b) => b.length - a.length)[0];
+    if (melhor !== l.url) return false;
+    return !l.consulta || l.consulta['aba'] === this.abaAtual();
   }
 
   /** Todas as seções começam abertas; quem quer menos itens recolhe as que não usa (vale até recarregar). */

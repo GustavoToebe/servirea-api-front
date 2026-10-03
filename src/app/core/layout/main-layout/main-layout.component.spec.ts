@@ -128,7 +128,7 @@ describe('MainLayoutComponent', () => {
     criar();
 
     const links = Array.from(fixture.nativeElement.querySelectorAll('[data-menu="lateral"] a')) as HTMLElement[];
-    expect(links.length).toBe(BARRA.length);
+    expect(links.length).toBe(BARRA.reduce((n, i) => n + (i.filhos?.length ?? 1), 0));
     const semIcone = links.filter(a => (a.querySelector('svg')?.children.length ?? 0) === 0).map(a => a.getAttribute('href'));
     expect(semIcone).toEqual([]);
   });

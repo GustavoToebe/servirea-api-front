@@ -161,7 +161,7 @@ describe('Navegação contextual', () => {
   it('no financeiro mostra as abas como atalhos e não repete o item principal', async () => {
     const f = await montar('/financeiro?aba=plano-de-contas');
     expect(f.nativeElement.querySelector('[data-tela-atual]').textContent).toContain('Plano de contas');
-    expect(chips(f)).toEqual(['Lançamentos financeiros', 'Contas / bancos']);
+    expect(chips(f)).toEqual(['Lançamentos financeiros', 'Banco/caixa']);
   });
 
   it('numa tela de seção com várias telas lista as irmãs', async () => {

@@ -19,8 +19,6 @@ import { BarraFiltrosComponent, FiltroAtivo } from '../../../../shared/component
     template: `
     <div class="space-y-6">
       <app-cabecalho-pagina titulo="Escalas litúrgicas" subtitulo="As escalas do mês, com as vagas preenchidas e as que ainda estão livres.">
-        <a acoes routerLink="/escalas/layouts" class="btn-secondary">Layouts</a>
-        <a acoes routerLink="/escalas/indisponibilidades" class="btn-secondary">Indisponibilidades</a>
         <a acoes routerLink="/escalas/nova" class="btn-primary">＋ Nova escala</a>
       </app-cabecalho-pagina>
 

@@ -99,7 +99,7 @@ export const ATALHOS: TelaNav[] = [
   { id: 'escalas/indisponibilidades', rotulo: 'Indisponibilidades', url: '/escalas/indisponibilidades', permissao: ['ESCALA', 'VAGA'], secao: 'escalas', noMenu: false, palavras: 'quem não pode datas restrição' },
   { id: 'escalas/layouts', rotulo: 'Layouts de escala', url: '/escalas/layouts', permissao: 'LAYOUT', secao: 'escalas', noMenu: false, palavras: 'modelo impressão cabeçalho' },
   { id: 'financeiro?lancamentos', rotulo: 'Lançamentos financeiros', url: '/financeiro', consulta: { aba: 'lancamentos' }, permissao: 'FINANCEIRO', secao: 'financeiro', noMenu: false, palavras: 'entrada saída baixa pagamento' },
-  { id: 'financeiro?contas', rotulo: 'Contas / bancos', url: '/financeiro', consulta: { aba: 'contas' }, permissao: 'FINANCEIRO', secao: 'financeiro', noMenu: false, palavras: 'caixa banco saldo' },
+  { id: 'financeiro?contas', rotulo: 'Banco/caixa', url: '/financeiro', consulta: { aba: 'contas' }, permissao: 'FINANCEIRO', secao: 'financeiro', noMenu: false, palavras: 'caixa banco saldo' },
   { id: 'financeiro?plano', rotulo: 'Plano de contas', url: '/financeiro', consulta: { aba: 'plano-de-contas' }, permissao: 'FINANCEIRO', secao: 'financeiro', noMenu: false, palavras: 'grupo conta contábil categoria' },
   { id: 'eventos/novo', rotulo: 'Novo evento', url: '/eventos/novo', permissao: 'EVENTO_CRIAR', secao: 'pastoral', noMenu: false, palavras: 'criar evento inscrição' },
   { id: 'portal/indisponibilidades', rotulo: 'Minha disponibilidade', url: '/portal/indisponibilidades', permissao: 'PORTAL_VOLUNTARIO', secao: 'meu-espaco', noMenu: false, palavras: 'não posso datas' },
