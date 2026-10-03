@@ -252,15 +252,15 @@ export class MainLayoutComponent implements OnInit {
   /** Itens do menu lateral agrupados por seção, na ordem das seções. */
   grupos() {
     const itens = this.menu().barra;
-    return SECOES.map(secao => {
-      const doGrupo = itens.filter((i: ItemMenu) => (SECAO_DA_URL[i.url] ?? 'inicio') === secao.id);
-      /** Módulo com subitens vira título do grupo e seus subitens, links; os demais itens são uma linha só. */
-      const permissoes = this.sessao.permissoes();
-      const linhas = doGrupo.flatMap(i => i.filhos
-        ? i.filhos.filter(f => podeVer(permissoes, f.permissao ?? null)).map(f => ({ chave: f.id, label: f.label, url: f.url ?? i.url, consulta: f.consulta as Record<string, string> | undefined, icone: f.id }))
-        : [{ chave: i.url, label: i.label, url: i.url, consulta: undefined as Record<string, string> | undefined, icone: i.url }]);
-      return { secao, itens: doGrupo, linhas };
-    }).filter(g => g.itens.length);
+    const permissoes = this.sessao.permissoes();
+    /** Módulo com subitens vira uma linha por subitem (cada um na sua seção); os demais itens são uma linha só. */
+    const todas = itens.flatMap((i: ItemMenu) => {
+      const secaoDoItem = SECAO_DA_URL[i.url] ?? 'inicio';
+      return i.filhos
+        ? i.filhos.filter(f => podeVer(permissoes, f.permissao ?? null)).map(f => ({ secaoId: f.secao ?? secaoDoItem, chave: f.id, label: f.label, url: f.url ?? i.url, consulta: f.consulta as Record<string, string> | undefined, icone: f.id }))
+        : [{ secaoId: secaoDoItem, chave: i.url, label: i.label, url: i.url, consulta: undefined as Record<string, string> | undefined, icone: i.url }];
+    });
+    return SECOES.map(secao => ({ secao, linhas: todas.filter(l => l.secaoId === secao.id) })).filter(g => g.linhas.length);
   }
 
   /** Aba da tela atual (?aba=), para destacar o subitem certo do módulo. */

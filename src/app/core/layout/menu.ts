@@ -6,6 +6,8 @@ export interface FilhoMenu {
   consulta?: Record<string, string>;
   /** Tela própria, quando o subitem não é uma aba do módulo. */
   url?: string;
+  /** Seção do menu em que o subitem aparece, quando difere da do módulo. */
+  secao?: 'inicio' | 'cadastro' | 'escalas' | 'comunicacao' | 'financeiro' | 'pastoral' | 'meu-espaco' | 'relatorios' | 'ajuda';
   /** Quem pode ver o subitem; vazio = quem vê o módulo. */
   permissao?: string | readonly string[] | null;
 }
@@ -39,8 +41,8 @@ export const BARRA: ItemMenu[] = [
   { label: 'Mural', url: '/mural', permissao: 'MURAL' },
   { label: 'Tarefas', url: '/tarefas', permissao: 'TAREFA' },
   { label: 'Financeiro', url: '/financeiro', permissao: 'FINANCEIRO', filhos: [
-    { id: 'financeiro?lancamentos', label: 'Lançamentos', consulta: { aba: 'lancamentos' } },
-    { id: 'financeiro?contas', label: 'Banco/caixa', consulta: { aba: 'contas' } },
+    { id: 'financeiro?lancamentos', label: 'Banco/caixa', consulta: { aba: 'lancamentos' } },
+    { id: 'financeiro?contas', label: 'Conta bancária', consulta: { aba: 'contas' }, secao: 'cadastro' },
     { id: 'financeiro?plano', label: 'Plano de contas', consulta: { aba: 'plano-de-contas' } },
   ] },
   { label: 'Eventos', url: '/eventos', permissao: 'EVENTO' },

@@ -17,7 +17,7 @@
     </div>
     <section class="card p-4"><h2 class="secao-titulo">Saldo por conta</h2><div class="flex flex-wrap gap-5">@for (c of resumo.contas; track c.id) { <p>{{ c.nome }}: <strong>{{ c.saldo | currency:'BRL' }}</strong></p> }</div><p class="text-xs text-slate-500 mt-2">Saldo inicial + entradas recebidas − saídas pagas até a data final. Pendentes não entram no saldo.</p></section>
   }
-  <h2 class="text-lg font-black text-slate-800" data-aba-titulo>{{ aba === 'movimentos' ? 'Lançamentos' : aba === 'contas' ? 'Banco/caixa' : 'Plano de contas' }}</h2>
+  <h2 class="text-lg font-black text-slate-800" data-aba-titulo>{{ aba === 'movimentos' ? 'Banco/caixa' : aba === 'contas' ? 'Conta bancária' : 'Plano de contas' }}</h2>
   <section class="card p-4 space-y-4">
     @if (aba === 'movimentos') {
       <app-barra-filtros placeholder="Buscar descrição" [(termo)]="filtro.nome" (termoChange)="buscarTexto()" (buscar)="buscar()" [temFiltros]="true">

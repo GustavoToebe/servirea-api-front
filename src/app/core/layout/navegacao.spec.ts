@@ -23,8 +23,9 @@ describe('Navegação por seções', () => {
 
   it('agrupa por seção na ordem do menu e omite seções vazias', () => {
     const grupos = agruparPorSecao(telasVisiveis(['FINANCEIRO']));
-    expect(grupos.map(g => g.secao.id)).toEqual(['inicio', 'financeiro', 'ajuda']);
-    expect(grupos[1].telas.map(t => t.rotulo)).toEqual(['Financeiro', 'Lançamentos financeiros', 'Banco/caixa', 'Plano de contas']);
+    expect(grupos.map(g => g.secao.id)).toEqual(['inicio', 'cadastro', 'financeiro', 'ajuda']);
+    expect(grupos[2].telas.map(t => t.rotulo)).toEqual(['Financeiro', 'Banco/caixa', 'Plano de contas']);
+    expect(grupos[1].telas.map(t => t.rotulo)).toContain('Conta bancária');
   });
 
   it('a busca ignora acento e caixa, exige todas as palavras e usa sinônimos', () => {
