@@ -1,0 +1,495 @@
+    <div class="space-y-4">
+      <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div><a routerLink="/escalas" class="text-sm font-semibold text-brand-blue">← Voltar para escalas</a>
+          <h1 class="mt-1 text-2xl font-black">{{ id ? 'Montagem da escala' : 'Nova escala' }}<app-numero [numero]="currentDetail?.sequencial" /></h1></div>
+        @if (id) {
+          <div class="flex flex-wrap items-center gap-2"><span class="badge" [ngClass]="statusClass(status)">{{ statusLabel(status) }}</span>
+            @if (status==='RASCUNHO' && sessaoRespostas.permissoes().includes('VAGA_DISTRIBUIR')) {<a class="btn-secondary !py-2" [routerLink]="['/escalas',id,'distribuicao']" data-distribuir>Distribuir por regras</a>}
+            @if (status==='FINALIZADA' && sessaoRespostas.permissoes().includes('NOTIFICACAO_ENVIAR')) {<button type="button" class="btn-secondary !py-2" [disabled]="avisando" (click)="avisarEscalados('EMAIL')" data-avisar-email>Avisar escalados por e-mail</button><button type="button" class="btn-secondary !py-2" [disabled]="avisando" (click)="avisarEscalados('WHATSAPP')" data-avisar-whatsapp>Avisar por WhatsApp</button>}
+            @if (status==='FINALIZADA' && sessaoRespostas.permissoes().includes('CHECKIN')) {<a class="btn-secondary !py-2" [routerLink]="['/escalas',id,'checkin']" data-checkin>Check-in</a>}
+            @if (sessaoRespostas.permissoes().includes('VAGA_TROCA_LER')) {<a class="btn-secondary !py-2" [routerLink]="['/escalas',id,'trocas']">Trocas</a>}
+            @if (sessaoRespostas.permissoes().includes('VAGA_CANDIDATURA_LER')) {<a class="btn-secondary !py-2" [routerLink]="['/escalas',id,'candidaturas']">Candidaturas</a>}
+            @if (sessaoRespostas.permissoes().includes('VAGA_RESPOSTA_LER')) {<a class="btn-secondary !py-2" [routerLink]="['/escalas',id,'respostas']">Respostas de participação</a>}
+            @if (status==='FINALIZADA') {
+              <app-orientacao-toggle chave="escala" [(valor)]="orientacao" />
+              <button type="button" class="btn-secondary !py-2" (click)="gerarPrevia()">Gerar prévia (PDF)</button>
+              <button class="btn-secondary !py-2" (click)="exportPdf()">Exportar PDF</button>
+              <button class="btn-secondary !py-2" (click)="exportPng()">Exportar PNG</button>
+            }
+          </div>
+        }
+      </div>
+
+      @if(!readOnly&&podeArrastar()){
+      <section class="card space-y-3 p-4"><h2 class="secao-titulo">Alocar por arraste ou teclado</h2><p class="text-sm text-slate-500">Arraste uma pessoa para a vaga, ou selecione aqui e use “Aplicar pessoa selecionada” na vaga. Altera apenas o rascunho; salve depois. Para substituir uma pessoa, será pedida confirmação.</p><label class="label" for="busca-arraste">Buscar voluntário ativo</label><input id="busca-arraste" class="field" [(ngModel)]="buscaArraste" (ngModelChange)="buscarArraste()" placeholder="Início do nome"><div class="flex flex-wrap gap-2">@for(v of pessoasArraste;track v.id){<button type="button" class="btn-secondary" [draggable]="!saving&&!arrasteOcupado" [disabled]="saving||arrasteOcupado" [attr.aria-pressed]="pessoaArraste===v.id" (dragstart)="iniciarArraste($event,v.id)" (dragend)="encerrarArraste()" (click)="pessoaArraste=v.id">{{v.nome_completo}}</button>}</div><div class="flex gap-3"><button type="button" [disabled]="buscandoArraste||paginaArraste===0" (click)="paginarArraste(-1)">Anterior</button><span>{{paginaArraste+1}}</span><button type="button" [disabled]="buscandoArraste||!maisArraste" (click)="paginarArraste(1)">Próxima</button></div><p role="status">{{erroArraste||avisoArraste}}</p><button type="button" class="btn-secondary" (click)="pessoaArraste=null">Limpar seleção</button></section>
+      }
+      @if (loading) {
+        <div class="space-y-3" aria-label="Carregando escala">
+          <div class="h-16 animate-pulse rounded-2xl bg-slate-200"></div>
+          @for (i of esqueleto; track i) { <div class="h-12 animate-pulse rounded-xl bg-slate-100"></div> }
+        </div>
+      } @else {
+        <section class="card p-4">
+          <form [formGroup]="form" class="grid gap-3 md:grid-cols-[2fr_minmax(10rem,1fr)_minmax(14rem,1.4fr)_6.5rem_minmax(9rem,1fr)]">
+            <div><label class="label">Título *</label><input class="field" formControlName="titulo" [readonly]="readOnly"></div>
+            <div>
+              <label class="label">Layout</label>
+              <select class="field" formControlName="layoutId" [attr.disabled]="metaTravada ? true : null" (change)="metaChanged()">
+                <option [ngValue]="null">Padrão</option>
+                @for(l of layoutsFiltrados; track l.id){
+                  <option [ngValue]="l.id">{{ l.nome }}</option>
+                }
+              </select>
+            </div>
+            <div>
+              <label class="label">Modelo *</label>
+              <select class="field" formControlName="tipo" [attr.disabled]="metaTravada ? true : null" (change)="metaChanged()">
+                <option value="SEMANAL">Semanal (dias úteis)</option>
+                <option value="MENSAL">Mensal (sábados e domingos)</option>
+              </select>
+            </div>
+            <div>
+              <label class="label">Ano *</label>
+              <input class="field" type="number" min="2020" max="2100" formControlName="ano" [readonly]="metaTravada" (change)="metaChanged()">
+            </div>
+            <div>
+              <label class="label">Mês *</label>
+              <select class="field" formControlName="mes" [attr.disabled]="metaTravada ? true : null" (change)="metaChanged()">
+                @for (m of months; track m; let i = $index) {
+                  <option [ngValue]="i+1">{{ m }}</option>
+                }
+              </select>
+            </div>
+          </form>
+          @if (observacaoAberta) {
+            <div class="mt-3"><label class="label">Observação</label><textarea class="field min-h-20" [formControl]="form.controls.observacao" [readonly]="readOnly"></textarea></div>
+          } @else if (!readOnly) {
+            <button type="button" class="mt-2 text-sm font-semibold text-brand-blue hover:underline" (click)="observacaoAberta = true">＋ Observação</button>
+          }
+          <details class="mt-2 text-sm text-slate-600">
+            <summary class="cursor-pointer font-semibold">Como a grade é montada?</summary>
+            <p class="mt-2">A escala mensal fica só com sábados e domingos; a semanal, com os dias úteis. Se a festa da Igreja cair no fim de semana, o nome aparece na mensal; se cair em dia de semana, aparece na semanal. Você ainda pode adicionar ou excluir um dia na mão.</p>
+          </details>
+        </section>
+
+        <!-- Cabeçalho do Layout (Visível na Escala e no PDF) -->
+        @if (textosCabecalho.length > 0) {
+          <section class="card p-4 bg-gradient-to-r from-indigo-50/50 via-purple-50/30 to-indigo-50/50 border border-indigo-200/80 space-y-1.5 shadow-2xs">
+            <div class="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-indigo-500 mb-1">
+              <span>📄 Cabeçalho do Layout (Impresso no Topo do Documento)</span>
+              <span class="text-slate-400 font-medium normal-case">Definido no modelo selecionado</span>
+            </div>
+            @for (t of textosCabecalho; track t.idLocal || t.conteudo) {
+              @if (t.tipo === 'TITULO') {
+                <div [class]="getAlignClass(t.alinhamento)" class="text-xl md:text-2xl font-black text-slate-800 tracking-tight">
+                  {{ resolverTextoTag(t.conteudo) }}
+                </div>
+              }
+              @if (t.tipo === 'SUBTITULO') {
+                <div [class]="getAlignClass(t.alinhamento)" class="text-sm font-bold text-slate-600">
+                  {{ resolverTextoTag(t.conteudo) }}
+                </div>
+              }
+              @if (t.tipo === 'TEXTO_LIVRE') {
+                <div [class]="getAlignClass(t.alinhamento)" class="text-xs text-slate-700 bg-white/90 border border-indigo-100 p-2.5 rounded-xl whitespace-pre-wrap leading-relaxed shadow-2xs">
+                  {{ resolverTextoTag(t.conteudo) }}
+                </div>
+              }
+            }
+          </section>
+        }
+
+        <!-- Barra de ferramentas da grade -->
+        <div class="flex flex-wrap items-center gap-2">
+          @if (!readOnly) {
+            <button type="button" class="btn-secondary !py-2" (click)="abrirNovoDia($event)" data-novo-dia>＋ Dia</button>
+          <button type="button" class="btn-secondary !py-2" (click)="gerarPrevia()">Gerar prévia (PDF)</button>
+          }
+          @if (ehMensal) {
+            @if (id) {
+              <a class="btn-secondary !py-2" target="_blank" [routerLink]="['/escalas/indisponibilidades']"
+                 [queryParams]="{ ano: form.controls.ano.value, mes: form.controls.mes.value }" data-indisponibilidades>
+                Indisponibilidades do mês ({{ pendentes }} pendentes)</a>
+            } @else {
+              <span class="text-sm text-slate-500">Salve o rascunho para ver indisponibilidades e irmãos.</span>
+            }
+          }
+          @if (ehMensal && apoio) {
+            <button type="button" class="btn-secondary !py-2 lg:hidden" (click)="painelAberto = !painelAberto">Ainda não escalados</button>
+          }
+        </div>
+
+        @if (!ehMensal && referenciasCount) {
+          <div class="rounded-2xl border border-slate-300 bg-slate-100 p-4 text-sm text-slate-700" data-aviso-referencias>
+            <strong>{{ referenciasCount }} linha(s) de referência:</strong> reponha essas pessoas em outros dias e apague a linha quando terminar.
+          </div>
+        }
+
+        <!-- Semanal: visualização em cartões estruturados ou tabela clássica -->
+        @if (!ehMensal) {
+          <div class="space-y-3">
+            <div class="flex items-center justify-between bg-slate-100/80 p-2 rounded-2xl border border-slate-200">
+              <span class="text-xs font-bold text-slate-700 pl-2">Escala Semanal (Dias úteis):</span>
+              <div class="inline-flex rounded-xl border border-slate-200 bg-white p-0.5 text-xs font-bold shadow-2xs">
+                <button type="button" class="px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+                        [class.bg-brand-blue]="modoSemanal === 'CARTOES'"
+                        [class.text-white]="modoSemanal === 'CARTOES'"
+                        [class.shadow-xs]="modoSemanal === 'CARTOES'"
+                        [class.text-slate-600]="modoSemanal !== 'CARTOES'"
+                        (click)="modoSemanal = 'CARTOES'">
+                  🗂️ Cartões da Missa
+                </button>
+                <button type="button" class="px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+                        [class.bg-brand-blue]="modoSemanal === 'TABELA'"
+                        [class.text-white]="modoSemanal === 'TABELA'"
+                        [class.shadow-xs]="modoSemanal === 'TABELA'"
+                        [class.text-slate-600]="modoSemanal !== 'TABELA'"
+                        (click)="modoSemanal = 'TABELA'">
+                  📊 Tabela Semanal
+                </button>
+              </div>
+            </div>
+
+            @if (modoSemanal === 'CARTOES') {
+              <div class="space-y-4">
+                @for (l of linhasSemanal; track l.chave) {
+                  @if (l.novaSemana) {
+                    <div class="rounded-xl bg-slate-100 px-4 py-2 text-xs font-black uppercase tracking-wider text-slate-600 border border-slate-200 flex items-center justify-between">
+                      <span class="flex items-center gap-1.5"><span>📅</span> Semana {{ l.semana }}</span>
+                      <span class="text-[11px] font-normal lowercase text-slate-400">Dias úteis</span>
+                    </div>
+                  }
+                  <div class="card overflow-visible border-l-4"
+                       [class.border-l-indigo-500]="!l.evento.referencia && !l.evento.ocorrenciaNova"
+                       [class.border-l-amber-400]="l.evento.ocorrenciaNova"
+                       [class.border-l-slate-400]="l.evento.referencia"
+                       [class.bg-slate-50]="l.evento.referencia"
+                       [attr.data-evento]="l.evento.data">
+                    <div class="flex items-center justify-between gap-3 border-b border-[var(--line)] px-4 py-2.5">
+                      <div class="min-w-0 truncate font-black">
+                        <span class="capitalize">{{ l.diaEData }}</span> · {{ l.evento.horario.slice(0,5) }} ·
+                        <span [class.text-red-700]="l.evento.celebracao !== 'Missa'">{{ l.evento.celebracao || 'Missa' }}</span>
+                        @if (l.evento.referencia) {
+                          <span class="ml-2 rounded bg-slate-300 px-1.5 py-0.5 text-[10px] font-bold uppercase text-slate-700">Referência</span>
+                        }
+                        @if (l.evento.ocorrenciaNova) {
+                          <span class="ml-2 rounded bg-amber-200 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">Dia a mais</span>
+                        }
+                      </div>
+                      <div class="flex shrink-0 items-center gap-2">
+                        <span class="text-sm text-slate-500 font-medium">{{ l.preenchidas }}/{{ l.evento.vagas.length }} vagas</span>
+                        @if (!readOnly) {
+                          <button type="button" class="rounded px-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" title="Editar dia" (click)="abrirEdicao(l, $event)" data-editar-dia>✎</button>
+                        }
+                      </div>
+                    </div>
+
+                    <!-- Estrutura Visual idêntica à do Layout -->
+                    <div class="space-y-3 p-3 bg-slate-50/40 rounded-b-2xl">
+                      @for (linha of linhasCelebracaoLayout; track linha.index) {
+                        <div class="p-3 rounded-xl border border-slate-200 bg-white shadow-2xs">
+                          <div class="text-[11px] font-bold text-slate-400 mb-2 pb-1 border-b border-slate-100 flex items-center justify-between">
+                            <span class="text-indigo-700 font-extrabold uppercase tracking-wide">Linha {{ linha.index + 1 }} da Missa</span>
+                          </div>
+                          <div class="flex flex-wrap gap-2.5 items-stretch">
+                            @for (bloco of linha.elementos; track bloco.idLocal || (bloco.funcao + '-' + bloco.posicao)) {
+                              @if (bloco.tipo === 'VAGA' || (!bloco.tipo && bloco.funcao)) {
+                                @let slot = l.vagasPorColuna[bloco.funcao + '-' + (bloco.posicao || 1)];
+                                @if (slot) {
+                                  <div [style.flex]="bloco.largura === 12 ? '1 1 100%' : (bloco.largura || 1)"
+                                       class="p-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white transition-all shadow-2xs min-w-[150px] flex flex-col justify-between">
+                                    <div>
+                                      <div class="flex items-center justify-between gap-1 text-[10px] font-black uppercase tracking-wider mb-1">
+                                        <span class="px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">{{ slot.funcao }}</span>
+                                        <span class="text-slate-400">Posição {{ slot.posicao }}</span>
+                                      </div>
+                                      <div class="text-xs font-black text-slate-800 mb-1.5 truncate" title="{{ bloco.rotulo || l.rotulos[slot.funcao + '-' + slot.posicao] || slot.funcao }}">
+                                        {{ bloco.rotulo || l.rotulos[slot.funcao + '-' + slot.posicao] || slot.funcao }}
+                                      </div>
+                                    </div>
+                                    <div>
+                                      @if (readOnly) {
+                                        <span class="block truncate rounded-lg px-2 py-1.5 bg-white border border-slate-200 text-sm"
+                                              [class.font-semibold]="!!slot.voluntario_id"
+                                              [class.text-slate-400]="!slot.voluntario_id">
+                                          {{ slot.voluntario?.nome_completo || '—' }}
+                                        </span>
+                                      } @else {
+                                        <div class="rounded-lg border border-transparent focus-within:border-[var(--brand)]" (dragover)="permitirArraste($event)" (drop)="soltarPessoa($event,l.evento,slot)"><app-volunteer-picker [remoto]="true" (voluntarioSelecionado)="lembrarOpcao($event)" [volunteers]="volunteers" [selectedId]="slot.voluntario_id" [excludeIds]="l.usados"
+                                          (selectedIdChange)="selectVolunteer(l.evento, slot, $event)" />@if(pessoaArraste&&podeArrastar()){<button type="button" class="btn-secondary mt-1 text-xs" [disabled]="saving||arrasteOcupado" (click)="aplicarArraste(l.evento,slot)">Aplicar pessoa selecionada</button>}</div>
+                                      }
+                                    </div>
+                                  </div>
+                                }
+                              } @else if (bloco.tipo === 'DATA') {
+                                <div [style.flex]="bloco.largura === 12 ? '1 1 100%' : (bloco.largura || 1)"
+                                     class="p-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-950 flex items-center justify-between text-xs font-bold">
+                                  <span>📅 Dia / Celebração: <strong class="capitalize">{{ l.diaEData }}</strong> · {{ l.evento.horario.slice(0,5) }}</span>
+                                  @if (l.evento.celebracao && l.evento.celebracao !== 'Missa') {
+                                    <span class="text-red-700 font-extrabold uppercase px-1.5 py-0.5 rounded bg-red-100">{{ l.evento.celebracao }}</span>
+                                  }
+                                </div>
+                              } @else if (bloco.tipo === 'TEXTO_LIVRE') {
+                                <div [style.flex]="bloco.largura === 12 ? '1 1 100%' : (bloco.largura || 1)"
+                                     class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs">
+                                  {{ resolverTextoTag(bloco.conteudo) }}
+                                </div>
+                              }
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <!-- Tabela Semanal clássica -->
+              <section class="card overflow-hidden">
+                <div class="overflow-auto" style="max-height: calc(100vh - 260px)">
+                  <table class="w-full border-separate border-spacing-0 text-left text-sm">
+                    <thead class="sticky top-0 z-20">
+                      <tr class="bg-red-700 text-white">
+                        <th class="sticky left-0 z-30 bg-red-700 px-3 py-2">ESCALA SEMANAL</th>
+                        <th class="px-3 py-2 text-center" [attr.colspan]="colunasVaga.length">{{ months[form.controls.mes.value-1] | uppercase }} {{ form.controls.ano.value }}</th>
+                      </tr>
+                      <tr class="bg-red-600 text-white">
+                        <th class="sticky left-0 z-30 w-40 bg-red-600 px-3 py-2">Dia</th>
+                        @for (col of colunasVaga; track col.funcao+'-'+col.posicao) { <th class="min-w-40 px-2 py-2 text-center">{{ col.rotulo }}</th> }
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (l of linhasSemanal; track l.chave) {
+                        @if (l.novaSemana) {
+                          <tr class="bg-slate-50" data-separador-semana><td class="sticky left-0 bg-slate-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-400" [attr.colspan]="colunasVaga.length + 1">Semana {{ l.semana }}</td></tr>
+                        }
+                        <tr class="align-top" [class.hover:bg-violet-50/40]="!l.evento.referencia" [class.bg-slate-100]="l.evento.referencia" [class.text-slate-500]="l.evento.referencia"
+                            [attr.data-referencia]="l.evento.referencia ? l.evento.data : null">
+                          <td class="sticky left-0 z-10 border-b border-slate-200 px-3 py-2"
+                              [class.bg-white]="!l.evento.referencia" [class.bg-slate-100]="l.evento.referencia"
+                              [class.border-l-4]="l.evento.ocorrenciaNova || l.hoje" [class.border-l-amber-400]="l.evento.ocorrenciaNova" [class.border-l-violet-600]="l.hoje && !l.evento.ocorrenciaNova">
+                            <div class="flex items-start justify-between gap-1">
+                              <div>
+                                <div class="font-black capitalize">{{ l.diaEData }}</div>
+                                <div class="text-[11px] text-slate-500">{{ l.evento.horario.slice(0,5) }}@if (l.evento.celebracao && l.evento.celebracao !== 'Missa') { · <span class="font-bold text-red-700">{{ l.evento.celebracao }}</span> }</div>
+                              </div>
+                              @if (!readOnly) {
+                                <button type="button" class="rounded px-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700" title="Editar dia" (click)="abrirEdicao(l, $event)" data-editar-dia>✎</button>
+                              }
+                            </div>
+                            @if (l.evento.referencia) {
+                              <div class="mt-1 rounded bg-slate-300 px-1.5 py-0.5 text-[10px] font-bold uppercase text-slate-700" data-selo-referencia>
+                                Referência de {{ mesDe(l.evento.data) }} — não entra na escala</div>
+                            }
+                            @if (l.evento.ocorrenciaNova) {
+                              <div class="mt-1 text-[11px] font-bold text-amber-700">Dia a mais — preencher à mão</div>
+                            }
+                          </td>
+                          @for (col of colunasVaga; track col.funcao+'-'+col.posicao) {
+                            <td class="border-b border-slate-200 px-1.5 py-1.5">
+                              @if (l.vagasPorColuna[col.funcao+'-'+col.posicao]; as slot) {
+                                @if (readOnly) {
+                                  <span class="block truncate rounded-lg px-2 py-1.5" [class.font-semibold]="!!slot.voluntario_id" [class.text-slate-400]="!slot.voluntario_id">{{ slot.voluntario?.nome_completo || '—' }}</span>
+                                } @else {
+                                  <div class="rounded-lg border border-transparent focus-within:border-[var(--brand)]" (dragover)="permitirArraste($event)" (drop)="soltarPessoa($event,l.evento,slot)"><app-volunteer-picker [remoto]="true" (voluntarioSelecionado)="lembrarOpcao($event)" [volunteers]="volunteers" [selectedId]="slot.voluntario_id" [excludeIds]="l.usados" (selectedIdChange)="selectVolunteer(l.evento, slot, $event)" />@if(pessoaArraste&&podeArrastar()){<button type="button" class="btn-secondary mt-1 text-xs" [disabled]="saving||arrasteOcupado" (click)="aplicarArraste(l.evento,slot)">Aplicar pessoa selecionada</button>}</div>
+                                }
+                              }
+                            </td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            }
+          </div>
+        }
+
+        <!-- Mensal: cartões por missa + painel "Ainda não escalados" -->
+        @if (ehMensal) {
+          <div class="grid gap-4" [class.lg:grid-cols-[1fr_20rem]]="!!apoio && painelDesktop">
+            <section class="space-y-3">
+              @for (l of linhas; track l.chave) {
+                <div class="card overflow-visible border-l-4" [class.border-l-violet-400]="l.fimDeSemana === 'SAB'" [class.border-l-violet-700]="l.fimDeSemana === 'DOM'" [attr.data-evento]="l.evento.data">
+                  <div class="flex items-center justify-between gap-3 border-b border-[var(--line)] px-4 py-2.5">
+                    <div class="min-w-0 truncate font-black"><span class="capitalize">{{ l.diaEData }}</span> · {{ l.evento.horario.slice(0,5) }} ·
+                      <span [class.text-red-700]="l.evento.celebracao !== 'Missa'">{{ l.evento.celebracao || 'Missa' }}</span></div>
+                    <div class="flex shrink-0 items-center gap-2">
+                      <span class="text-sm text-slate-500">{{ l.preenchidas }}/{{ l.evento.vagas.length }} vagas</span>
+                      @if (!readOnly) {
+                        <button type="button" class="rounded px-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" title="Editar dia" (click)="abrirEdicao(l, $event)" data-editar-dia>✎</button>
+                      }
+                    </div>
+                  </div>
+                  <!-- Estrutura Visual idêntica à do Layout -->
+                  <div class="space-y-3 p-3 bg-slate-50/40 rounded-b-2xl">
+                    @for (linha of linhasCelebracaoLayout; track linha.index) {
+                      <div class="p-3 rounded-xl border border-slate-200 bg-white shadow-2xs">
+                        <div class="text-[11px] font-bold text-slate-400 mb-2 pb-1 border-b border-slate-100 flex items-center justify-between">
+                          <span class="text-violet-700 font-extrabold uppercase tracking-wide">Linha {{ linha.index + 1 }} da Missa</span>
+                        </div>
+                        <div class="flex flex-wrap gap-2.5 items-stretch">
+                          @for (bloco of linha.elementos; track bloco.idLocal || (bloco.funcao + '-' + bloco.posicao)) {
+                            @if (bloco.tipo === 'VAGA' || (!bloco.tipo && bloco.funcao)) {
+                              @let slot = l.vagasPorColuna[bloco.funcao + '-' + (bloco.posicao || 1)];
+                              @if (slot) {
+                                <div [style.flex]="bloco.largura === 12 ? '1 1 100%' : (bloco.largura || 1)"
+                                     class="p-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white transition-all shadow-2xs min-w-[150px] flex flex-col justify-between">
+                                  <div>
+                                    <div class="flex items-center justify-between gap-1 text-[10px] font-black uppercase tracking-wider mb-1">
+                                      <span class="px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">
+                                        {{ slot.funcao }}
+                                      </span>
+                                      <span class="text-slate-400">Posição {{ slot.posicao }}</span>
+                                    </div>
+                                    <div class="text-xs font-black text-slate-800 mb-1.5 truncate" title="{{ bloco.rotulo || l.rotulos[slot.funcao + '-' + slot.posicao] || slot.funcao }}">
+                                      {{ bloco.rotulo || l.rotulos[slot.funcao + '-' + slot.posicao] || slot.funcao }}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    @if (readOnly) {
+                                      <span class="block truncate rounded-lg px-2 py-1.5 bg-white border border-slate-200 text-sm"
+                                            [class.font-semibold]="!!slot.voluntario_id"
+                                            [class.text-slate-400]="!slot.voluntario_id">
+                                        {{ slot.voluntario?.nome_completo || '—' }}
+                                      </span>
+                                    } @else {
+                                      <div class="rounded-lg border border-transparent focus-within:border-[var(--brand)]" (dragover)="permitirArraste($event)" (drop)="soltarPessoa($event,l.evento,slot)"><app-volunteer-picker [remoto]="true" (voluntarioSelecionado)="lembrarOpcao($event)" [volunteers]="volunteers" [selectedId]="slot.voluntario_id" [excludeIds]="l.usados" [marcadores]="l.marcadores"
+                                        (selectedIdChange)="selectVolunteer(l.evento, slot, $event)" />@if(pessoaArraste&&podeArrastar()){<button type="button" class="btn-secondary mt-1 text-xs" [disabled]="saving||arrasteOcupado" (click)="aplicarArraste(l.evento,slot)">Aplicar pessoa selecionada</button>}</div>
+                                    }
+                                  </div>
+                                </div>
+                              }
+                            } @else if (bloco.tipo === 'DATA') {
+                              <div [style.flex]="bloco.largura === 12 ? '1 1 100%' : (bloco.largura || 1)"
+                                   class="p-2.5 rounded-xl bg-violet-50 border border-violet-200 text-violet-950 flex items-center justify-between text-xs font-bold">
+                                <span>📅 Data / Celebração: <strong class="capitalize">{{ l.diaEData }}</strong> · {{ l.evento.horario.slice(0,5) }}</span>
+                                @if (l.evento.celebracao && l.evento.celebracao !== 'Missa') {
+                                  <span class="text-red-700 font-extrabold uppercase px-1.5 py-0.5 rounded bg-red-100">{{ l.evento.celebracao }}</span>
+                                }
+                              </div>
+                            } @else if (bloco.tipo === 'TEXTO_LIVRE') {
+                              <div [style.flex]="bloco.largura === 12 ? '1 1 100%' : (bloco.largura || 1)"
+                                   class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs">
+                                {{ resolverTextoTag(bloco.conteudo) }}
+                              </div>
+                            }
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                  @if (sugestaoIrmao && sugestaoIrmao.chave === l.chave) {
+                    <div class="mx-3 mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-violet-50 px-3 py-2 text-sm" data-sugestao-irmao>
+                      <span>👨‍👩‍👧 {{ sugestaoIrmao.nomePessoa }} tem irmão: {{ sugestaoIrmao.nomeIrmao }}.</span>
+                      <div class="flex gap-2">
+                        <button type="button" class="btn-secondary !px-3 !py-1 text-xs" [disabled]="!vagaLivre(l.evento)"
+                                [title]="vagaLivre(l.evento) ? '' : 'Sem vaga livre nesta missa'" (click)="colocarIrmao(l.evento)" data-colocar-irmao>Colocar {{ sugestaoIrmao.nomeIrmao }} também</button>
+                        <button type="button" class="text-xs text-slate-500 hover:underline" (click)="sugestaoIrmao = null">Agora não</button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </section>
+            @if (apoio) {
+              <div class="lg:block" [class.hidden]="!painelAberto">
+                <div class="mb-2 hidden justify-end lg:flex">
+                  <button type="button" class="text-xs font-semibold text-slate-500 hover:underline" (click)="alternarPainelDesktop()">{{ painelDesktop ? 'Recolher painel ›' : '‹ Ainda não escalados' }}</button>
+                </div>
+                @if (painelDesktop || painelAberto) {
+                  <app-ainda-nao-escalados [parcial]="true" [apoio]="apoio" [volunteers]="volunteers" [eventos]="events" [revisao]="revisao" />
+                }
+              </div>
+            }
+          </div>
+        }
+
+        @if (!events.length) {
+          <div class="card p-8 text-center text-slate-500">Nenhum evento foi gerado. Confira ano, mês e modelo.</div>
+        }
+        @if (error) {
+          <div class="rounded-xl bg-red-50 p-4 text-red-700">{{ error }}</div>
+        }
+
+        <!-- Rodapé da escala (no final da página, não fica flutuando) -->
+        <div class="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="min-w-48 flex-1">
+            <div class="text-sm text-slate-600"><strong>{{ preenchidas }}</strong> de <strong>{{ total }}</strong> vagas</div>
+            <div class="mt-1 h-2 max-w-md overflow-hidden rounded-full bg-slate-100" role="progressbar" [attr.aria-valuenow]="progresso" aria-valuemin="0" aria-valuemax="100">
+              <div class="h-full transition-all" [class.bg-emerald-500]="progresso === 100" [class.bg-violet-600]="progresso < 100" [style.width.%]="progresso"></div>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center justify-end gap-2">
+            @if (status==='RASCUNHO') {
+              <button class="btn-primary" type="button" [disabled]="saving || form.invalid" (click)="saveDraft()">{{ saving ? 'Salvando...' : 'Salvar rascunho' }}</button>
+              <button class="btn-primary !bg-emerald-600 hover:!bg-emerald-700" type="button" [disabled]="saving || form.invalid" (click)="finalize()">Finalizar escala</button>
+            }
+            @if (temAcoesExtras) {
+              <button type="button" class="btn-secondary !px-3" title="Mais ações" (click)="abrirMenu($event)" data-mais-acoes>⋯</button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Botões flutuantes de navegação rápida (Topo / Fim da página) -->
+    <aside aria-label="Navegação rápida pela página" class="fixed bottom-6 right-6 z-30 flex flex-col gap-2 rounded-2xl p-1.5 bg-white/90 backdrop-blur border border-slate-200 shadow-md">
+      <button type="button"
+              class="flex items-center justify-center w-10 h-10 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition-all cursor-pointer shadow-2xs"
+              (click)="rolarParaTopo()"
+              title="Ir para o início da página">
+        <span class="text-xs font-black">▲</span>
+      </button>
+      <button type="button"
+              class="flex items-center justify-center w-10 h-10 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition-all cursor-pointer shadow-2xs"
+              (click)="rolarParaFinal()"
+              title="Ir para o final da página (Salvar / Finalizar)">
+        <span class="text-xs font-black">▼</span>
+      </button>
+    </aside>
+
+    <!-- Mini-painéis (o fundo transparente fecha; nenhum listener global) -->
+    @if (painelAtivo) {
+      <div class="fixed inset-0 z-40" (click)="fecharPaineis()"></div>
+      <div class="card fixed z-50 w-72 p-3 shadow-xl" [style.top.px]="painelAtivo.top" [style.left.px]="painelAtivo.left" role="dialog">
+        @if (edicao) {
+          <p class="mb-2 text-sm font-black">{{ edicao.dataLonga }}</p>
+          <label class="label">Horário</label>
+          <input class="field mb-2" type="time" [value]="edicao.evento.horario.slice(0,5)" (change)="changeTime(edicao.evento, $event)">
+          <label class="label">Celebração</label>
+          <input class="field mb-3" list="celebracoes-sugeridas" [value]="edicao.evento.celebracao" (change)="changeCelebration(edicao.evento, $event)">
+          <div class="flex justify-between gap-2">
+            @if (edicao.evento.referencia) {
+              <button type="button" class="text-sm font-bold text-red-600 hover:underline" (click)="apagarReferencia(edicao.evento)">Apagar referência</button>
+            } @else {
+              <button type="button" class="text-sm font-bold text-red-600 hover:underline" (click)="removeDay(edicao.evento)">Excluir dia</button>
+            }
+            <button type="button" class="btn-secondary !px-3 !py-1 text-sm" (click)="fecharPaineis()">Pronto</button>
+          </div>
+        }
+        @if (novoDiaAberto) {
+          <p class="mb-2 text-sm font-black">Adicionar um dia</p>
+          <label class="label">Data</label>
+          <app-campo-data [ngModel]="addDate" (ngModelChange)="addDate = $event" [limpavel]="false" />
+          <label class="label mt-2">Horário</label>
+          <input class="field" type="time" [value]="addTime" (change)="setAddTime($event)">
+          <label class="label mt-2">Celebração</label>
+          <input class="field mb-3" list="celebracoes-sugeridas" [value]="addCelebration" (input)="setAddCelebration($event)" placeholder="Ex.: Missa, Páscoa">
+          <button class="btn-primary w-full" type="button" (click)="addDay(); fecharPaineis()">＋ Adicionar dia</button>
+        }
+        @if (menuAberto) {
+          <div class="flex flex-col text-sm">
+            @if (status==='RASCUNHO') { <button type="button" class="rounded px-2 py-2 text-left hover:bg-slate-50" (click)="fecharPaineis(); regenerate()">Recriar grade</button> }
+            @if (currentDetail?.tipo==='SEMANAL' && status!=='CANCELADA') { <button type="button" class="rounded px-2 py-2 text-left hover:bg-slate-50" (click)="fecharPaineis(); replicarAberto = true" data-replicar-mes>Replicar para outro mês</button> }
+            @if (id && status==='FINALIZADA') { <button type="button" class="rounded px-2 py-2 text-left hover:bg-slate-50" (click)="fecharPaineis(); reopen()">Reabrir como rascunho</button> }
+            @if (id && status==='CANCELADA') { <button type="button" class="rounded px-2 py-2 text-left hover:bg-slate-50" (click)="fecharPaineis(); reopen()">Restaurar como rascunho</button> }
+            @if (id && status!=='CANCELADA') { <button type="button" class="rounded px-2 py-2 text-left font-semibold text-red-600 hover:bg-red-50" (click)="fecharPaineis(); cancelScale()">Cancelar escala</button> }
+            @if (id && status==='CANCELADA') { <button type="button" class="rounded px-2 py-2 text-left font-semibold text-red-600 hover:bg-red-50" (click)="fecharPaineis(); remove()">Excluir definitivamente</button> }
+          </div>
+        }
+      </div>
+    }
+    <datalist id="celebracoes-sugeridas">@for (t of celebrationOptions; track t) { <option [value]="t"></option> }</datalist>
+    <app-replicar-dialog [open]="replicarAberto" [origem]="currentDetail" (fechar)="replicarAberto = false" />

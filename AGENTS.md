@@ -104,67 +104,37 @@ Detalhe, tabelas e valores em `docs/design-system.md`. Leia antes de mexer em te
   `<div class="parish">`.
 - Trabalhar na branch autorizada pelo usuário; nesta implementação, `melhoria/ecossistema-sem-ia`.
 
-## Segurança e CI na branch de melhorias
+## Segurança e CI
 
 - `core/auth/destino-api.ts` compara origem e fronteira do caminho antes de anexar Bearer, cookies e XSRF. Não substituir por `startsWith` na URL completa.
-- Pull requests executam testes e build; publicação apenas na main. Testes Angular são obrigatórios antes do build de produção.
-
-## Financeiro paroquial
-- `features/financeiro/`, rota `/financeiro`, telas de lançamentos, contas e categorias; regras em `docs/financeiro.md`.
-- Lista paginada por vencimento; resumo por data da baixa. Sem cache de saldos. Debounce e geração de carga impedem resposta antiga substituir a busca nova.
-- Exibir ações conforme FINANCEIRO_CRIAR/ALTERAR/BAIXAR/CONFIGURAR. Enviar versão para editar/baixar/estornar/cancelar; conflito exige atualizar. Datas no CampoData, sem controles nativos.
-
-## Cuidados pessoais
-
-Formulário de pessoa só mostra e envia cuidados com PESSOA_CUIDADOS_ALTERAR. Editor geral omite esses campos; backend mantém os anteriores. Campos da resposta dependem de PESSOA_CUIDADOS_LER.
+- Pull requests executam testes e build; publicação só na `main`. Testes Angular antes do build de produção.
+- Depois de mexer em serviços de API, rode `python scripts/verificar-contrato-api.py` (lê o contrato do back vizinho; ver [contrato da API](docs/contrato-api.md)).
 
 ## Fontes e estado verificável
 
-- [Estado local](docs/estado-projeto.json) e [índice](docs/README.md). Histórico/plano não define a versão implantada.
-- Executar `python scripts/verificar-docs.py` ao mudar docs, schema ou migrations; atualizar o estado junto.
-- Nesta tarefa, usar `melhoria/ecossistema-sem-ia`, conforme pedido do usuário. Publicação depende do fluxo e autorização vigentes.
+- [Estado local](docs/estado-projeto.json) e [índice](docs/README.md). Histórico e plano não definem a versão implantada; precedência em [fontes e retomada](docs/desenvolvimento/fontes-e-retomada.md).
+- Rode `python scripts/verificar-docs.py` ao mudar docs, schema ou migrations e atualize o estado junto.
+- Trabalhar na branch autorizada pelo usuário (`melhoria/ecossistema-sem-ia` nesta etapa). Publicação depende do fluxo e da autorização vigentes; commit e push não são implantação.
 
-## Paginação
+## Regras por funcionalidade
 
-Pessoas/inscrições/eventos usam contratos de [listas paginadas](docs/listas-paginadas.md). Seleção de pessoas é por página; busca reinicia em zero e descarta respostas antigas. Não usar o cache integral de fichas para contar ou mostrar a lista paginada.
+Cada tela tem seu documento em `docs/`; aqui só a regra que não pode ser quebrada.
 
-- Consumo de pessoas/voluntários/usuários: docs/cotas-plano.md, seção independente em Minha conta. Fotos vinculadas/anexos retidos têm cota (V057); consumo em bytes convertido para MB. Inventário pendente exige conferência com PAROQUIA_ALTERAR. Mensais da fila e importacoes_mes aplicados; CSV/XLSX em Pessoas → Importar, com PESSOA/PESSOA_CRIAR, prévia/chave/hash e confirmação atômica. CSV/XLSX com abas e mapeamento: docs/importacao-pessoas.md. Hash inclui arquivo/aba/mapeamento; sem mesclagem. Documentos gerais pendentes.
-
-- Nova rodada de produto: docs/funcionalidades-plano.md e docs/mural-tarefas.md. Recursos explícitos, leitura preservada, mutações protegidas; tabelas V060, histórico versionado, sem HTML/notificações.
-
-- Portal/calendário/pastorais: docs/portal-calendario-pastorais.md. Token de calendário só em memória, limpar ao destruir tela. /portal exige recurso explícito até para consulta. Vínculo pessoa/usuário configurado por administrador; não inferir identidade; confirmação/recusa V062, dependentes ainda pendentes; trocas V064. Coordenador do grupo não altera permissões.
-
-- V062: docs/respostas-escala.md. PORTAL_RESPONDER só para pessoa própria; prazo no início da celebração, servidor Brasília→UTC. Recusa não desaloca/presença. Reabrir/trocar pessoa invalida decisão. @Version vaga; lock paróquia→escala para resposta, escala para edição/alocação. Histórico mantém UUIDs após exclusão. VAGA_RESPOSTA_LER para consulta da coordenação.
-
-- V063: docs/candidaturas-vagas.md, portal/Candidatura*. PORTAL_CANDIDATAR para própria pessoa; VAGA_CANDIDATURA_LER/DECIDIR para coordenação. Criar exige PORTAL_VOLUNTARIO; decidir também ESCALAS. Locks paróquia→escala→vaga. Reabrir/cancelar expira pendentes e reabertura avança versão da vaga. Aprovação não confirma presença/intenção; histórico sem cascata.
-
-- V064: docs/trocas-escala.md. PORTAL_TROCAR para pedidos próprios/aceite; VAGA_TROCA_LER/DECIDIR para coordenação. Original permanece até aprovação. Locks paróquia→escala, versão/ciclo/prazo/vínculos/elegibilidade revalidados. Substituição de uma vaga; sem permuta bilateral/notificações. Diretório mínimo limitado a contas vinculadas, sem contatos.
-
-- Ajuda: docs/ajuda.md, features/ajuda/ajuda-temas.ts. Conteúdo estático de uso, busca local, sem dados de negócio/HTML dinâmico. Revisar orientações ao mudar fluxos. Parâmetro tema usa apenas IDs do catálogo; Servirea filtra por permissões.
-
-- [Fontes e retomada](docs/desenvolvimento/fontes-e-retomada.md): precedência, histórico e registro de evidências.
-
-- V065: docs/tarefas-relatorios-disponibilidade.md. Responsável é usuario_id com FK composta do vínculo; diretório mínimo de 30. Relatórios projetam vagas ocupadas finalizadas; CSV limitado a 5.000, AUDITORIA + RELATORIO_EXPORTAR. Portal próprio PORTAL_DISPONIBILIDADE; versão mensal sob lock da paróquia compartilhada com a coordenação. PUT mensal exige versao.
-
-- F07/V066: [Primeiros passos](docs/onboarding.md). ONBOARDING + ONBOARDING_GERENCIAR e leitura do módulo; progresso compartilhado por paróquia, versão manual sob lock da paróquia, GET sem escrita. Requisitos mínimos são conferidos pelo servidor; nenhuma configuração/envio automático. ESCALAS respeita plano; etapas sem acesso/recurso ficam fora do percentual.
-
-- Rodada 6–10: mural com público/leitura versionada, arraste com teclado, aniversário com opt-in específico e agendador desligado por padrão, página pública por snapshot explícito. Contratos em docs/mural-publico-leituras.md, docs/arraste-escala.md, docs/aniversarios.md e docs/site-publico.md. Histórico de consumo sob demanda: docs/historico-consumo.md; não gerar zeros para consultas ausentes nem gravar dados pessoais.
-
-- Rodada 11–17: docs/liturgia.md, docs/indicadores-participacao.md, docs/estoque-patrimonio.md e docs/seletores-escala.md. Nenhuma geração de conteúdo; estoque só muda por movimento com chave/versão.
-
-- [MFA da conta](docs/mfa-usuarios.md): TOTP e recuperação globais, rotas próprias sem permissão de domínio, suporte recusado, versão de credenciais nos tokens. Nunca contornar por redefinição por e-mail.
-
-## Acessos pessoais
-Dependentes exigem autorização explícita e conta ligada à pessoa; parentesco não concede acesso. Coordenação própria revalida membro ativo COORDENADOR a cada operação e não autoriza nomear coordenadores. Contratos em docs/acessos-responsaveis-coordenacao.md.
-
-- F04: docs/distribuicao-escala.md. Tela /escalas/:id/distribuicao; prévia explicada, escolhas marcadas, aplicação com versão e regras da prévia. Sem IA.
-
-- F05/F13: docs/notificacoes-entregas.md. /entregas (gatilhos e histórico); avisar escalados na montagem finalizada e notificar no mural. Confirmar antes de enfileirar; sem IA.
-
-- F09: docs/privacidade.md. /pessoas/:id/privacidade (histórico e exportação) e /privacidade (retenção); confirmar antes de exportar ou anonimizar.
-
-- F15/F16: docs/checkin-pwa.md. /escalas/:id/checkin e /portal/checkin; PWA com sw.js que só guarda a página offline (nunca cachear API/portal/documentos).
-
-- T05: início usa VoluntariosService.painel() e a grade de indisponibilidades usa ativosLeves() (projeção paginada); não voltar a carregar a lista completa de voluntários nessas telas.
-
-- T17: docs/contrato-api.md. Depois de mexer em serviços de API rode `python scripts/verificar-contrato-api.py` (lê o contrato do back vizinho).
+| Área | Documento | Regra que não pode ser quebrada |
+|---|---|---|
+| Financeiro paroquial | [financeiro](docs/financeiro.md) | Ações conforme FINANCEIRO_*; enviar `versao` para editar/baixar/estornar; busca nova descarta resposta antiga; sem cache de saldos |
+| Cuidados pessoais | [cotas-plano](docs/cotas-plano.md) | Formulário só mostra/envia cuidados com PESSOA_CUIDADOS_ALTERAR; leitura depende de PESSOA_CUIDADOS_LER |
+| Listas e seleção | [listas-paginadas](docs/listas-paginadas.md), [seletores-escala](docs/seletores-escala.md) | Seleção por página; busca reinicia em zero; início usa `VoluntariosService.painel()` e a grade usa `ativosLeves()`, nunca a lista completa |
+| Cotas e consumo | [cotas-plano](docs/cotas-plano.md), [historico-consumo](docs/historico-consumo.md) | Consumo em Minha conta; inventário pendente não afirma espaço livre; ausência de histórico não é zero |
+| Importação | [importacao-pessoas](docs/importacao-pessoas.md) | Prévia, hash e confirmação atômica; sem mesclar fichas |
+| Mural e tarefas | [mural-tarefas](docs/mural-tarefas.md) | Recursos explícitos, leitura preservada, mutações com `versao` |
+| Portal e calendário | [portal-calendario-pastorais](docs/portal-calendario-pastorais.md) | Token de calendário só em memória e limpo ao destruir a tela; `/portal` exige recurso explícito |
+| Resposta, candidatura, troca | [respostas-escala](docs/respostas-escala.md), [candidaturas-vagas](docs/candidaturas-vagas.md), [trocas-escala](docs/trocas-escala.md) | Só a pessoa própria; mostrar prazo e versão; conflito pede recarregar |
+| Ajuda | [ajuda](docs/ajuda.md) | Conteúdo estático, busca local, parâmetro `tema` só com IDs do catálogo |
+| Tarefas, relatórios, onboarding | [tarefas-relatorios-disponibilidade](docs/tarefas-relatorios-disponibilidade.md), [onboarding](docs/onboarding.md) | CSV limitado e autorizado; checklist só lê |
+| Aniversários, site, liturgia, estoque | [aniversarios](docs/aniversarios.md), [site-publico](docs/site-publico.md), [liturgia](docs/liturgia.md), [estoque-patrimonio](docs/estoque-patrimonio.md) | Opt-in explícito; sem conteúdo gerado; estoque por movimento |
+| MFA e acessos | [mfa-usuarios](docs/mfa-usuarios.md), [acessos-responsaveis-coordenacao](docs/acessos-responsaveis-coordenacao.md) | Nunca contornar MFA por e-mail; dependente só com autorização explícita |
+| Distribuição | [distribuicao-escala](docs/distribuicao-escala.md) | Prévia sem efeito; aplicar reenvia versão e regras da prévia; 409 descarta a prévia |
+| Notificações | [notificacoes-entregas](docs/notificacoes-entregas.md) | Confirmar antes de enfileirar; gatilhos desligados por padrão |
+| Privacidade | [privacidade](docs/privacidade.md) | Confirmar antes de exportar ou anonimizar |
+| Check-in e PWA | [checkin-pwa](docs/checkin-pwa.md) | Código no fragmento da URL e removido da barra; `sw.js` só guarda a página offline (nunca API, portal ou documentos) |
